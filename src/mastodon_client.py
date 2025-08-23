@@ -21,7 +21,7 @@ class MastodonPost:
     created_at: datetime
     url: str
     in_reply_to_id: Optional[str] = None
-    media_attachments: List[Dict[str, Any]] = None
+    media_attachments: Optional[List[Dict[str, Any]]] = None
 
 
 class MastodonClient:
@@ -30,7 +30,7 @@ class MastodonClient:
     def __init__(self, api_base_url: str, access_token: str):
         self.api_base_url = api_base_url
         self.access_token = access_token
-        self.client = None
+        self.client: Optional[Mastodon] = None
         self._authenticated = False
 
     def authenticate(self) -> bool:
@@ -41,10 +41,14 @@ class MastodonClient:
             )
 
             # Verify credentials
-            account = self.client.me()
-            self._authenticated = True
-            logger.info(f"Successfully connected to Mastodon as @{account['username']}")
-            return True
+            if self.client:
+                account = self.client.me()
+                self._authenticated = True
+                logger.info(f"Successfully connected to Mastodon as @{account['username']}")
+                return True
+            else:
+                logger.error("Failed to initialize Mastodon client")
+                return False
 
         except Exception as e:
             logger.error(f"Failed to authenticate with Mastodon: {e}")
@@ -66,14 +70,14 @@ class MastodonClient:
             )
 
             logger.info(f"Successfully posted status to Mastodon: {status['id']}")
-            return status
+            return status if isinstance(status, dict) else None
 
         except Exception as e:
             logger.error(f"Failed to post status to Mastodon: {e}")
             return None
 
     def upload_media(
-        self, media_file: bytes, mime_type: str = None, description: str = None
+        self, media_file: bytes, mime_type: Optional[str] = None, description: Optional[str] = None
     ) -> Optional[str]:
         """Upload media to Mastodon"""
         if not self._authenticated or not self.client:
@@ -85,7 +89,7 @@ class MastodonClient:
             )
 
             logger.info(f"Successfully uploaded media to Mastodon: {media['id']}")
-            return media["id"]
+            return media["id"] if isinstance(media, dict) and "id" in media else None
 
         except Exception as e:
             logger.error(f"Failed to upload media to Mastodon: {e}")

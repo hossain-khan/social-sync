@@ -122,7 +122,8 @@ class BlueskyClient:
         """Get post thread context"""
         try:
             response = self.client.get_post_thread(uri=post_uri)
-            return response.thread
+            thread = response.thread
+            return thread if isinstance(thread, dict) else None
         except Exception as e:
             logger.error(f"Failed to fetch post thread: {e}")
             return None
