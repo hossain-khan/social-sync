@@ -65,8 +65,8 @@ class BlueskyClient:
             for feed_item in response.feed:
                 post = feed_item.post
                 
-                # Skip reposts and replies for now
-                if hasattr(feed_item, 'reason') or post.record.reply:
+                # Skip reposts (when reason is not None) and replies
+                if (hasattr(feed_item, 'reason') and feed_item.reason is not None) or post.record.reply:
                     continue
                 
                 # Parse the post creation date
@@ -84,7 +84,7 @@ class BlueskyClient:
                     author_handle=post.author.handle,
                     author_display_name=post.author.display_name,
                     reply_to=post.record.reply.parent.uri if post.record.reply else None,
-                    embed=post.record.embed.py_object if hasattr(post.record, 'embed') and post.record.embed else None
+                    embed=post.record.embed.__dict__ if hasattr(post.record, 'embed') and post.record.embed else None
                 )
                 posts.append(bluesky_post)
                 
