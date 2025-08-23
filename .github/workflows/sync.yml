@@ -27,14 +27,6 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
       
-      - name: Restore sync state
-        uses: actions/cache/restore@v4
-        with:
-          path: sync_state.json
-          key: social-sync-state-${{ github.repository }}
-          restore-keys: |
-            social-sync-state-
-      
       - name: Install dependencies
         run: |
           pip install --upgrade pip
@@ -64,12 +56,25 @@ jobs:
           fi
           python sync.py sync ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
       
-      - name: Save sync state
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: sync_state.json
-          key: social-sync-state-${{ github.repository }}-${{ github.run_id }}
+      - name: Commit and push sync state changes
+        if: success() && github.event.inputs.dry_run != 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add sync_state.json
+          if git diff --staged --quiet; then
+            echo "📋 No changes to sync state - nothing to commit"
+          else
+            echo "💾 Committing sync state updates..."
+            git commit -m "🤖 Update sync state after automated sync
+
+            - Updated last sync time
+            - Added newly synced posts
+            - Run ID: ${{ github.run_id }}
+            - Trigger: ${{ github.event_name }}"
+            git push
+            echo "✅ Sync state successfully committed and pushed"
+          fi
       
       - name: Upload logs
         if: always()

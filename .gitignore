@@ -207,7 +207,6 @@ marimo/_lsp/
 __marimo__/
 
 # Social Sync specific files
-sync_state.json
 social_sync.log
 test_state.json
 example_state.json
