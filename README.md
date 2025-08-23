@@ -191,12 +191,57 @@ social-sync/
 │   ├── sync_state.py          # State management
 │   └── content_processor.py   # Content adaptation
 ├── .github/workflows/
-│   └── sync.yml               # GitHub Actions workflow
+│   ├── sync.yml               # Main sync workflow
+│   └── validate.yml           # Code quality validation
 ├── sync.py                    # CLI entry point
 ├── requirements.txt           # Python dependencies
+├── requirements-dev.txt       # Development dependencies
+├── pyproject.toml            # Tool configurations
 ├── .env.example              # Environment template
 └── README.md                 # This file
 ```
+
+## Development & Contributing 🛠️
+
+### Code Quality Standards
+
+This project maintains high code quality standards with automated validation:
+
+#### **🔍 Automated Checks (CI)**
+- **Python Compilation**: All Python files must compile successfully
+- **Code Formatting**: Uses [Black](https://black.readthedocs.io/) for consistent formatting
+- **Import Sorting**: Uses [isort](https://pycqa.github.io/isort/) for organized imports
+- **Linting**: Uses [flake8](https://flake8.pycqa.org/) for code quality
+- **Type Checking**: Uses [mypy](https://mypy.readthedocs.io/) for type validation
+- **Security Scanning**: Uses [bandit](https://bandit.readthedocs.io/) for security issues
+- **Dependency Scanning**: Uses [safety](https://pyup.io/safety/) and [pip-audit](https://github.com/pypa/pip-audit)
+
+#### **🧪 Running Quality Checks Locally**
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Format code
+black .
+isort .
+
+# Run linting
+flake8 .
+mypy src/ sync.py
+
+# Security scan
+bandit -r src/ sync.py
+
+# Dependency vulnerability check
+safety check
+pip-audit
+```
+
+#### **⚡ GitHub Actions**
+- **Code Quality Validation**: Runs on every push and PR to `main`
+- **Multi-Python Testing**: Tests against Python 3.11 and 3.12
+- **Comprehensive Reporting**: Uploads security and dependency scan results
+- **Branch Protection**: All checks must pass before merging
 
 ## Troubleshooting 🐛
 
