@@ -50,6 +50,18 @@ class BlueskyClient:
             logger.error(f"Failed to authenticate with Bluesky: {e}")
             return False
 
+    def get_user_did(self) -> Optional[str]:
+        """Get the authenticated user's DID"""
+        if not self._authenticated:
+            if not self.authenticate():
+                return None
+        
+        try:
+            return self.client.me.did if self.client.me else None
+        except Exception as e:
+            logger.error(f"Failed to get user DID: {e}")
+            return None
+
     def get_recent_posts(
         self, limit: int = 10, since_date: Optional[datetime] = None
     ) -> List[BlueskyPost]:

@@ -41,6 +41,63 @@ jobs:
             echo "📝 No existing sync state found - this is a fresh start"
           fi
       
+      - name: Initialize sync state for new users
+        run: |
+          # Check if this is a fork by comparing the sync state with current user
+          if [ -f sync_state.json ]; then
+            # Get current authenticated user's DID for comparison
+            CURRENT_USER_DID=$(python -c '
+            import os
+            from src.config import Settings
+            from src.bluesky_client import BlueskyClient
+            settings = Settings()
+            client = BlueskyClient(settings.bluesky_handle, settings.bluesky_password)
+            print(client.get_user_did())
+            ' 2>/dev/null || echo "unknown")
+            
+            # Check if sync state contains a different user DID
+            SYNC_STATE_DID=$(python -c '
+            import json
+            try:
+              with open("sync_state.json", "r") as f:
+                data = json.load(f)
+              if data.get("synced_posts") and len(data["synced_posts"]) > 0:
+                uri = data["synced_posts"][0]["bluesky_uri"] 
+                # Extract DID from URI: at://did:plc:xxxxx/...
+                did = uri.split("/")[2] if "/" in uri else "unknown"
+                print(did)
+              else:
+                print("empty")
+            except:
+              print("error")
+            ' 2>/dev/null || echo "error")
+            
+            echo "🔍 Current user DID: $CURRENT_USER_DID"
+            echo "🔍 Sync state DID: $SYNC_STATE_DID" 
+            
+            # If DIDs don't match and current DID is valid, this is likely a fork
+            if [ "$CURRENT_USER_DID" != "unknown" ] && [ "$SYNC_STATE_DID" != "unknown" ] && [ "$SYNC_STATE_DID" != "empty" ] && [ "$SYNC_STATE_DID" != "error" ] && [ "$CURRENT_USER_DID" != "$SYNC_STATE_DID" ]; then
+              echo "🔄 Detected fork: Different user DID in sync state"
+              echo "🗑️ Clearing sync state for fresh start..."
+              python -c '
+            import json
+            from datetime import datetime
+            fresh_state = {
+              "last_sync_time": datetime.utcnow().isoformat(),
+              "synced_posts": [],
+              "last_bluesky_post_uri": None
+            }
+            with open("sync_state.json", "w") as f:
+              json.dump(fresh_state, f, indent=2)
+            print("✅ Created fresh sync state for new user")
+              '
+            else
+              echo "✅ Sync state matches current user - no reset needed"
+            fi
+          else
+            echo "📝 No sync state file found - will be created after first sync"
+          fi
+      
       - name: Run sync
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
@@ -57,17 +114,38 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          # Ensure sync_state.json exists (it should after running sync)
+          if [ ! -f sync_state.json ]; then
+            echo "⚠️  sync_state.json not found after sync - this shouldn't happen"
+            exit 1
+          fi
+          
           git add sync_state.json
           if git diff --staged --quiet; then
             echo "📋 No changes to sync state - nothing to commit"
           else
             echo "💾 Committing sync state updates..."
-            git commit -m "🤖 Update sync state after automated sync
+            
+            # Different commit messages for first-time vs updates
+            if git ls-files --error-unmatch sync_state.json >/dev/null 2>&1; then
+              # File is already tracked - this is an update
+              git commit -m "🤖 Update sync state after automated sync
 
-            - Updated last sync time
-            - Added newly synced posts
-            - Run ID: ${{ github.run_id }}
-            - Trigger: ${{ github.event_name }}"
+              - Updated last sync time
+              - Added newly synced posts
+              - Run ID: ${{ github.run_id }}
+              - Trigger: ${{ github.event_name }}"
+            else
+              # File is not tracked - this is first time
+              git commit -m "🎉 Initialize sync state after first sync
+
+              - Created initial sync state
+              - Added synced posts from first run  
+              - Run ID: ${{ github.run_id }}
+              - Trigger: ${{ github.event_name }}"
+            fi
+            
             git push
             echo "✅ Sync state successfully committed and pushed"
           fi

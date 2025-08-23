@@ -12,6 +12,14 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon, design
 - 🧪 **Dry Run Mode**: Test without actually posting
 - 📊 **Comprehensive Logging**: Detailed logs and status reporting
 
+## Quick Start 🚀
+
+### For Fork Users
+If you're forking this repository, see [FORK_SETUP.md](FORK_SETUP.md) for a complete guide on setting up your own instance.
+
+### For Contributors
+Follow the setup guide below for local development.
+
 ## Setup Guide 🛠️
 
 ### 1. Prerequisites
