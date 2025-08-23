@@ -57,9 +57,11 @@ jobs:
           MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           LOG_LEVEL: INFO
-          # Only sync posts from today onwards since we manually synced historical posts
-          SYNC_START_DATE: ${{ github.event.schedule && '2025-08-23T14:10:00+00:00' || '' }}
         run: |
+          # Only set SYNC_START_DATE for scheduled runs to avoid re-syncing historical posts
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            export SYNC_START_DATE="2025-08-23T14:10:00+00:00"
+          fi
           python sync.py sync ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
       
       - name: Save sync state
