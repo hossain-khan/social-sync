@@ -94,7 +94,7 @@ class MastodonClient:
             )
 
             logger.info(f"Successfully uploaded media to Mastodon: {media['id']}")
-            return media["id"] if isinstance(media, dict) and "id" in media else None
+            return str(media["id"]) if isinstance(media, dict) and "id" in media else None
 
         except Exception as e:
             logger.error(f"Failed to upload media to Mastodon: {e}")
