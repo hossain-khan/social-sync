@@ -7,14 +7,14 @@ import os
 import sys
 from pathlib import Path
 
-# Add src to Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 import click
 from dotenv import load_dotenv
 
-from src.config import get_settings
-from src.sync_orchestrator import SocialSyncOrchestrator
+# Add src to Python path
+sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+from src.config import get_settings  # noqa: E402
+from src.sync_orchestrator import SocialSyncOrchestrator  # noqa: E402
 
 # Load environment variables
 load_dotenv()
@@ -62,13 +62,13 @@ def sync(dry_run, since_date):
         result = orchestrator.run_sync()
 
         if result["success"]:
-            click.echo(f"✅ Sync completed successfully!")
+            click.echo("✅ Sync completed successfully!")
             click.echo(f"   • Synced: {result['synced_count']} posts")
             if result["failed_count"] > 0:
                 click.echo(f"   • Failed: {result['failed_count']} posts")
             click.echo(f"   • Duration: {result['duration']:.2f}s")
             if result["dry_run"]:
-                click.echo(f"   • Mode: DRY RUN (no posts actually created)")
+                click.echo("   • Mode: DRY RUN (no posts actually created)")
         else:
             click.echo(f"❌ Sync failed: {result.get('error', 'Unknown error')}")
             sys.exit(1)
@@ -110,6 +110,16 @@ def config():
         click.echo(f"   • Mastodon instance: {settings.mastodon_api_base_url}")
         click.echo(f"   • Sync interval: {settings.sync_interval_minutes} minutes")
         click.echo(f"   • Max posts per sync: {settings.max_posts_per_sync}")
+
+        # Show sync start date (either configured or default)
+        sync_start = settings.get_sync_start_datetime()
+        if settings.sync_start_date:
+            click.echo(f"   • Sync start date: {settings.sync_start_date} (configured)")
+        else:
+            click.echo(
+                f"   • Sync start date: {sync_start.strftime('%Y-%m-%d')} (default: 7 days ago)"
+            )
+
         click.echo(f"   • Dry run: {settings.dry_run}")
         click.echo(f"   • Log level: {settings.log_level}")
 
