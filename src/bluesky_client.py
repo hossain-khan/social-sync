@@ -5,8 +5,9 @@ Bluesky client wrapper for Social Sync
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+import requests
 from atproto import Client as AtprotoClient
 
 logger = logging.getLogger(__name__)
@@ -125,4 +126,46 @@ class BlueskyClient:
             return thread if isinstance(thread, dict) else None
         except Exception as e:
             logger.error(f"Failed to fetch post thread: {e}")
+            return None
+
+    def download_blob(self, blob_ref: str, did: str) -> Optional[Tuple[bytes, str]]:
+        """Download image blob from AT Protocol
+
+        Args:
+            blob_ref: The blob reference (CID)
+            did: The DID of the post author
+
+        Returns:
+            Tuple of (image_bytes, mime_type) or None if failed
+        """
+        if not self._authenticated:
+            logger.error("Client not authenticated for blob download")
+            return None
+
+        try:
+            # Construct blob URL - AT Protocol blob service
+            # Format: https://bsky.social/xrpc/com.atproto.sync.getBlob?did={did}&cid={blob_ref}
+            blob_url = f"https://bsky.social/xrpc/com.atproto.sync.getBlob?did={did}&cid={blob_ref}"
+
+            headers = {"User-Agent": "Social-Sync/1.0 (AT Protocol blob downloader)"}
+
+            # Add authentication if available
+            if hasattr(self.client, "access_token") and self.client.access_token:
+                headers["Authorization"] = f"Bearer {self.client.access_token}"
+
+            response = requests.get(blob_url, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            # Get mime type from response headers
+            mime_type = response.headers.get("content-type", "image/jpeg")
+            if not mime_type.startswith("image/"):
+                mime_type = "image/jpeg"
+
+            logger.info(
+                f"Successfully downloaded blob {blob_ref[:8]}... ({len(response.content)} bytes)"
+            )
+            return response.content, mime_type
+
+        except Exception as e:
+            logger.error(f"Failed to download blob {blob_ref}: {e}")
             return None
