@@ -3,6 +3,7 @@ Main sync orchestrator for Social Sync
 """
 
 import logging
+import time
 from datetime import datetime
 from typing import List
 
@@ -196,6 +197,9 @@ class SocialSyncOrchestrator:
                     logger.info(
                         f"Successfully uploaded image {i+1}/{len(images)} to Mastodon: {media_id}"
                     )
+                    # Add delay between image uploads to avoid rate limiting
+                    if i < len(images) - 1:  # Don't delay after the last image
+                        time.sleep(0.5)  # Shorter delay for images within the same post
                 else:
                     logger.warning(
                         f"Failed to upload image {i+1} to Mastodon for post {bluesky_post.uri}"
@@ -246,6 +250,10 @@ class SocialSyncOrchestrator:
         for post in posts_to_sync:
             if self.sync_post(post):
                 synced_count += 1
+                # Add delay between posts to avoid rate limiting
+                if synced_count < len(posts_to_sync):  # Don't delay after the last post
+                    logger.info("Waiting 1 second to avoid rate limiting...")
+                    time.sleep(1)
             else:
                 failed_count += 1
 

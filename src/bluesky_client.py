@@ -63,9 +63,10 @@ class BlueskyClient:
             raise RuntimeError("Client not authenticated. Call authenticate() first.")
 
         try:
-            # Get the user's own posts
+            # Get the user's own posts (AT Protocol max is 100)
+            actual_limit = min(limit * 2, 100)  # Ensure we don't exceed API limit
             response = self.client.get_author_feed(
-                actor=self.handle, limit=limit * 2  # Get more posts to filter by date
+                actor=self.handle, limit=actual_limit
             )
 
             posts = []
