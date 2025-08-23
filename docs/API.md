@@ -86,16 +86,24 @@ class BlueskyPost:
 **Purpose**: Adapt content between platform formats
 
 **Processing Steps**:
-1. **Embed Handling**: Convert AT Protocol embeds to text
-2. **Mention Conversion**: Handle @mentions format differences  
-3. **Character Limit**: Truncate to Mastodon's 500 char limit
-4. **Attribution**: Add "(via Bluesky)" tag
+1. **Embed Handling**: Convert AT Protocol embeds to text or media
+2. **Image Processing**: Download and upload images with alt text
+3. **Mention Conversion**: Handle @mentions format differences  
+4. **Character Limit**: Truncate to Mastodon's 500 char limit
+5. **Attribution**: Add "(via Bluesky)" tag
 
 **Embed Types Supported**:
 - **External Links**: Convert to text with URL
-- **Images**: Note count and include alt text
+- **Images**: Download from Bluesky and upload to Mastodon with alt text
 - **Quoted Posts**: Include quote preview with attribution
 - **Record Embeds**: Handle referenced content
+
+**Image Syncing Features**:
+- Downloads images via AT Protocol blob API
+- Uploads to Mastodon with proper MIME types
+- Preserves alt text descriptions
+- Supports multiple images per post
+- Graceful fallback to text placeholders if image sync fails
 
 ### 5. State Management (`sync_state.py`)
 
@@ -156,8 +164,9 @@ response = client.get_author_feed(
 )
 ```
 
-**Rate Limits**: 
+**Rate Limits**:
 - 5000 requests per hour per authenticated user
+- Additional blob download limits may apply for image syncing
 - No specific posting limits documented
 
 ### Mastodon API

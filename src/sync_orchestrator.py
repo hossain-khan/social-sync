@@ -77,22 +77,42 @@ class SocialSyncOrchestrator:
         try:
             logger.info(f"Syncing post: {bluesky_post.uri}")
 
+            # Check if we have images to sync
+            has_images = bool(
+                self.content_processor.extract_images_from_embed(bluesky_post.embed)
+            )
+
             # Process content for Mastodon compatibility
+            # Don't include image placeholders if we're going to attach actual images
             processed_text = self.content_processor.process_bluesky_to_mastodon(
-                text=bluesky_post.text, embed=bluesky_post.embed
+                text=bluesky_post.text,
+                embed=bluesky_post.embed,
+                include_image_placeholders=not has_images or self.settings.dry_run,
             )
 
             # Add sync attribution
             processed_text = self.content_processor.add_sync_attribution(processed_text)
 
+            # Handle image attachments
+            media_ids = []
+            if bluesky_post.embed and not self.settings.dry_run:
+                media_ids = self._sync_images(bluesky_post)
+
             if self.settings.dry_run:
+                # Show what would be synced
+                image_count = len(
+                    self.content_processor.extract_images_from_embed(bluesky_post.embed)
+                )
+                image_info = f" with {image_count} image(s)" if image_count > 0 else ""
                 logger.info(
-                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}..."
+                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}"
                 )
                 mastodon_post_id = "dry-run"
             else:
-                # Post to Mastodon
-                mastodon_response = self.mastodon_client.post_status(processed_text)
+                # Post to Mastodon with media attachments
+                mastodon_response = self.mastodon_client.post_status(
+                    processed_text, media_ids=media_ids if media_ids else None
+                )
                 if not mastodon_response:
                     logger.error(f"Failed to post to Mastodon: {bluesky_post.uri}")
                     return False
@@ -107,6 +127,85 @@ class SocialSyncOrchestrator:
         except Exception as e:
             logger.error(f"Error syncing post {bluesky_post.uri}: {e}")
             return False
+
+    def _sync_images(self, bluesky_post: BlueskyPost) -> List[str]:
+        """Download images from Bluesky and upload to Mastodon
+
+        Returns list of media IDs for Mastodon
+        """
+        media_ids: List[str] = []
+
+        # Extract image information from embed
+        images = self.content_processor.extract_images_from_embed(bluesky_post.embed)
+
+        if not images:
+            return media_ids
+
+        logger.info(f"Found {len(images)} image(s) to sync for post {bluesky_post.uri}")
+
+        # Extract author DID from URI for blob downloads
+        # Format: at://did:plc:abc123/app.bsky.feed.post/xyz789
+        author_did = bluesky_post.author_handle  # We'll need the actual DID
+        if bluesky_post.uri.startswith("at://"):
+            author_did = bluesky_post.uri.split("/")[2]
+
+        for i, image_info in enumerate(images):
+            try:
+                logger.info(
+                    f"Processing image {i+1}/{len(images)} for post {bluesky_post.uri}"
+                )
+
+                # Download image from Bluesky
+                image_data = None
+                mime_type = image_info.get("mime_type", "image/jpeg")
+
+                if image_info.get("blob_ref"):
+                    # Download via AT Protocol blob API
+                    image_data = self.bluesky_client.download_blob(
+                        image_info["blob_ref"], author_did
+                    )
+                elif image_info.get("url"):
+                    # Download from direct URL
+                    image_data = self.content_processor.download_image(
+                        image_info["url"]
+                    )
+
+                if not image_data:
+                    logger.warning(
+                        f"Failed to download image {i+1} for post {bluesky_post.uri}"
+                    )
+                    continue
+
+                image_bytes, actual_mime_type = image_data
+                mime_type = actual_mime_type or mime_type
+
+                # Upload to Mastodon
+                media_id = self.mastodon_client.upload_media(
+                    media_file=image_bytes,
+                    mime_type=mime_type,
+                    description=image_info.get("alt", ""),
+                )
+
+                if media_id:
+                    media_ids.append(media_id)
+                    logger.info(
+                        f"Successfully uploaded image {i+1}/{len(images)} to Mastodon: {media_id}"
+                    )
+                else:
+                    logger.warning(
+                        f"Failed to upload image {i+1} to Mastodon for post {bluesky_post.uri}"
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Error processing image {i+1} for post {bluesky_post.uri}: {e}"
+                )
+                continue
+
+        logger.info(
+            f"Successfully processed {len(media_ids)}/{len(images)} images for post {bluesky_post.uri}"
+        )
+        return media_ids
 
     def run_sync(self) -> dict:
         """Run the main sync process"""
