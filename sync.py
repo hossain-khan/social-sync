@@ -3,8 +3,8 @@
 Social Sync CLI - Command line interface for syncing social media posts
 """
 import logging
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add src to Python path
@@ -13,9 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 import click
 from dotenv import load_dotenv
 
-from src.sync_orchestrator import SocialSyncOrchestrator
 from src.config import get_settings
-
+from src.sync_orchestrator import SocialSyncOrchestrator
 
 # Load environment variables
 load_dotenv()
@@ -25,16 +24,16 @@ def setup_logging(log_level: str):
     """Setup logging configuration"""
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler('social_sync.log')
-        ]
+            logging.FileHandler("social_sync.log"),
+        ],
     )
 
 
 @click.group()
-@click.option('--log-level', default='INFO', help='Set logging level')
+@click.option("--log-level", default="INFO", help="Set logging level")
 @click.pass_context
 def cli(ctx, log_level):
     """Social Sync - Sync posts from Bluesky to Mastodon"""
@@ -43,32 +42,37 @@ def cli(ctx, log_level):
 
 
 @cli.command()
-@click.option('--dry-run', is_flag=True, help='Run without actually posting to Mastodon')
-@click.option('--since-date', help='Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)')
+@click.option(
+    "--dry-run", is_flag=True, help="Run without actually posting to Mastodon"
+)
+@click.option(
+    "--since-date",
+    help="Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)",
+)
 def sync(dry_run, since_date):
     """Run the sync process"""
     if dry_run:
-        os.environ['DRY_RUN'] = 'true'
-    
+        os.environ["DRY_RUN"] = "true"
+
     if since_date:
-        os.environ['SYNC_START_DATE'] = since_date
-    
+        os.environ["SYNC_START_DATE"] = since_date
+
     try:
         orchestrator = SocialSyncOrchestrator()
         result = orchestrator.run_sync()
-        
-        if result['success']:
+
+        if result["success"]:
             click.echo(f"✅ Sync completed successfully!")
             click.echo(f"   • Synced: {result['synced_count']} posts")
-            if result['failed_count'] > 0:
+            if result["failed_count"] > 0:
                 click.echo(f"   • Failed: {result['failed_count']} posts")
             click.echo(f"   • Duration: {result['duration']:.2f}s")
-            if result['dry_run']:
+            if result["dry_run"]:
                 click.echo(f"   • Mode: DRY RUN (no posts actually created)")
         else:
             click.echo(f"❌ Sync failed: {result.get('error', 'Unknown error')}")
             sys.exit(1)
-            
+
     except Exception as e:
         logging.exception("Unexpected error during sync")
         click.echo(f"❌ Unexpected error: {e}")
@@ -81,12 +85,14 @@ def status():
     try:
         orchestrator = SocialSyncOrchestrator()
         status_info = orchestrator.get_sync_status()
-        
+
         click.echo("📊 Social Sync Status")
         click.echo(f"   • Last sync: {status_info['last_sync_time'] or 'Never'}")
         click.echo(f"   • Total synced posts: {status_info['total_synced_posts']}")
-        click.echo(f"   • Dry run mode: {'ON' if status_info['dry_run_mode'] else 'OFF'}")
-        
+        click.echo(
+            f"   • Dry run mode: {'ON' if status_info['dry_run_mode'] else 'OFF'}"
+        )
+
     except Exception as e:
         logging.exception("Error getting status")
         click.echo(f"❌ Error getting status: {e}")
@@ -98,7 +104,7 @@ def config():
     """Show current configuration"""
     try:
         settings = get_settings()
-        
+
         click.echo("⚙️ Social Sync Configuration")
         click.echo(f"   • Bluesky handle: {settings.bluesky_handle}")
         click.echo(f"   • Mastodon instance: {settings.mastodon_api_base_url}")
@@ -106,7 +112,7 @@ def config():
         click.echo(f"   • Max posts per sync: {settings.max_posts_per_sync}")
         click.echo(f"   • Dry run: {settings.dry_run}")
         click.echo(f"   • Log level: {settings.log_level}")
-        
+
     except Exception as e:
         click.echo(f"❌ Error reading configuration: {e}")
         sys.exit(1)
@@ -117,20 +123,20 @@ def test():
     """Test client connections without syncing"""
     try:
         orchestrator = SocialSyncOrchestrator()
-        
+
         click.echo("🔧 Testing client connections...")
-        
+
         if orchestrator.setup_clients():
             click.echo("✅ All clients authenticated successfully!")
         else:
             click.echo("❌ Client authentication failed!")
             sys.exit(1)
-            
+
     except Exception as e:
         logging.exception("Error testing connections")
         click.echo(f"❌ Error testing connections: {e}")
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

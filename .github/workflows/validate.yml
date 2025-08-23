@@ -1,0 +1,211 @@
+name: Code Quality Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Install development dependencies
+        run: |
+          pip install black isort flake8 mypy pylint pytest
+      
+      - name: Check Python syntax and compilation
+        run: |
+          echo "🐍 Checking Python syntax and compilation..."
+          python -m py_compile sync.py
+          python -m py_compile test_setup.py
+          find src -name "*.py" -exec python -m py_compile {} \;
+          echo "✅ All Python files compile successfully"
+      
+      - name: Check code formatting with Black
+        run: |
+          echo "🖤 Checking code formatting with Black..."
+          black --check --diff --color .
+          echo "✅ Code formatting is correct"
+      
+      - name: Check import sorting with isort
+        run: |
+          echo "📦 Checking import sorting with isort..."
+          isort --check-only --diff --color .
+          echo "✅ Import sorting is correct"
+      
+      - name: Lint with flake8
+        run: |
+          echo "🔍 Running flake8 linting..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+          echo "✅ Linting passed"
+      
+      - name: Type checking with mypy
+        run: |
+          echo "🔍 Running mypy type checking..."
+          mypy sync.py src/ --ignore-missing-imports --no-strict-optional
+          echo "✅ Type checking passed"
+      
+      - name: Run basic imports test
+        run: |
+          echo "🧪 Testing basic imports..."
+          python -c "
+          import sys
+          sys.path.insert(0, 'src')
+          
+          # Test core imports
+          from src.config import get_settings
+          from src.bluesky_client import BlueskyClient
+          from src.mastodon_client import MastodonClient
+          from src.sync_orchestrator import SocialSyncOrchestrator
+          from src.sync_state import SyncState
+          from src.content_processor import ContentProcessor
+          
+          print('✅ All core modules import successfully')
+          
+          # Test CLI import
+          import click
+          print('✅ CLI dependencies available')
+          
+          # Test API libraries
+          import atproto
+          import mastodon
+          print('✅ API libraries available')
+          "
+      
+      - name: Test configuration loading
+        run: |
+          echo "⚙️ Testing configuration loading..."
+          python -c "
+          import os
+          os.environ['BLUESKY_HANDLE'] = 'test.bsky.social'
+          os.environ['BLUESKY_PASSWORD'] = 'test-password'
+          os.environ['MASTODON_API_BASE_URL'] = 'https://mastodon.social'
+          os.environ['MASTODON_ACCESS_TOKEN'] = 'test-token'
+          
+          from src.config import get_settings
+          settings = get_settings()
+          
+          assert settings.bluesky_handle == 'test.bsky.social'
+          assert settings.mastodon_api_base_url == 'https://mastodon.social'
+          print('✅ Configuration loading works correctly')
+          "
+      
+      - name: Test CLI help commands
+        run: |
+          echo "🖥️ Testing CLI help commands..."
+          python sync.py --help
+          python sync.py sync --help
+          python sync.py status --help
+          python sync.py config --help
+          echo "✅ CLI help commands work"
+      
+      - name: Validate project structure
+        run: |
+          echo "📁 Validating project structure..."
+          
+          # Check required files exist
+          test -f sync.py && echo "✅ sync.py exists"
+          test -f requirements.txt && echo "✅ requirements.txt exists"
+          test -f README.md && echo "✅ README.md exists"
+          test -f .env.example && echo "✅ .env.example exists"
+          
+          # Check directory structure
+          test -d src && echo "✅ src/ directory exists"
+          test -d .github/workflows && echo "✅ .github/workflows/ directory exists"
+          test -d docs && echo "✅ docs/ directory exists"
+          test -d examples && echo "✅ examples/ directory exists"
+          
+          # Check core modules
+          test -f src/__init__.py && echo "✅ src/__init__.py exists"
+          test -f src/config.py && echo "✅ src/config.py exists"
+          test -f src/bluesky_client.py && echo "✅ src/bluesky_client.py exists"
+          test -f src/mastodon_client.py && echo "✅ src/mastodon_client.py exists"
+          test -f src/sync_orchestrator.py && echo "✅ src/sync_orchestrator.py exists"
+          test -f src/sync_state.py && echo "✅ src/sync_state.py exists"
+          test -f src/content_processor.py && echo "✅ src/content_processor.py exists"
+          
+          echo "✅ Project structure is valid"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run security scan with bandit
+        run: |
+          pip install bandit[toml]
+          echo "🔒 Running security scan with bandit..."
+          bandit -r src/ sync.py -f json -o bandit-report.json || true
+          bandit -r src/ sync.py
+          echo "✅ Security scan completed"
+      
+      - name: Upload security scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results-${{ github.run_id }}
+          path: bandit-report.json
+          retention-days: 30
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install safety pip-audit
+      
+      - name: Check for security vulnerabilities in dependencies
+        run: |
+          echo "🔍 Checking dependencies for security vulnerabilities..."
+          
+          echo "Running safety check..."
+          safety check --json --output safety-report.json || true
+          safety check
+          
+          echo "Running pip-audit..."
+          pip-audit --format=json --output=pip-audit-report.json || true
+          pip-audit
+          
+          echo "✅ Dependency security check completed"
+      
+      - name: Upload dependency scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-scan-results-${{ github.run_id }}
+          path: |
+            safety-report.json
+            pip-audit-report.json
+          retention-days: 30
