@@ -50,10 +50,6 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           LOG_LEVEL: INFO
         run: |
-          # Only set SYNC_START_DATE for scheduled runs to avoid re-syncing historical posts
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            export SYNC_START_DATE="2025-08-23T14:10:00+00:00"
-          fi
           python sync.py sync ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
       
       - name: Commit and push sync state changes
