@@ -44,12 +44,7 @@ jobs:
         run: |
           if [ -f sync_state.json ]; then
             echo "📊 Found existing sync state:"
-            python -c "
-            from src.sync_state import SyncState
-            state = SyncState()
-            print(f'Last sync: {state.get_last_sync_time()}')
-            print(f'Synced posts: {state.get_synced_posts_count()}')
-            "
+            python -c 'from src.sync_state import SyncState; state = SyncState(); print(f"Last sync: {state.get_last_sync_time()}"); print(f"Synced posts: {state.get_synced_posts_count()}")'
           else
             echo "📝 No existing sync state found - this is a fresh start"
           fi
