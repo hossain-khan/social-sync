@@ -111,7 +111,8 @@ class SocialSyncOrchestrator:
                 logger.info(
                     f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}"
                 )
-                mastodon_post_id = "dry-run"
+                # Don't mark posts as synced during dry runs
+                return True
             else:
                 # Post to Mastodon with media attachments
                 mastodon_response = self.mastodon_client.post_status(
@@ -124,9 +125,9 @@ class SocialSyncOrchestrator:
                 mastodon_post_id = mastodon_response["id"]
                 logger.info(f"Successfully synced post to Mastodon: {mastodon_post_id}")
 
-            # Mark as synced
-            self.sync_state.mark_post_synced(bluesky_post.uri, mastodon_post_id)
-            return True
+                # Mark as synced only for actual posts
+                self.sync_state.mark_post_synced(bluesky_post.uri, mastodon_post_id)
+                return True
 
         except Exception as e:
             logger.error(f"Error syncing post {bluesky_post.uri}: {e}")

@@ -242,16 +242,31 @@ class ContentProcessor:
             embed.get("py_type", "").split(".")[-1] if embed.get("py_type") else ""
         )
 
-        if embed_type == "Images":
+        if embed_type == "images":
             bluesky_images = embed.get("images", [])
             for img in bluesky_images:
                 # Extract image URL and metadata
-                image_info = {"url": None, "alt": img.get("alt", ""), "mime_type": None}
+                # Handle both dict and AT Protocol Image objects
+                if hasattr(img, "alt"):
+                    # AT Protocol Image object
+                    alt_text = img.alt or ""
+                    blob = img.image if hasattr(img, "image") else None
+                else:
+                    # Dict format
+                    alt_text = img.get("alt", "")
+                    blob = img.get("image")
+
+                image_info = {"url": None, "alt": alt_text, "mime_type": None}
 
                 # Get image blob reference
-                if img.get("image"):
-                    blob = img["image"]
-                    if isinstance(blob, dict):
+                if blob:
+                    if hasattr(blob, "mime_type"):
+                        # AT Protocol BlobRef object
+                        image_info["mime_type"] = blob.mime_type
+                        if hasattr(blob, "ref") and hasattr(blob.ref, "link"):
+                            image_info["blob_ref"] = blob.ref.link
+                    elif isinstance(blob, dict):
+                        # Dict format
                         image_info["mime_type"] = blob.get("mime_type", "image/jpeg")
                         # The blob ref contains the image identifier
                         if blob.get("ref"):
