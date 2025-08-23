@@ -27,10 +27,32 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
       
+      - name: Restore sync state
+        uses: actions/cache/restore@v4
+        with:
+          path: sync_state.json
+          key: social-sync-state-${{ github.repository }}
+          restore-keys: |
+            social-sync-state-
+      
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+      
+      - name: Check sync state
+        run: |
+          if [ -f sync_state.json ]; then
+            echo "📊 Found existing sync state:"
+            python -c "
+            from src.sync_state import SyncState
+            state = SyncState()
+            print(f'Last sync: {state.get_last_sync_time()}')
+            print(f'Synced posts: {state.get_synced_posts_count()}')
+            "
+          else
+            echo "📝 No existing sync state found - this is a fresh start"
+          fi
       
       - name: Run sync
         env:
@@ -43,6 +65,13 @@ jobs:
         run: |
           python sync.py sync ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
       
+      - name: Save sync state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: sync_state.json
+          key: social-sync-state-${{ github.repository }}-${{ github.run_id }}
+      
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -50,3 +79,11 @@ jobs:
           name: sync-logs-${{ github.run_id }}
           path: social_sync.log
           retention-days: 7
+      
+      - name: Upload sync state (backup)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-state-backup-${{ github.run_id }}
+          path: sync_state.json
+          retention-days: 30

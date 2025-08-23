@@ -110,6 +110,18 @@ The sync runs automatically every 15 minutes via GitHub Actions. You can also:
 - **Dry run**: Use the manual trigger with dry-run mode enabled
 - **View logs**: Check the Actions tab for execution logs
 
+### 🔄 State Persistence in CI
+
+**Problem**: GitHub Actions runs in fresh environments, which would normally cause duplicate posts every run.
+
+**Solution**: The workflow uses GitHub Actions Cache to persist the `sync_state.json` file between runs:
+
+1. **Before sync**: Restores previous sync state from cache
+2. **After sync**: Saves updated sync state to cache for next run
+3. **Backup**: Also uploads state as artifact for recovery
+
+This ensures duplicate posts are prevented even in automated CI runs! 🎯
+
 ## How It Works 🔧
 
 1. **Authentication**: Connects to both Bluesky and Mastodon APIs

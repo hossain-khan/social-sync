@@ -49,7 +49,13 @@ class SyncState:
     
     def is_post_synced(self, post_uri: str) -> bool:
         """Check if a post has already been synced"""
-        return post_uri in self.state.get("synced_posts", [])
+        synced_posts = self.state.get("synced_posts", [])
+        for record in synced_posts:
+            if isinstance(record, dict) and record.get("bluesky_uri") == post_uri:
+                return True
+            elif isinstance(record, str) and record == post_uri:  # Backward compatibility
+                return True
+        return False
     
     def mark_post_synced(self, bluesky_post_uri: str, mastodon_post_id: Optional[str] = None):
         """Mark a post as synced"""
