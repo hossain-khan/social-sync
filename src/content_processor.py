@@ -26,6 +26,7 @@ class ContentProcessor:
     def process_bluesky_to_mastodon(
         text: str,
         embed: Optional[Dict[str, Any]] = None,
+        facets: Optional[List[Dict[str, Any]]] = None,
         include_image_placeholders: bool = True,
     ) -> str:
         """
@@ -34,9 +35,16 @@ class ContentProcessor:
         Args:
             text: The original post text
             embed: Embed data from Bluesky
+            facets: Facets data containing rich text annotations (URLs, mentions, etc.)
             include_image_placeholders: Whether to add text placeholders for images
         """
         processed_text = text
+
+        # First expand URLs using facets
+        if facets:
+            processed_text = ContentProcessor._expand_urls_from_facets(
+                processed_text, facets
+            )
 
         # Handle embedded content
         if embed:
@@ -52,6 +60,62 @@ class ContentProcessor:
         processed_text = ContentProcessor._truncate_if_needed(processed_text)
 
         return processed_text
+
+    @staticmethod
+    def _expand_urls_from_facets(text: str, facets: List[Dict[str, Any]]) -> str:
+        """Expand truncated URLs using facets data from Bluesky
+
+        Facets contain the full URL information that corresponds to
+        truncated URLs in the post text.
+        """
+        if not facets:
+            return text
+
+        # Process facets in reverse order to avoid index shifting when replacing text
+        sorted_facets = sorted(
+            facets, key=lambda f: f.get("index", {}).get("byteStart", 0), reverse=True
+        )
+
+        for facet in sorted_facets:
+            try:
+                # Get the byte range for this facet
+                facet_index = facet.get("index", {})
+                byte_start = facet_index.get("byteStart")
+                byte_end = facet_index.get("byteEnd")
+
+                if byte_start is None or byte_end is None:
+                    continue
+
+                # Look for link features in this facet
+                features = facet.get("features", [])
+                for feature in features:
+                    # Check if this is a link feature
+                    if feature.get("py_type", "").endswith("Link"):
+                        full_url = feature.get("uri")
+                        if full_url:
+                            # Convert byte positions to character positions
+                            # Note: This assumes UTF-8 encoding where most characters are 1 byte
+                            # For more accurate conversion, we'd need to properly handle multi-byte chars
+                            text_bytes = text.encode("utf-8")
+
+                            # Extract the truncated URL from the text
+                            if byte_end <= len(text_bytes):
+                                before = text_bytes[:byte_start].decode(
+                                    "utf-8", errors="ignore"
+                                )
+                                after = text_bytes[byte_end:].decode(
+                                    "utf-8", errors="ignore"
+                                )
+
+                                # Replace with the full URL
+                                text = before + full_url + after
+                                logger.debug(f"Expanded URL from facets: {full_url}")
+
+            except Exception as e:
+                logger.warning(f"Error processing facet for URL expansion: {e}")
+                continue
+
+        return text
 
     @staticmethod
     def _handle_embed(

@@ -90,6 +90,7 @@ class SocialSyncOrchestrator:
             processed_text = self.content_processor.process_bluesky_to_mastodon(
                 text=bluesky_post.text,
                 embed=bluesky_post.embed,
+                facets=bluesky_post.facets,
                 include_image_placeholders=not has_images or self.settings.dry_run,
             )
 

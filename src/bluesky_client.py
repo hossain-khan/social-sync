@@ -25,6 +25,7 @@ class BlueskyPost:
     author_display_name: Optional[str] = None
     reply_to: Optional[str] = None
     embed: Optional[Dict[str, Any]] = None
+    facets: Optional[List[Dict[str, Any]]] = None
 
 
 class BlueskyClient:
@@ -101,6 +102,11 @@ class BlueskyClient:
                         if hasattr(post.record, "embed") and post.record.embed
                         else None
                     ),
+                    facets=(
+                        BlueskyClient._extract_facets_data(post.record.facets)
+                        if hasattr(post.record, "facets") and post.record.facets
+                        else None
+                    ),
                 )
                 posts.append(bluesky_post)
 
@@ -116,6 +122,40 @@ class BlueskyClient:
 
         except Exception as e:
             logger.error(f"Failed to fetch posts from Bluesky: {e}")
+            return []
+
+    @staticmethod
+    def _extract_facets_data(facets) -> List[Dict[str, Any]]:
+        """Extract facets data into dictionaries for easier processing"""
+        try:
+            facets_data: List[Dict[str, Any]] = []
+            for facet in facets:
+                facet_dict: Dict[str, Any] = {
+                    "index": {
+                        "byteStart": facet.index.byte_start,
+                        "byteEnd": facet.index.byte_end,
+                    },
+                    "features": [],
+                }
+
+                # Extract features (links, mentions, hashtags, etc.)
+                if hasattr(facet, "features") and facet.features:
+                    for feature in facet.features:
+                        feature_dict: Dict[str, Any] = {
+                            "py_type": str(type(feature).__name__)
+                        }
+
+                        # Extract link URI if it's a link feature
+                        if hasattr(feature, "uri"):
+                            feature_dict["uri"] = feature.uri
+
+                        facet_dict["features"].append(feature_dict)
+
+                facets_data.append(facet_dict)
+
+            return facets_data
+        except Exception as e:
+            logger.warning(f"Error extracting facets data: {e}")
             return []
 
     def get_post_thread(self, post_uri: str) -> Optional[Dict[str, Any]]:
