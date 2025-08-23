@@ -4,11 +4,10 @@ Bluesky client wrapper for Social Sync
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from atproto import Client as AtprotoClient
-from atproto import models
 
 logger = logging.getLogger(__name__)
 

@@ -3,9 +3,8 @@ Main sync orchestrator for Social Sync
 """
 
 import logging
-import sys
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+from typing import List
 
 from .bluesky_client import BlueskyClient, BlueskyPost
 from .config import get_settings
