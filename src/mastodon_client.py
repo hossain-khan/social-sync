@@ -44,7 +44,9 @@ class MastodonClient:
             if self.client:
                 account = self.client.me()
                 self._authenticated = True
-                logger.info(f"Successfully connected to Mastodon as @{account['username']}")
+                logger.info(
+                    f"Successfully connected to Mastodon as @{account['username']}"
+                )
                 return True
             else:
                 logger.error("Failed to initialize Mastodon client")
@@ -77,7 +79,10 @@ class MastodonClient:
             return None
 
     def upload_media(
-        self, media_file: bytes, mime_type: Optional[str] = None, description: Optional[str] = None
+        self,
+        media_file: bytes,
+        mime_type: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> Optional[str]:
         """Upload media to Mastodon"""
         if not self._authenticated or not self.client:

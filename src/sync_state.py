@@ -30,11 +30,15 @@ class SyncState:
         try:
             with open(self.state_file, "r") as f:
                 data = json.load(f)
-                return data if isinstance(data, dict) else {
-                    "last_sync_time": None,
-                    "synced_posts": [],
-                    "last_bluesky_post_uri": None,
-                }
+                return (
+                    data
+                    if isinstance(data, dict)
+                    else {
+                        "last_sync_time": None,
+                        "synced_posts": [],
+                        "last_bluesky_post_uri": None,
+                    }
+                )
         except Exception as e:
             logger.error(f"Failed to load state file: {e}")
             return {
