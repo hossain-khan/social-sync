@@ -4,6 +4,7 @@
 # Code formatting
 black>=23.0.0
 isort>=5.12.0
+colorama>=0.4.6  # For colored output in isort and other tools
 
 # Linting
 flake8>=6.0.0

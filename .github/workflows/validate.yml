@@ -32,7 +32,7 @@ jobs:
           
       - name: Install development dependencies
         run: |
-          pip install black isort flake8 mypy pylint pytest
+          pip install black isort flake8 mypy pylint pytest colorama
       
       - name: Check Python syntax and compilation
         run: |
