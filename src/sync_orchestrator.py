@@ -69,6 +69,9 @@ class SocialSyncOrchestrator:
             if not self.sync_state.is_post_synced(post.uri):
                 new_posts.append(post)
 
+        # Sort posts by creation time (ascending) to post older posts first
+        new_posts.sort(key=lambda post: post.created_at)
+
         logger.info(f"Found {len(new_posts)} new posts to sync")
         return new_posts
 

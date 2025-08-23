@@ -150,7 +150,10 @@ class ContentProcessor:
     def add_sync_attribution(text: str, source: str = "Bluesky") -> str:
         """Add attribution that content was synced from another platform"""
         # Only add attribution if there's room and it's not already present
-        attribution = f"\n\n(via {source})"
+        # Add butterfly emoji for Bluesky attribution
+        attribution = (
+            f"\n\n(via {source} 🦋)" if source == "Bluesky" else f"\n\n(via {source})"
+        )
 
         if (
             "(via" not in text
