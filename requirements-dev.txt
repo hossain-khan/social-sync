@@ -12,6 +12,7 @@ pylint>=2.17.0
 
 # Type checking
 mypy>=1.5.0
+types-requests>=2.32.0  # Type stubs for requests library
 
 # Security scanning
 bandit[toml]>=1.7.5
