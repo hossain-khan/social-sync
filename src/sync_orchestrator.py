@@ -57,8 +57,13 @@ class SocialSyncOrchestrator:
         """Get new posts from Bluesky that haven't been synced yet"""
         logger.info("Fetching recent posts from Bluesky...")
         
+        # Get the sync start date from configuration
+        since_date = self.settings.get_sync_start_datetime()
+        logger.info(f"Looking for posts since: {since_date.isoformat()}")
+        
         recent_posts = self.bluesky_client.get_recent_posts(
-            limit=self.settings.max_posts_per_sync
+            limit=self.settings.max_posts_per_sync,
+            since_date=since_date
         )
         
         # Filter out posts that have already been synced

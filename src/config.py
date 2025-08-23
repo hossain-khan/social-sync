@@ -2,6 +2,7 @@
 Configuration management for Social Sync
 """
 import os
+from datetime import datetime, timezone
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings
@@ -21,6 +22,10 @@ class Settings(BaseSettings):
     # Sync Configuration
     sync_interval_minutes: int = Field(default=15, description="Sync interval in minutes")
     max_posts_per_sync: int = Field(default=10, description="Maximum posts per sync")
+    sync_start_date: Optional[str] = Field(
+        default=None, 
+        description="Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS). If not set, starts from 7 days ago"
+    )
     dry_run: bool = Field(default=False, description="Run in dry-run mode")
     
     # Logging
@@ -55,6 +60,40 @@ class Settings(BaseSettings):
         if not v or v == "your-access-token":
             raise ValueError("Please set a valid Mastodon access token")
         return v
+    
+    @field_validator("sync_start_date")
+    @classmethod
+    def validate_sync_start_date(cls, v):
+        if v is None:
+            return v
+        try:
+            # Try to parse the date string
+            if 'T' in v:
+                # Full datetime format
+                datetime.fromisoformat(v.replace('Z', '+00:00'))
+            else:
+                # Date only format - add time
+                datetime.fromisoformat(f"{v}T00:00:00+00:00")
+            return v
+        except ValueError:
+            raise ValueError("sync_start_date must be in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)")
+    
+    def get_sync_start_datetime(self) -> datetime:
+        """Get the sync start date as a datetime object"""
+        if self.sync_start_date:
+            try:
+                if 'T' in self.sync_start_date:
+                    # Full datetime format
+                    return datetime.fromisoformat(self.sync_start_date.replace('Z', '+00:00'))
+                else:
+                    # Date only format - start at beginning of day UTC
+                    return datetime.fromisoformat(f"{self.sync_start_date}T00:00:00+00:00")
+            except ValueError:
+                pass
+        
+        # Default: 7 days ago
+        from datetime import timedelta
+        return datetime.now(timezone.utc) - timedelta(days=7)
 
 
 def get_settings() -> Settings:

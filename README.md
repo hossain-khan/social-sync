@@ -145,8 +145,26 @@ The sync runs automatically every 15 minutes via GitHub Actions. You can also:
 |---------|---------------------|---------|-------------|
 | Sync Interval | `SYNC_INTERVAL_MINUTES` | 15 | How often to sync (GitHub Actions cron) |
 | Max Posts | `MAX_POSTS_PER_SYNC` | 10 | Maximum posts to process per sync |
+| **Sync Start Date** | `SYNC_START_DATE` | 7 days ago | Start date for syncing posts (ISO format) |
 | Dry Run | `DRY_RUN` | false | Test mode without actual posting |
 | Log Level | `LOG_LEVEL` | INFO | Logging verbosity |
+
+### 📅 Sync Start Date Examples
+
+```bash
+# Start from a specific date (beginning of day UTC)
+SYNC_START_DATE=2025-01-01
+
+# Start from a specific datetime (assumes UTC if no timezone)
+SYNC_START_DATE=2025-01-15T10:30:00
+
+# Start from a specific datetime with timezone
+SYNC_START_DATE=2025-01-15T10:30:00-05:00
+
+# CLI override
+python sync.py sync --since-date 2025-01-01
+python sync.py sync --since-date 2025-01-15T10:30:00
+```
 
 ## Project Structure 📁
 

@@ -44,10 +44,14 @@ def cli(ctx, log_level):
 
 @cli.command()
 @click.option('--dry-run', is_flag=True, help='Run without actually posting to Mastodon')
-def sync(dry_run):
+@click.option('--since-date', help='Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)')
+def sync(dry_run, since_date):
     """Run the sync process"""
     if dry_run:
         os.environ['DRY_RUN'] = 'true'
+    
+    if since_date:
+        os.environ['SYNC_START_DATE'] = since_date
     
     try:
         orchestrator = SocialSyncOrchestrator()
