@@ -33,7 +33,11 @@ def setup_logging(log_level: str):
 
 
 @click.group()
-@click.option("--log-level", default="INFO", help="Set logging level")
+@click.option(
+    "--log-level",
+    default="INFO",
+    help="Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+)
 @click.pass_context
 def cli(ctx, log_level):
     """Social Sync - Sync posts from Bluesky to Mastodon"""
