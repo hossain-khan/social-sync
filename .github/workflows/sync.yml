@@ -86,4 +86,4 @@ jobs:
         with:
           name: sync-state-backup-${{ github.run_id }}
           path: sync_state.json
-          retention-days: 30
+          retention-days: 90
