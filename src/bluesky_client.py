@@ -55,9 +55,13 @@ class BlueskyClient:
         if not self._authenticated:
             if not self.authenticate():
                 return None
-        
+
         try:
-            return self.client.me.did if self.client.me else None
+            return (
+                str(self.client.me.did)
+                if self.client.me and self.client.me.did
+                else None
+            )
         except Exception as e:
             logger.error(f"Failed to get user DID: {e}")
             return None
