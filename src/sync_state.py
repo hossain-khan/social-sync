@@ -121,7 +121,8 @@ class SyncState:
         synced_posts = self.state.get("synced_posts", [])
         for record in synced_posts:
             if isinstance(record, dict) and record.get("bluesky_uri") == bluesky_uri:
-                return record.get("mastodon_id")
+                mastodon_id = record.get("mastodon_id")
+                return mastodon_id if isinstance(mastodon_id, str) else None
         return None
 
     def cleanup_old_records(self, days: int = 30):
