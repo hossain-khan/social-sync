@@ -233,10 +233,10 @@ class BlueskyClient:
                     "title": getattr(external, "title", None),  # Page title
                     "description": getattr(
                         external, "description", None
-                    ),  # Page description
+                    ),  # Page description (extracted but not used to save space)
                 }
-                # This data will be formatted by ContentProcessor as:
-                # "🔗 {title}: {uri}\n{description}"
+                # ContentProcessor formats this as: "🔗 {title}: {uri}"
+                # Note: Description is omitted to keep within Mastodon's character limits
 
             # === IMAGE ATTACHMENTS ===
             # Handle posts with one or more attached images

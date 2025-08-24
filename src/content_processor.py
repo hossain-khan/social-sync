@@ -127,12 +127,11 @@ class ContentProcessor:
         )
 
         if embed_type == "external":
-            # Handle external links
+            # Handle external links - keep concise to avoid Mastodon character limits
             external = embed.get("external", {})
             if external.get("uri"):
                 link_text = f"\n\n🔗 {external.get('title', 'Link')}: {external['uri']}"
-                if external.get("description"):
-                    link_text += f"\n{external['description']}"
+                # Note: Deliberately not including description to keep posts within character limits
                 return text + link_text
 
         elif embed_type == "images":
