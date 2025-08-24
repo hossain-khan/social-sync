@@ -17,6 +17,10 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     
+    # Grant permissions to write to repository
+    permissions:
+      contents: write
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
