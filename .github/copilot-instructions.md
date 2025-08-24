@@ -11,6 +11,20 @@ Before committing any code changes, you MUST run these formatting and validation
 3. **Type check with mypy**: Run `mypy src/` to catch type annotation issues
 4. **Lint with flake8**: Run `flake8 src/` to check code quality and style
 5. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
+6. **Update CHANGELOG.md**: Document any new features, bug fixes, or breaking changes in the changelog
+
+## Changelog Management
+
+Always update `CHANGELOG.md` when making changes:
+
+- **New Features**: Add to the `[Unreleased]` section under `### Added`
+- **Bug Fixes**: Add to the `[Unreleased]` section under `### Fixed`
+- **Breaking Changes**: Add to the `[Unreleased]` section under `### Changed`
+- **Deprecations**: Add to the `[Unreleased]` section under `### Deprecated`
+- **Removals**: Add to the `[Unreleased]` section under `### Removed`
+- **Security Updates**: Add to the `[Unreleased]` section under `### Security`
+
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format for consistency.
 
 ## JSON File Standards
 
@@ -29,11 +43,13 @@ The project includes JSON configuration and state files that must be properly fo
 - `src/` - Main source code directory
 - `sync.py` - CLI entry point for the sync tool
 - `sync_state.json` - Sync history and state persistence (tracked in git)
+- `CHANGELOG.md` - Project changelog following Keep a Changelog format
 - `src/config.py` - Configuration management with Pydantic models
 - `src/bluesky_client.py` - AT Protocol client for Bluesky integration
 - `src/mastodon_client.py` - Mastodon API client wrapper
 - `src/sync_orchestrator.py` - Main sync logic coordinator with threading support
 - `src/sync_state.py` - State persistence for preventing duplicates and parent post lookups
+- `src/content_processor.py` - Content transformation utilities
 - `src/content_processor.py` - Content transformation utilities
 
 ## Key Features
