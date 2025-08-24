@@ -47,10 +47,11 @@ social-sync/
 
 ### ✅ **Intelligent Sync Management**
 - **Thread-Aware Sync**: Reply posts maintain conversation context on Mastodon
+- **Parent Post Lookup**: Maps Bluesky reply URIs to Mastodon post IDs for proper threading
 - **Duplicate Prevention**: Tracks synced posts to avoid duplicates
-- **State Persistence**: JSON-based state management with parent post lookups
-- **Incremental Sync**: Only processes new posts since last sync
-- **Error Recovery**: Graceful handling of API failures
+- **State Persistence**: JSON-based state management with comprehensive post mappings
+- **Incremental Sync**: Only processes new posts since last sync with configurable start dates
+- **Error Recovery**: Graceful handling of API failures with detailed logging
 
 ### ✅ **GitHub Actions Automation**
 - **Scheduled Execution**: Runs automatically every 15 minutes
@@ -141,16 +142,17 @@ social-sync/
 ## 🎯 What Gets Synced
 
 ### **✅ Supported Content**
-- Regular text posts
-- Posts with external links (with link previews)
-- Posts with images (includes alt text)
-- Quoted posts (with attribution)
-- Posts with hashtags and mentions
+- Regular text posts with hashtags and mentions
+- Posts with external links (with metadata preview formatting)
+- Posts with images (downloaded from Bluesky and uploaded to Mastodon with alt text)
+- Quoted posts (with formatted quote preview and attribution)
+- **Reply posts (threaded)** - maintains conversation context across platforms
 
 ### **❌ Not Synced (By Design)**
-- Replies to other users
-- Reposts/boosts
-- Already synced posts
+- Replies to posts that haven't been synced (orphaned replies become standalone posts)
+- Reposts/boosts (Bluesky reposts are not sync targets)
+- Posts already synced (duplicate prevention)
+- Posts older than sync start date
 - Private/restricted posts
 
 ## 📊 Monitoring & Observability
