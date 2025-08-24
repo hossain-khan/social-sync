@@ -48,8 +48,10 @@ LOG_LEVEL: str              # Logging level (default: INFO)
 
 **Key Methods**:
 - `authenticate()`: Login with handle/password
-- `get_recent_posts(limit)`: Fetch user's recent posts
-- `get_post_thread(uri)`: Get post context/thread
+- `get_recent_posts(limit, since_date)`: Fetch user's recent posts with optional date filtering
+- `get_post_thread(uri)`: Get post context/thread information
+- `get_user_did()`: Get user's decentralized identifier (DID)
+- `download_blob(blob_ref, did)`: Download images and media from AT Protocol
 
 **Post Data Structure**:
 ```python
@@ -62,7 +64,8 @@ class BlueskyPost:
     author_handle: str          # Author's handle
     author_display_name: str    # Author's display name
     reply_to: Optional[str]     # Reply parent URI (for threading)
-    embed: Optional[Dict]       # Embedded content
+    embed: Optional[Dict]       # Embedded content (links, images, quotes)
+    facets: List[Dict]          # Facets for hashtags, mentions, links
 ```
 
 **Threading Support**:
