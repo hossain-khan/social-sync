@@ -10,11 +10,25 @@ Before committing any code changes, you MUST run these formatting and validation
 2. **Sort imports with isort**: Always run `isort src/` to maintain consistent import ordering  
 3. **Type check with mypy**: Run `mypy src/` to catch type annotation issues
 4. **Lint with flake8**: Run `flake8 src/` to check code quality and style
+5. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
+
+## JSON File Standards
+
+The project includes JSON configuration and state files that must be properly formatted:
+
+- **sync_state.json** - Contains sync history and state data
+  - Must have valid JSON syntax
+  - Required fields: `last_sync_time`, `synced_posts`, `last_bluesky_post_uri`
+  - Each post in `synced_posts` must have: `bluesky_uri`, `mastodon_id`, `synced_at`
+- **Format JSON files**: Use `python format_json.py` to format all JSON files, or `python format_json.py file.json` for specific files
+- **Validate JSON syntax**: Use `python -m json.tool file.json > /dev/null` to check for errors
+- **Manual formatting**: Use `python -m json.tool file.json > formatted.json && mv formatted.json file.json`
 
 ## Project Structure
 
 - `src/` - Main source code directory
 - `sync.py` - CLI entry point for the sync tool
+- `sync_state.json` - Sync history and state persistence (tracked in git)
 - `src/config.py` - Configuration management with Pydantic models
 - `src/bluesky_client.py` - AT Protocol client for Bluesky integration
 - `src/mastodon_client.py` - Mastodon API client wrapper
@@ -39,6 +53,7 @@ The project has GitHub Actions workflows that validate:
 - Import sorting (isort) 
 - Type checking (mypy)
 - Linting (flake8)
+- JSON validation and structure verification
 - Security scanning (bandit)
 - Dependency vulnerability checks (pip-audit)
 
