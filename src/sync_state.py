@@ -116,6 +116,15 @@ class SyncState:
         """Get the number of synced posts"""
         return len(self.state.get("synced_posts", []))
 
+    def get_mastodon_id_for_bluesky_post(self, bluesky_uri: str) -> Optional[str]:
+        """Get the Mastodon post ID for a given Bluesky URI"""
+        synced_posts = self.state.get("synced_posts", [])
+        for record in synced_posts:
+            if isinstance(record, dict) and record.get("bluesky_uri") == bluesky_uri:
+                mastodon_id = record.get("mastodon_id")
+                return mastodon_id if isinstance(mastodon_id, str) else None
+        return None
+
     def cleanup_old_records(self, days: int = 30):
         """Remove sync records older than specified days"""
         if "synced_posts" not in self.state:

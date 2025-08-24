@@ -61,9 +61,14 @@ class BlueskyPost:
     created_at: datetime        # Post timestamp
     author_handle: str          # Author's handle
     author_display_name: str    # Author's display name
-    reply_to: Optional[str]     # Reply parent URI
+    reply_to: Optional[str]     # Reply parent URI (for threading)
     embed: Optional[Dict]       # Embedded content
 ```
+
+**Threading Support**:
+- The `reply_to` field contains the AT Protocol URI of the parent post
+- Thread structure is detected automatically during sync processing
+- Parent-child relationships are preserved across platform boundaries
 
 ### 3. Mastodon Client (`mastodon_client.py`)
 
@@ -71,9 +76,14 @@ class BlueskyPost:
 
 **Key Methods**:
 - `authenticate()`: Verify API credentials
-- `post_status(text, reply_to, media)`: Create new status
+- `post_status(text, reply_to, media)`: Create new status with optional threading
 - `upload_media(file, description)`: Upload media files
 - `get_recent_posts(limit)`: Fetch user's posts
+
+**Threading Support**:
+- The `in_reply_to_id` parameter maintains conversation threads
+- Supports nested replies up to Mastodon's depth limits
+- Thread context is preserved when syncing from Bluesky conversations
 
 **API Endpoints Used**:
 - `POST /api/v1/statuses` - Create status
@@ -138,11 +148,20 @@ class BlueskyPost:
 2. Fetch recent posts from Bluesky
 3. Filter out already-synced posts
 4. Process each new post:
+   - **Thread Detection**: Check for `reply_to` field in Bluesky post
+   - **Parent Lookup**: Find corresponding Mastodon post ID for threaded replies
    - Transform content for Mastodon
-   - Post to Mastodon (if not dry-run)
-   - Update sync state
+   - Post to Mastodon with thread information (if not dry-run)
+   - Update sync state with post mappings
 5. Clean up old state records
 6. Return sync results
+
+**Threading Logic**:
+- Detects reply posts via AT Protocol `reply_to` field
+- Looks up parent post's Mastodon ID from sync state
+- Posts replies using Mastodon's `in_reply_to_id` parameter
+- Maintains conversation context across platforms
+- Gracefully handles orphaned replies (parent not synced)
 
 ## API Integration Details
 

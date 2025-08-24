@@ -64,6 +64,7 @@ The workflow automatically detects forks by:
 
 - Daily automated sync at 2:00 AM UTC
 - Only new posts (not already synced) will be processed
-- Images, URLs, and text are all synced properly  
+- Images, URLs, and text are all synced properly
+- **Threading support**: Reply posts maintain conversation context on Mastodon
 - Sync state is automatically committed back to your repository
 - Full audit trail of all synced posts maintained in git history

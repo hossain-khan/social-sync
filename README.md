@@ -5,6 +5,7 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon, design
 ## Features ✨
 
 - 🔄 **Automated Syncing**: Sync posts from Bluesky to Mastodon on a schedule
+- 🧵 **Thread Support**: Maintains conversation threading when syncing reply posts
 - 🚀 **GitHub Actions Integration**: Runs automatically using GitHub Actions
 - 🎯 **Smart Deduplication**: Tracks synced posts to avoid duplicates
 - 📝 **Content Processing**: Handles embedded links, images, and quoted posts
@@ -135,9 +136,32 @@ This ensures duplicate posts are prevented even in automated CI runs! 🎯
 1. **Authentication**: Connects to both Bluesky and Mastodon APIs
 2. **Fetch Posts**: Gets recent posts from your Bluesky feed
 3. **Content Processing**: Adapts content for Mastodon (handles links, images, character limits)
-4. **Deduplication**: Checks against previous syncs to avoid duplicates
-5. **Post Creation**: Creates corresponding posts on Mastodon
-6. **State Tracking**: Updates sync state for future runs
+4. **Thread Detection**: Identifies reply posts and looks up parent posts in sync history
+5. **Deduplication**: Checks against previous syncs to avoid duplicates
+6. **Post Creation**: Creates corresponding posts on Mastodon (with reply threading if applicable)
+7. **State Tracking**: Updates sync state for future runs
+
+### 🧵 Threading Behavior
+
+When a Bluesky thread (conversation) is synced:
+
+- **Parent posts** are synced normally as standalone posts
+- **Reply posts** are automatically detected and synced as Mastodon replies
+- **Conversation context** is preserved across platforms
+- **Sync attribution** is skipped for replies to keep them concise
+
+**Example:**
+```
+Bluesky Thread:
+├── Original post: "Just discovered this amazing library!"
+└── Reply: "Here's how to implement it in your project..."
+
+Mastodon Result:
+├── Post: "Just discovered this amazing library! (via Bluesky)"
+└── Reply: "Here's how to implement it in your project..."
+```
+
+**Note**: Reply posts can only be threaded if their parent post was previously synced to Mastodon. If the parent isn't found in the sync history, the reply will be posted as a standalone post with a warning logged.
 
 ## Content Processing 📝
 
@@ -146,18 +170,20 @@ This ensures duplicate posts are prevented even in automated CI runs! 🎯
 - ✅ Posts with external links (with preview)
 - ✅ Posts with images (with alt text)
 - ✅ Quoted posts (with quote preview)
+- ✅ **Threaded posts (replies)** - maintains conversation context
 
 ### What Doesn't Get Synced
-- ❌ Replies to other users
+- ❌ Replies to other users (unless the parent post was also synced)
 - ❌ Reposts/boosts
 - ❌ Posts already synced
 
 ### Content Adaptations
+- **Thread Handling**: Reply posts are synced as Mastodon replies to maintain conversation flow
 - **Character Limit**: Truncates posts that exceed Mastodon's 500-character limit
 - **Link Embeds**: Converts Bluesky link cards to text with URLs
 - **Image Handling**: Notes image count and includes alt text
 - **Quote Posts**: Includes quoted content with attribution
-- **Attribution**: Adds "(via Bluesky)" to synced posts
+- **Attribution**: Adds "(via Bluesky)" to synced posts (skipped for replies to keep them concise)
 
 ## Configuration Options ⚙️
 

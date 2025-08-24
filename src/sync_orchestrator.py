@@ -81,6 +81,22 @@ class SocialSyncOrchestrator:
         try:
             logger.info(f"Syncing post: {bluesky_post.uri}")
 
+            # Check if this is a reply and find the parent post in Mastodon
+            in_reply_to_id = None
+            if bluesky_post.reply_to:
+                # Look for the parent post's Mastodon ID in our sync state
+                in_reply_to_id = self.sync_state.get_mastodon_id_for_bluesky_post(
+                    bluesky_post.reply_to
+                )
+                if in_reply_to_id:
+                    logger.info(
+                        f"Post is a reply to {bluesky_post.reply_to}, will post as reply to Mastodon post {in_reply_to_id}"
+                    )
+                else:
+                    logger.warning(
+                        f"Post is a reply to {bluesky_post.reply_to}, but parent post not found in sync state. Posting as standalone."
+                    )
+
             # Check if we have images to sync
             has_images = bool(
                 self.content_processor.extract_images_from_embed(bluesky_post.embed)
@@ -95,8 +111,11 @@ class SocialSyncOrchestrator:
                 include_image_placeholders=not has_images or self.settings.dry_run,
             )
 
-            # Add sync attribution
-            processed_text = self.content_processor.add_sync_attribution(processed_text)
+            # Add sync attribution (but not for replies to keep them concise)
+            if not in_reply_to_id:
+                processed_text = self.content_processor.add_sync_attribution(
+                    processed_text
+                )
 
             # Handle image attachments
             media_ids = []
@@ -109,22 +128,32 @@ class SocialSyncOrchestrator:
                     self.content_processor.extract_images_from_embed(bluesky_post.embed)
                 )
                 image_info = f" with {image_count} image(s)" if image_count > 0 else ""
+                reply_info = f" as reply to {in_reply_to_id}" if in_reply_to_id else ""
                 logger.info(
-                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}"
+                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}{reply_info}"
                 )
                 # Don't mark posts as synced during dry runs
                 return True
             else:
-                # Post to Mastodon with media attachments
+                # Post to Mastodon with media attachments and reply info
                 mastodon_response = self.mastodon_client.post_status(
-                    processed_text, media_ids=media_ids if media_ids else None
+                    processed_text,
+                    in_reply_to_id=in_reply_to_id,
+                    media_ids=media_ids if media_ids else None,
                 )
                 if not mastodon_response:
                     logger.error(f"Failed to post to Mastodon: {bluesky_post.uri}")
                     return False
 
                 mastodon_post_id = mastodon_response["id"]
-                logger.info(f"Successfully synced post to Mastodon: {mastodon_post_id}")
+                if in_reply_to_id:
+                    logger.info(
+                        f"Successfully synced reply to Mastodon: {mastodon_post_id} (reply to {in_reply_to_id})"
+                    )
+                else:
+                    logger.info(
+                        f"Successfully synced post to Mastodon: {mastodon_post_id}"
+                    )
 
                 # Mark as synced only for actual posts
                 self.sync_state.mark_post_synced(bluesky_post.uri, mastodon_post_id)

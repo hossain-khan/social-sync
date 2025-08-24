@@ -39,14 +39,16 @@ social-sync/
 - **Extensible Architecture**: Easy to add more platforms
 
 ### ✅ **Smart Content Processing**
+- **Thread Support**: Maintains conversation threading for reply posts across platforms
 - **Character Limit Handling**: Automatically truncates for Mastodon's 500-char limit
 - **Embed Processing**: Handles links, images, and quoted posts
-- **Attribution**: Adds "(via Bluesky)" to synced posts
+- **Attribution**: Adds "(via Bluesky)" to synced posts (skipped for replies)
 - **Content Validation**: Ensures posts meet platform requirements
 
 ### ✅ **Intelligent Sync Management**
+- **Thread-Aware Sync**: Reply posts maintain conversation context on Mastodon
 - **Duplicate Prevention**: Tracks synced posts to avoid duplicates
-- **State Persistence**: JSON-based state management
+- **State Persistence**: JSON-based state management with parent post lookups
 - **Incremental Sync**: Only processes new posts since last sync
 - **Error Recovery**: Graceful handling of API failures
 
