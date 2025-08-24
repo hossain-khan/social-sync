@@ -15,16 +15,27 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class BlueskyPost:
-    """Represents a Bluesky post with metadata"""
+    """
+    Represents a Bluesky post with metadata and rich content.
 
-    uri: str
-    cid: str
-    text: str
-    created_at: datetime
-    author_handle: str
-    author_display_name: Optional[str] = None
-    reply_to: Optional[str] = None
+    This class normalizes AT Protocol post data into a format that can be
+    easily processed for cross-platform synchronization.
+    """
+
+    uri: str  # Unique AT Protocol identifier (at://...)
+    cid: str  # Content identifier hash
+    text: str  # Plain text content of the post
+    created_at: datetime  # Post creation timestamp
+    author_handle: str  # Author's handle (e.g., "user.bsky.social")
+    author_display_name: Optional[str] = None  # Author's display name
+    reply_to: Optional[str] = None  # URI of parent post if this is a reply
+
+    # Rich media attachments (external links, images, quoted posts)
+    # Converted from AT Protocol objects to dicts for easier cross-platform processing
     embed: Optional[Dict[str, Any]] = None
+
+    # Text formatting metadata (hashtags, mentions, links with precise positions)
+    # Used to preserve rich text features when syncing to other platforms
     facets: Optional[List[Dict[str, Any]]] = None
 
 
@@ -114,11 +125,15 @@ class BlueskyClient:
                     reply_to=(
                         post.record.reply.parent.uri if post.record.reply else None
                     ),
+                    # Convert AT Protocol embed objects to dictionaries for cross-platform compatibility
+                    # This ensures external links, images, etc. are preserved when syncing to Mastodon
                     embed=(
                         BlueskyClient._extract_embed_data(post.record.embed)
                         if hasattr(post.record, "embed") and post.record.embed
                         else None
                     ),
+                    # Extract rich text features (hashtags, mentions, links) from AT Protocol facets
+                    # Facets provide precise byte ranges and metadata for text formatting
                     facets=(
                         BlueskyClient._extract_facets_data(post.record.facets)
                         if hasattr(post.record, "facets") and post.record.facets
@@ -177,8 +192,28 @@ class BlueskyClient:
 
     @staticmethod
     def _extract_embed_data(embed) -> Optional[Dict[str, Any]]:
-        """Extract embed data into dictionary for easier processing"""
+        """
+        Extract embed data from AT Protocol embed objects into dictionaries.
+
+        AT Protocol embeds are complex objects that contain rich media attachments
+        like external links, images, or quoted posts. This method converts them
+        into simple dictionaries that can be easily processed by the content
+        processor when syncing to other platforms.
+
+        Args:
+            embed: AT Protocol embed object (can be External, Images, Record, etc.)
+
+        Returns:
+            Dictionary containing extracted embed data, or None if extraction fails
+
+        Embed Types Handled:
+        - External: Link cards with title, description, and URL
+        - Images: Photo attachments with alt text and metadata
+        - Record: Quoted posts or other embedded records
+        """
         try:
+            # Start with the embed type identifier from AT Protocol
+            # e.g., "app.bsky.embed.external" -> used by content processor for routing
             embed_dict: Dict[str, Any] = {
                 "py_type": (
                     embed.py_type
@@ -187,34 +222,56 @@ class BlueskyClient:
                 )
             }
 
-            # Handle external embeds (link cards)
+            # === EXTERNAL LINKS (Link Cards) ===
+            # These appear when users share URLs that generate preview cards
+            # Example: Sharing a GitHub repo or news article link
             if hasattr(embed, "external") and embed.external:
                 external = embed.external
+                # Extract the three key pieces of link card data
                 embed_dict["external"] = {
-                    "uri": getattr(external, "uri", None),
-                    "title": getattr(external, "title", None),
-                    "description": getattr(external, "description", None),
+                    "uri": getattr(external, "uri", None),  # The actual URL
+                    "title": getattr(external, "title", None),  # Page title
+                    "description": getattr(
+                        external, "description", None
+                    ),  # Page description
                 }
+                # This data will be formatted by ContentProcessor as:
+                # "🔗 {title}: {uri}\n{description}"
 
-            # Handle image embeds
+            # === IMAGE ATTACHMENTS ===
+            # Handle posts with one or more attached images
+            # Each image can have alt text for accessibility
             if hasattr(embed, "images") and embed.images:
                 images_data = []
                 for image in embed.images:
+                    # Extract image metadata and accessibility info
                     image_data = {
-                        "alt": getattr(image, "alt", None),
-                        "aspect_ratio": getattr(image, "aspect_ratio", None),
+                        "alt": getattr(
+                            image, "alt", None
+                        ),  # Alt text for screen readers
+                        "aspect_ratio": getattr(
+                            image, "aspect_ratio", None
+                        ),  # Width:height ratio
                     }
+                    # Additional blob/file metadata if available
                     if hasattr(image, "image") and image.image:
                         image_data["image"] = {
-                            "mime_type": getattr(image.image, "mime_type", None),
-                            "size": getattr(image.image, "size", None),
+                            "mime_type": getattr(
+                                image.image, "mime_type", None
+                            ),  # e.g., "image/jpeg"
+                            "size": getattr(
+                                image.image, "size", None
+                            ),  # File size in bytes
                         }
                     images_data.append(image_data)
                 embed_dict["images"] = images_data
+                # ContentProcessor will format as: "📷 [N images]\nAlt text: ..."
 
-            # Handle record embeds (quotes)
+            # === QUOTED POSTS (Record Embeds) ===
+            # Handle when users quote-tweet/quote-post another post
+            # Currently basic implementation - could be expanded for full quote handling
             if hasattr(embed, "record") and embed.record:
-                # This would need more detailed handling for quote posts
+                # TODO: Could extract quoted post author, text, etc. for richer display
                 embed_dict["record"] = {"py_type": str(type(embed.record).__name__)}
 
             return embed_dict
