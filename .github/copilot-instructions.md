@@ -32,9 +32,18 @@ The project includes JSON configuration and state files that must be properly fo
 - `src/config.py` - Configuration management with Pydantic models
 - `src/bluesky_client.py` - AT Protocol client for Bluesky integration
 - `src/mastodon_client.py` - Mastodon API client wrapper
-- `src/sync_orchestrator.py` - Main sync logic coordinator
-- `src/sync_state.py` - State persistence for preventing duplicates
+- `src/sync_orchestrator.py` - Main sync logic coordinator with threading support
+- `src/sync_state.py` - State persistence for preventing duplicates and parent post lookups
 - `src/content_processor.py` - Content transformation utilities
+
+## Key Features
+
+- **Cross-platform Sync**: Bluesky to Mastodon post synchronization
+- **Thread Support**: Maintains conversation threading when syncing reply posts
+- **Duplicate Prevention**: State-based tracking prevents re-posting content
+- **Content Processing**: Handles external links, images, quoted posts, and threading
+- **External Link Embedding**: Extracts and formats link metadata for cross-platform compatibility
+- **JSON Validation**: Comprehensive validation system for sync state integrity
 
 ## Development Guidelines
 
@@ -62,5 +71,10 @@ All code must pass these checks before merging.
 ## API Integration
 
 - **Bluesky**: Uses AT Protocol SDK for post fetching and publishing
+  - Handles reply detection through AT Protocol thread structure
+  - Extracts parent post URIs from `reply_to` fields
 - **Mastodon**: Uses mastodon.py library for API interactions
+  - Supports threaded posts via `in_reply_to_id` parameter
+  - Maintains conversation context across platforms
 - Both clients include authentication, error handling, and rate limiting considerations
+- State management tracks Bluesky-to-Mastodon post ID mappings for thread reconstruction
