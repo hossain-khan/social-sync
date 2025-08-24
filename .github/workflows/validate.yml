@@ -67,6 +67,62 @@ jobs:
           mypy sync.py src/ --ignore-missing-imports --no-strict-optional
           echo "✅ Type checking passed"
       
+      - name: Validate and format JSON files
+        run: |
+          echo "📄 Validating JSON files..."
+          
+          # Function to validate JSON syntax
+          validate_json() {
+            if python -m json.tool "$1" > /dev/null 2>&1; then
+              echo "✅ $1 - Valid JSON syntax"
+            else
+              echo "❌ $1 - Invalid JSON syntax"
+              python -m json.tool "$1"
+              exit 1
+            fi
+          }
+          
+          # Check if sync_state.json exists and validate it
+          if [ -f "sync_state.json" ]; then
+            validate_json "sync_state.json"
+            
+            # Verify the JSON structure has required fields
+            python -c "
+          import json
+          with open('sync_state.json', 'r') as f:
+              data = json.load(f)
+          
+          # Validate required top-level fields
+          required_fields = ['last_sync_time', 'synced_posts', 'last_bluesky_post_uri']
+          for field in required_fields:
+              if field not in data:
+                  raise ValueError(f'Missing required field: {field}')
+          
+          # Validate synced_posts structure
+          if not isinstance(data['synced_posts'], list):
+              raise ValueError('synced_posts must be a list')
+          
+          for i, post in enumerate(data['synced_posts']):
+              required_post_fields = ['bluesky_uri', 'mastodon_id', 'synced_at']
+              for field in required_post_fields:
+                  if field not in post:
+                      raise ValueError(f'Post {i} missing required field: {field}')
+          
+          print(f'✅ sync_state.json structure validation passed ({len(data[\"synced_posts\"])} posts)')
+            "
+          else
+            echo "ℹ️ sync_state.json not found - will be created after first sync"
+          fi
+          
+          # Validate other JSON files if they exist
+          for json_file in *.json **/*.json; do
+            if [ -f "$json_file" ] && [ "$json_file" != "sync_state.json" ]; then
+              validate_json "$json_file"
+            fi
+          done
+          
+          echo "✅ JSON validation completed"
+
       - name: Run basic imports test
         run: |
           echo "🧪 Testing basic imports..."
