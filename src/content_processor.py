@@ -126,7 +126,7 @@ class ContentProcessor:
             embed.get("py_type", "").split(".")[-1] if embed.get("py_type") else ""
         )
 
-        if embed_type == "External":
+        if embed_type == "external":
             # Handle external links
             external = embed.get("external", {})
             if external.get("uri"):
@@ -135,7 +135,7 @@ class ContentProcessor:
                     link_text += f"\n{external['description']}"
                 return text + link_text
 
-        elif embed_type == "Images":
+        elif embed_type == "images":
             # Handle images
             images = embed.get("images", [])
             if images and include_image_placeholders:
@@ -155,7 +155,7 @@ class ContentProcessor:
 
                 return text + image_text
 
-        elif embed_type == "Record":
+        elif embed_type == "record":
             # Handle quoted posts/records
             record = embed.get("record", {})
             if record.get("py_type", "").endswith("ViewRecord"):

@@ -115,7 +115,7 @@ class BlueskyClient:
                         post.record.reply.parent.uri if post.record.reply else None
                     ),
                     embed=(
-                        post.record.embed.__dict__
+                        BlueskyClient._extract_embed_data(post.record.embed)
                         if hasattr(post.record, "embed") and post.record.embed
                         else None
                     ),
@@ -174,6 +174,53 @@ class BlueskyClient:
         except Exception as e:
             logger.warning(f"Error extracting facets data: {e}")
             return []
+
+    @staticmethod
+    def _extract_embed_data(embed) -> Optional[Dict[str, Any]]:
+        """Extract embed data into dictionary for easier processing"""
+        try:
+            embed_dict: Dict[str, Any] = {
+                "py_type": (
+                    embed.py_type
+                    if hasattr(embed, "py_type")
+                    else str(type(embed).__name__)
+                )
+            }
+
+            # Handle external embeds (link cards)
+            if hasattr(embed, "external") and embed.external:
+                external = embed.external
+                embed_dict["external"] = {
+                    "uri": getattr(external, "uri", None),
+                    "title": getattr(external, "title", None),
+                    "description": getattr(external, "description", None),
+                }
+
+            # Handle image embeds
+            if hasattr(embed, "images") and embed.images:
+                images_data = []
+                for image in embed.images:
+                    image_data = {
+                        "alt": getattr(image, "alt", None),
+                        "aspect_ratio": getattr(image, "aspect_ratio", None),
+                    }
+                    if hasattr(image, "image") and image.image:
+                        image_data["image"] = {
+                            "mime_type": getattr(image.image, "mime_type", None),
+                            "size": getattr(image.image, "size", None),
+                        }
+                    images_data.append(image_data)
+                embed_dict["images"] = images_data
+
+            # Handle record embeds (quotes)
+            if hasattr(embed, "record") and embed.record:
+                # This would need more detailed handling for quote posts
+                embed_dict["record"] = {"py_type": str(type(embed.record).__name__)}
+
+            return embed_dict
+        except Exception as e:
+            logger.warning(f"Error extracting embed data: {e}")
+            return None
 
     def get_post_thread(self, post_uri: str) -> Optional[Dict[str, Any]]:
         """Get post thread context"""
