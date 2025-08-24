@@ -126,16 +126,15 @@ class ContentProcessor:
             embed.get("py_type", "").split(".")[-1] if embed.get("py_type") else ""
         )
 
-        if embed_type == "External":
-            # Handle external links
+        if embed_type == "external":
+            # Handle external links - keep concise to avoid Mastodon character limits
             external = embed.get("external", {})
             if external.get("uri"):
                 link_text = f"\n\n🔗 {external.get('title', 'Link')}: {external['uri']}"
-                if external.get("description"):
-                    link_text += f"\n{external['description']}"
+                # Note: Deliberately not including description to keep posts within character limits
                 return text + link_text
 
-        elif embed_type == "Images":
+        elif embed_type == "images":
             # Handle images
             images = embed.get("images", [])
             if images and include_image_placeholders:
@@ -155,7 +154,7 @@ class ContentProcessor:
 
                 return text + image_text
 
-        elif embed_type == "Record":
+        elif embed_type == "record":
             # Handle quoted posts/records
             record = embed.get("record", {})
             if record.get("py_type", "").endswith("ViewRecord"):
