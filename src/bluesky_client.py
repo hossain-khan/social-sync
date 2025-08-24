@@ -55,7 +55,7 @@ class BlueskyClient:
         if not self._authenticated:
             if not self.authenticate():
                 return None
-        
+
         try:
             return self.client.me.did if self.client.me else None
         except Exception as e:
