@@ -329,3 +329,133 @@ class TestContentProcessor:
             "Original text", embed, include_image_placeholders=True
         )
         assert result == "Original text"
+
+    def test_no_duplicate_links_with_facets_and_embed(self):
+        """Test that links don't get duplicated when both facets and external embed exist"""
+        text = "Check out this site: https://keepachangelog.com..."
+
+        # Facets that should expand the truncated URL
+        facets = [
+            {
+                "index": {"byteStart": 21, "byteEnd": 49},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://keepachangelog.com/en/1.0.0/",
+                    }
+                ],
+            }
+        ]
+
+        # No external embed - this is the key difference from the bug scenario
+        embed = None
+
+        result = ContentProcessor.process_bluesky_to_mastodon(
+            text=text, embed=embed, facets=facets, include_image_placeholders=True
+        )
+
+        # Should have the full URL expanded, no duplicates
+        assert "https://keepachangelog.com/en/1.0.0/" in result
+        # Should not have the truncated URL anymore
+        assert "https://keepachangelog.com..." not in result
+        # Should only appear once
+        assert result.count("https://keepachangelog.com") == 1
+
+    def test_duplicate_link_bug_scenario(self):
+        """Test the specific scenario that caused the duplicate link bug"""
+        text = "TIL: There is a nice site with guideline on how to author changelogs. ❤️\nhttps://keepachangelog.com..."
+
+        # Facets that should expand the truncated URL
+        facets = [
+            {
+                "index": {"byteStart": 77, "byteEnd": 106},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://keepachangelog.com/en/1.0.0/",
+                    }
+                ],
+            }
+        ]
+
+        # No external embed in this case
+        embed = None
+
+        result = ContentProcessor.process_bluesky_to_mastodon(
+            text=text, embed=embed, facets=facets, include_image_placeholders=True
+        )
+
+        # Should have the full URL expanded, no truncated URL
+        assert "https://keepachangelog.com/en/1.0.0/" in result
+        assert "https://keepachangelog.com..." not in result
+        # Should only appear once total
+        link_count = result.count("https://keepachangelog.com")
+        assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
+
+    def test_duplicate_link_with_facets_and_external_embed(self):
+        """Test that we don't duplicate links when both facets and external embed exist"""
+        text = "Check out this site: https://keepachangelog.com..."
+
+        # Facets that expand the URL in the text
+        facets = [
+            {
+                "index": {"byteStart": 21, "byteEnd": 49},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://keepachangelog.com/en/1.0.0/",
+                    }
+                ],
+            }
+        ]
+
+        # AND an external embed for the same URL - this could cause duplication
+        embed = {
+            "$type": "app.bsky.embed.external",
+            "external": {
+                "uri": "https://keepachangelog.com/en/1.0.0/",
+                "title": "Keep a Changelog",
+                "description": "Don't let your friends dump git logs into changelogs.",
+            },
+        }
+
+        result = ContentProcessor.process_bluesky_to_mastodon(
+            text=text, embed=embed, facets=facets, include_image_placeholders=True
+        )
+
+        # Should only have the link appear once, not duplicated
+        # The facets should expand the truncated URL, but we shouldn't add it again via external embed
+        link_count = result.count("https://keepachangelog.com")
+        assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
+
+        # Should have the full URL, not the truncated version
+        assert "https://keepachangelog.com/en/1.0.0/" in result
+        assert "https://keepachangelog.com..." not in result
+
+    def test_external_embed_only_no_facets(self):
+        """Test external embed works correctly when there are no facets (normal case)"""
+        text = "Check out this cool library!"
+
+        # No facets - just an external embed
+        facets = None
+
+        # External embed with title and link
+        embed = {
+            "$type": "app.bsky.embed.external",
+            "external": {
+                "uri": "https://github.com/example/awesome-lib",
+                "title": "Awesome Library",
+                "description": "A really cool library for developers",
+            },
+        }
+
+        result = ContentProcessor.process_bluesky_to_mastodon(
+            text=text, embed=embed, facets=facets, include_image_placeholders=True
+        )
+
+        # Should have the original text plus the external link
+        assert "Check out this cool library!" in result
+        assert "🔗 Awesome Library: https://github.com/example/awesome-lib" in result
+        # Should only appear once
+        link_count = result.count("https://github.com/example/awesome-lib")
+        assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
