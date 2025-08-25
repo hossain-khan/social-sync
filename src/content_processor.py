@@ -139,9 +139,19 @@ class ContentProcessor:
             # Handle external links - keep concise to avoid Mastodon character limits
             external = embed.get("external", {})
             if external.get("uri"):
-                link_text = f"\n\n🔗 {external.get('title', 'Link')}: {external['uri']}"
-                # Note: Deliberately not including description to keep posts within character limits
-                return text + link_text
+                # Check if this URL is already present in the text (from facets expansion)
+                # to avoid duplicate links
+                external_uri = external["uri"]
+                if external_uri not in text:
+                    link_text = (
+                        f"\n\n🔗 {external.get('title', 'Link')}: {external_uri}"
+                    )
+                    # Note: Deliberately not including description to keep posts within character limits
+                    return text + link_text
+                else:
+                    # URL already in text (likely from facets), don't add again
+                    logger.debug(f"Skipping duplicate external link: {external_uri}")
+                    return text
 
         elif embed_type == "images":
             # Handle images

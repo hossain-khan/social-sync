@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- � **Comprehensive Test Infrastructure**: Complete testing framework with 90+ unit tests covering all major components
+- 🧪 **Comprehensive Test Infrastructure**: Complete testing framework with 90+ unit tests covering all major components
   - pytest-based testing with coverage reporting (60% baseline coverage)
   - Test runner script (`run_tests.py`) with multiple test categories (unit, integration, threading)
   - Comprehensive testing documentation (`TESTING.md`)
@@ -16,8 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Mock-based testing to avoid external API calls during testing
   - Environment isolation and proper test configuration management
 
-- �🧵 **Thread Support**: Maintain conversation threading when syncing reply posts from Bluesky to Mastodon
+- 🧵 **Thread Support**: Maintain conversation threading when syncing reply posts from Bluesky to Mastodon
   - Reply posts are automatically detected and synced as proper Mastodon replies
+
+### Fixed
+- 🔗 **Duplicate Link Bug**: Fixed issue where links could appear twice in synced posts
+  - When both facets (URL expansion) and external embeds exist for the same URL, prevent duplicate links
+  - Added comprehensive test coverage for link duplication scenarios
+  - Removed problematic sync state entry `3lx5slbb6zc2l` that exhibited this bug
   - Parent post lookup functionality preserves conversation context across platforms
   - Smart attribution handling (skips "(via Bluesky)" for replies to keep them concise)
   - Comprehensive logging for threading operations and debugging
