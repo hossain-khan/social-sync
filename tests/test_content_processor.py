@@ -431,3 +431,31 @@ class TestContentProcessor:
         # Should have the full URL, not the truncated version
         assert "https://keepachangelog.com/en/1.0.0/" in result
         assert "https://keepachangelog.com..." not in result
+
+    def test_external_embed_only_no_facets(self):
+        """Test external embed works correctly when there are no facets (normal case)"""
+        text = "Check out this cool library!"
+
+        # No facets - just an external embed
+        facets = None
+
+        # External embed with title and link
+        embed = {
+            "$type": "app.bsky.embed.external",
+            "external": {
+                "uri": "https://github.com/example/awesome-lib",
+                "title": "Awesome Library",
+                "description": "A really cool library for developers",
+            },
+        }
+
+        result = ContentProcessor.process_bluesky_to_mastodon(
+            text=text, embed=embed, facets=facets, include_image_placeholders=True
+        )
+
+        # Should have the original text plus the external link
+        assert "Check out this cool library!" in result
+        assert "🔗 Awesome Library: https://github.com/example/awesome-lib" in result
+        # Should only appear once
+        link_count = result.count("https://github.com/example/awesome-lib")
+        assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
