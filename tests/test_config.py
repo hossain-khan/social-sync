@@ -52,11 +52,16 @@ class TestSettings:
         os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
         os.environ["BLUESKY_PASSWORD"] = "test-password"
         os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
-        
+
         # Explicitly clear environment variables that might override defaults
         env_vars_to_clear = [
-            "DRY_RUN", "SYNC_INTERVAL_MINUTES", "MAX_POSTS_PER_SYNC", 
-            "LOG_LEVEL", "STATE_FILE", "MASTODON_API_BASE_URL", "SYNC_START_DATE"
+            "DRY_RUN",
+            "SYNC_INTERVAL_MINUTES",
+            "MAX_POSTS_PER_SYNC",
+            "LOG_LEVEL",
+            "STATE_FILE",
+            "MASTODON_API_BASE_URL",
+            "SYNC_START_DATE",
         ]
         for var in env_vars_to_clear:
             if var in os.environ:
@@ -71,7 +76,9 @@ class TestSettings:
         assert settings.dry_run is False  # Code default
         assert settings.log_level == "INFO"
         assert settings.state_file == "sync_state.json"
-        assert settings.mastodon_api_base_url == "https://mastodon.social"  # Code default
+        assert (
+            settings.mastodon_api_base_url == "https://mastodon.social"
+        )  # Code default
         assert settings.sync_start_date is None  # Code default
 
     def test_settings_custom_values(self):
