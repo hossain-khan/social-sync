@@ -62,18 +62,19 @@ class TestBlueskyClient:
         result = client.authenticate()
         
         assert result is False
-        assert client.session is None
+        assert client._authenticated is False
 
     @patch('src.bluesky_client.AtprotoClient')
     def test_get_user_did_authenticated(self, mock_client_class):
         """Test getting user DID when authenticated"""
         mock_client = Mock()
-        mock_session = Mock()
-        mock_session.did = "did:plc:test123"
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
         mock_client_class.return_value = mock_client
         
         client = BlueskyClient("test.bsky.social", "test-password")
-        client.session = mock_session
+        client._authenticated = True  # Set authenticated directly for this test
         
         result = client.get_user_did()
         assert result == "did:plc:test123"
@@ -82,10 +83,12 @@ class TestBlueskyClient:
     def test_get_user_did_not_authenticated(self, mock_client_class):
         """Test getting user DID when not authenticated"""
         mock_client = Mock()
+        # Make authentication fail
+        mock_client.login.side_effect = Exception("Not authenticated")
         mock_client_class.return_value = mock_client
         
         client = BlueskyClient("test.bsky.social", "test-password")
-        client.session = None
+        # Client starts as not authenticated
         
         result = client.get_user_did()
         assert result is None
