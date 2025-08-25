@@ -102,6 +102,11 @@ class TestSocialSyncOrchestrator:
 
     def test_get_posts_to_sync_no_posts(self):
         """Test getting posts when no posts are available"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        
         self.mock_bluesky_client.get_recent_posts.return_value = []
         
         result = self.orchestrator.get_posts_to_sync()
@@ -111,6 +116,11 @@ class TestSocialSyncOrchestrator:
 
     def test_get_posts_to_sync_with_new_posts(self):
         """Test getting posts with new (unsynced) posts"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        
         # Mock posts from Bluesky
         mock_post1 = BlueskyPost(
             uri="at://test-uri-1",
@@ -147,6 +157,11 @@ class TestSocialSyncOrchestrator:
 
     def test_get_posts_to_sync_filter_already_synced(self):
         """Test getting posts filters out already synced posts"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        
         mock_post1 = BlueskyPost(
             uri="at://synced-uri",
             cid="test-cid-1",
@@ -186,6 +201,11 @@ class TestSocialSyncOrchestrator:
 
     def test_sync_post_simple_text_success(self):
         """Test syncing a simple text post successfully"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        
         mock_post = BlueskyPost(
             uri="at://test-uri",
             cid="test-cid",
@@ -204,7 +224,7 @@ class TestSocialSyncOrchestrator:
         self.mock_content_processor.add_sync_attribution.return_value = "Processed text\n\n(via Bluesky)"
         
         # Mock Mastodon posting
-        self.mock_mastodon_client.post_status.return_value = "mastodon-post-id-123"
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id-123"}
         
         result = self.orchestrator.sync_post(mock_post)
         
@@ -216,6 +236,11 @@ class TestSocialSyncOrchestrator:
 
     def test_sync_post_reply_with_parent_found(self):
         """Test syncing a reply post when parent is found"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        
         mock_post = BlueskyPost(
             uri="at://reply-uri",
             cid="test-cid",
@@ -237,7 +262,7 @@ class TestSocialSyncOrchestrator:
         # Note: replies don't get sync attribution
         
         # Mock Mastodon posting
-        self.mock_mastodon_client.post_status.return_value = "reply-mastodon-id"
+        self.mock_mastodon_client.post_status.return_value = {"id": "reply-mastodon-id"}
         
         result = self.orchestrator.sync_post(mock_post)
         
@@ -249,6 +274,11 @@ class TestSocialSyncOrchestrator:
 
     def test_sync_post_reply_parent_not_found(self):
         """Test syncing a reply post when parent is not found"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        
         mock_post = BlueskyPost(
             uri="at://orphan-reply-uri",
             cid="test-cid",
@@ -270,7 +300,7 @@ class TestSocialSyncOrchestrator:
         self.mock_content_processor.add_sync_attribution.return_value = "Orphaned reply\n\n(via Bluesky)"
         
         # Mock Mastodon posting
-        self.mock_mastodon_client.post_status.return_value = "orphan-mastodon-id"
+        self.mock_mastodon_client.post_status.return_value = {"id": "orphan-mastodon-id"}
         
         result = self.orchestrator.sync_post(mock_post)
         

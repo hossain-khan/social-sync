@@ -49,7 +49,7 @@ class TestThreadingSyncFlow:
         
         mock_mastodon = Mock()
         mock_mastodon.authenticate.return_value = True
-        mock_mastodon.post_status.side_effect = ["mastodon-parent-id", "mastodon-reply-id"]
+        mock_mastodon.post_status.side_effect = [{"id": "mastodon-parent-id"}, {"id": "mastodon-reply-id"}]
         mock_mastodon_class.return_value = mock_mastodon
         
         # Create orchestrator with test state file
@@ -66,6 +66,13 @@ class TestThreadingSyncFlow:
             
             orchestrator = SocialSyncOrchestrator()
             orchestrator.settings = mock_settings
+            
+            # Set up clients directly
+            orchestrator.bluesky_client = mock_bluesky
+            orchestrator.mastodon_client = mock_mastodon
+            
+            # Set up sync state
+            orchestrator.sync_state = SyncState(self.state_file)
 
         # Step 1: Sync parent post
         parent_post = BlueskyPost(
@@ -93,8 +100,9 @@ class TestThreadingSyncFlow:
         
         # Verify parent was posted without reply parameter
         mock_mastodon.post_status.assert_called_with(
-            status="This is the parent post\n\n(via Bluesky)",
-            media_ids=[]
+            "This is the parent post\n\n(via Bluesky)",
+            in_reply_to_id=None,
+            media_ids=None
         )
         
         # Step 2: Sync reply post
@@ -118,16 +126,12 @@ class TestThreadingSyncFlow:
         assert result is True
         
         # Verify reply was posted with in_reply_to_id
-        expected_calls = [
-            # First call - parent post
-            ({"status": "This is the parent post\n\n(via Bluesky)", "media_ids": []},),
-            # Second call - reply post
-            ({"status": "This is a reply to the parent", "in_reply_to_id": "mastodon-parent-id", "media_ids": []},)
-        ]
+        # Check the call count first
+        assert mock_mastodon.post_status.call_count == 2
         
-        actual_calls = [call.kwargs for call in mock_mastodon.post_status.call_args_list]
-        assert len(actual_calls) == 2
-        assert actual_calls[1]["in_reply_to_id"] == "mastodon-parent-id"
+        # Check the second call (reply) has the right in_reply_to_id
+        second_call = mock_mastodon.post_status.call_args_list[1]
+        assert second_call.kwargs["in_reply_to_id"] == "mastodon-parent-id"
 
     def test_sync_state_parent_post_lookup(self):
         """Test sync state parent post lookup functionality"""
@@ -160,7 +164,7 @@ class TestThreadingSyncFlow:
         
         mock_mastodon = Mock()
         mock_mastodon.authenticate.return_value = True
-        mock_mastodon.post_status.return_value = "orphan-reply-mastodon-id"
+        mock_mastodon.post_status.return_value = {"id": "orphan-reply-mastodon-id"}
         mock_mastodon_class.return_value = mock_mastodon
         
         # Create orchestrator
@@ -175,6 +179,13 @@ class TestThreadingSyncFlow:
             
             orchestrator = SocialSyncOrchestrator()
             orchestrator.settings = mock_settings
+            
+            # Set up clients directly
+            orchestrator.bluesky_client = mock_bluesky
+            orchestrator.mastodon_client = mock_mastodon
+            
+            # Set up sync state
+            orchestrator.sync_state = SyncState(self.state_file)
 
         # Create orphaned reply post (parent not in sync state)
         orphan_reply = BlueskyPost(
@@ -202,8 +213,9 @@ class TestThreadingSyncFlow:
         
         # Verify it was posted as standalone (no in_reply_to_id) with attribution
         mock_mastodon.post_status.assert_called_with(
-            status="This is an orphaned reply\n\n(via Bluesky)",
-            media_ids=[]
+            "This is an orphaned reply\n\n(via Bluesky)",
+            in_reply_to_id=None,
+            media_ids=None
         )
 
     @patch('src.sync_orchestrator.BlueskyClient')
@@ -237,6 +249,13 @@ class TestThreadingSyncFlow:
             
             orchestrator = SocialSyncOrchestrator()
             orchestrator.settings = mock_settings
+            
+            # Set up clients directly
+            orchestrator.bluesky_client = mock_bluesky
+            orchestrator.mastodon_client = mock_mastodon
+            
+            # Set up sync state
+            orchestrator.sync_state = SyncState(self.state_file)
 
         # Test reply post in dry-run
         reply_post = BlueskyPost(
@@ -255,6 +274,7 @@ class TestThreadingSyncFlow:
         mock_content_processor = Mock()
         mock_content_processor.extract_images_from_embed.return_value = []
         mock_content_processor.process_bluesky_to_mastodon.return_value = "Dry run reply"
+        mock_content_processor.add_sync_attribution.return_value = "Dry run reply\n\n(via Bluesky)"
         orchestrator.content_processor = mock_content_processor
         
         # Sync in dry-run mode
