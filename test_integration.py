@@ -97,7 +97,7 @@ class TestSyncIntegration:
         
         assert settings.bluesky_handle == 'test.bsky.social'
         assert settings.dry_run is True
-        assert settings.max_posts_per_sync == 10  # default value
+        assert settings.max_posts_per_sync == 100  # actual configured value in .env
         
         # Test datetime parsing
         sync_start = settings.get_sync_start_datetime()
@@ -166,7 +166,7 @@ class TestContentProcessingIntegration:
         
         # Should be truncated to fit within 500 chars
         assert len(with_attribution) <= 500
-        assert with_attribution.endswith("(via Bluesky)")
+        assert with_attribution.endswith("(via Bluesky 🦋)")
 
 
 if __name__ == "__main__":

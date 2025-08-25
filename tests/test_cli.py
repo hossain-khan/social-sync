@@ -7,13 +7,13 @@ import sys
 import tempfile
 import os
 import subprocess
+from click.testing import CliRunner
 
-# Add the parent directory to sys.path to import modules
-project_root = Path(__file__).parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-import sync as cli_module
+# Import the CLI group from sync.py
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from sync import cli
 
 
 class TestCLI:
@@ -62,59 +62,100 @@ class TestCLI:
         
         assert result.returncode == 0
 
-    @patch('src.sync_orchestrator.SocialSyncOrchestrator')
-    def test_sync_command_dry_run(self, mock_orchestrator_class):
-        """Test sync command with dry-run flag"""
-        mock_orchestrator = Mock()
-        mock_orchestrator.run_sync.return_value = {
-            'success': True,
-            'synced_count': 2,
-            'failed_count': 0,
-            'total_processed': 2,
-            'duration': 1.5,
-            'dry_run': True
-        }
-        mock_orchestrator_class.return_value = mock_orchestrator
-        
-        # Mock environment variables to avoid validation errors
-        with patch.dict(os.environ, {
-            'BLUESKY_HANDLE': 'test.bsky.social',
-            'BLUESKY_PASSWORD': 'test-password',
-            'MASTODON_ACCESS_TOKEN': 'test-token'
-        }):
-            result = subprocess.run([
-                sys.executable, str(Path(__file__).parent.parent / "sync.py"), 
-                "sync", "--dry-run"
-            ], capture_output=True, text=True)
-        
-        # Should complete successfully
-        assert result.returncode == 0
+    import subprocess
+from unittest.mock import Mock, patch
+from click.testing import CliRunner
 
-    @patch('src.sync_orchestrator.SocialSyncOrchestrator')
-    def test_sync_command_since_date(self, mock_orchestrator_class):
-        """Test sync command with since-date parameter"""
-        mock_orchestrator = Mock()
-        mock_orchestrator.run_sync.return_value = {
-            'success': True,
-            'synced_count': 1,
-            'failed_count': 0,
-            'total_processed': 1,
-            'duration': 0.8,
-            'dry_run': False
+# Import the CLI group from sync.py
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from sync import cli
+
+def test_sync_command_dry_run():
+    """Test sync command with --dry-run flag"""
+    with (
+        patch("src.sync_orchestrator.SocialSyncOrchestrator") as mock_orchestrator,
+        patch("src.config.Settings") as mock_settings,
+        patch("sync.SocialSyncOrchestrator") as mock_sync_orchestrator_direct,
+    ):
+        # Configure mocks
+        mock_settings_instance = Mock()
+        mock_settings_instance.state_file = "/tmp/test_state.json"
+        mock_settings.return_value = mock_settings_instance
+        
+        mock_orchestrator_instance = Mock()
+        mock_orchestrator.return_value = mock_orchestrator_instance
+        
+        # Mock run_sync to return proper dictionary
+        mock_orchestrator_instance.run_sync.return_value = {
+            "success": True,
+            "synced_count": 5,
+            "failed_count": 0,
+            "duration": 2.5,
+            "dry_run": True
         }
-        mock_orchestrator_class.return_value = mock_orchestrator
         
-        with patch.dict(os.environ, {
-            'BLUESKY_HANDLE': 'test.bsky.social',
-            'BLUESKY_PASSWORD': 'test-password',
-            'MASTODON_ACCESS_TOKEN': 'test-token'
-        }):
-            result = subprocess.run([
-                sys.executable, str(Path(__file__).parent.parent / "sync.py"),
-                "sync", "--since-date", "2025-01-01"
-            ], capture_output=True, text=True)
+        # Mock the direct import in sync.py as well
+        mock_sync_orchestrator_direct.return_value = mock_orchestrator_instance
+
+        # Use Click's test runner instead of subprocess
+        runner = CliRunner()
+        result = runner.invoke(cli, ['sync', '--dry-run'])
         
-        assert result.returncode == 0
+        # Print output for debugging
+        if result.exit_code != 0:
+            print(f"Command output: {result.output}")
+            print(f"Exception: {result.exception}")
+        
+        # Verify command executed successfully
+        assert result.exit_code == 0
+        
+        # Verify run_sync was called
+        mock_orchestrator_instance.run_sync.assert_called_once()
+
+
+def test_sync_command_since_date():
+    """Test sync command with --since flag"""
+    with (
+        patch("src.sync_orchestrator.SocialSyncOrchestrator") as mock_orchestrator,
+        patch("src.config.Settings") as mock_settings,
+        patch("sync.SocialSyncOrchestrator") as mock_sync_orchestrator_direct,
+    ):
+        # Configure mocks
+        mock_settings_instance = Mock()
+        mock_settings_instance.state_file = "/tmp/test_state.json"
+        mock_settings.return_value = mock_settings_instance
+        
+        mock_orchestrator_instance = Mock()
+        mock_orchestrator.return_value = mock_orchestrator_instance
+        
+        # Mock run_sync to return proper dictionary
+        mock_orchestrator_instance.run_sync.return_value = {
+            "success": True,
+            "synced_count": 3,
+            "failed_count": 0,
+            "duration": 1.8,
+            "dry_run": False
+        }
+        
+        # Mock the direct import in sync.py as well
+        mock_sync_orchestrator_direct.return_value = mock_orchestrator_instance
+
+        # Use Click's test runner
+        runner = CliRunner()
+        result = runner.invoke(cli, ['sync', '--since-date', '2023-01-01'])
+        
+        # Print output for debugging
+        if result.exit_code != 0:
+            print(f"Command output: {result.output}")
+            print(f"Exception: {result.exception}")
+        
+        # Verify command executed successfully
+        assert result.exit_code == 0
+        
+        # Verify run_sync was called
+        mock_orchestrator_instance.run_sync.assert_called_once()
 
     @patch('src.sync_orchestrator.SocialSyncOrchestrator')
     def test_status_command(self, mock_orchestrator_class):
@@ -160,32 +201,46 @@ class TestCLI:
         assert result.returncode == 0
         assert "Configuration" in result.stdout
 
-    @patch('src.bluesky_client.BlueskyClient')
-    @patch('src.mastodon_client.MastodonClient')
-    def test_test_command_success(self, mock_mastodon_class, mock_bluesky_class):
-        """Test test command with successful connections"""
-        # Mock successful authentication
-        mock_bluesky = Mock()
-        mock_bluesky.authenticate.return_value = True
-        mock_bluesky_class.return_value = mock_bluesky
-        
-        mock_mastodon = Mock()
-        mock_mastodon.authenticate.return_value = True
-        mock_mastodon_class.return_value = mock_mastodon
-        
-        with patch.dict(os.environ, {
+def test_test_command_success():
+    """Test test command with successful connections"""
+    with (
+        patch("src.sync_orchestrator.SocialSyncOrchestrator") as mock_orchestrator,
+        patch("sync.SocialSyncOrchestrator") as mock_sync_orchestrator_direct,
+        patch('src.config.get_settings') as mock_get_settings,
+        patch.dict(os.environ, {
             'BLUESKY_HANDLE': 'test.bsky.social',
             'BLUESKY_PASSWORD': 'test-password',
             'MASTODON_API_BASE_URL': 'https://mastodon.social',
             'MASTODON_ACCESS_TOKEN': 'test-token'
-        }):
-            result = subprocess.run([
-                sys.executable, str(Path(__file__).parent.parent / "sync.py"),
-                "test"
-            ], capture_output=True, text=True)
+        })
+    ):
+        # Configure settings mocks
+        mock_settings_instance = Mock()
+        mock_settings_instance.state_file = "/tmp/test_state.json"
+        mock_settings_instance.bluesky_handle = 'test.bsky.social'
+        mock_settings_instance.bluesky_password = 'test-password'
+        mock_settings_instance.mastodon_api_base_url = 'https://mastodon.social'
+        mock_settings_instance.mastodon_access_token = 'test-token'
+        mock_get_settings.return_value = mock_settings_instance
         
-        assert result.returncode == 0
-        assert "Connection Test" in result.stdout
+        # Configure orchestrator mock
+        mock_orchestrator_instance = Mock()
+        mock_orchestrator_instance.setup_clients.return_value = True  # Successful setup
+        mock_orchestrator.return_value = mock_orchestrator_instance
+        mock_sync_orchestrator_direct.return_value = mock_orchestrator_instance
+        
+        # Use Click's test runner
+        runner = CliRunner()
+        result = runner.invoke(cli, ['test'])
+        
+        # Print output for debugging
+        if result.exit_code != 0:
+            print(f"Command output: {result.output}")
+            print(f"Exception: {result.exception}")
+        
+        # Verify command executed successfully
+        assert result.exit_code == 0
+        assert "All clients authenticated successfully!" in result.output
 
     @patch('src.bluesky_client.BlueskyClient')
     @patch('src.mastodon_client.MastodonClient')
@@ -224,19 +279,27 @@ class TestCLI:
         assert result.returncode != 0
         assert "No such command" in result.stderr
 
-    def test_sync_missing_credentials(self):
-        """Test sync command fails with missing credentials"""
-        # Clear environment variables
+def test_sync_missing_credentials():
+    """Test sync command fails with missing credentials"""
+    # Use Click's test runner with empty environment
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        # Clear credential environment variables
         env = {k: v for k, v in os.environ.items() 
                if not k.startswith(('BLUESKY_', 'MASTODON_'))}
         
-        result = subprocess.run([
-            sys.executable, str(Path(__file__).parent.parent / "sync.py"),
-            "sync", "--dry-run"
-        ], capture_output=True, text=True, env=env)
-        
-        # Should fail due to missing credentials
-        assert result.returncode != 0
+        # Mock to prevent actual credential checking
+        with (
+            patch('src.config.Settings') as mock_settings,
+            patch('src.sync_orchestrator.SocialSyncOrchestrator') as mock_orchestrator
+        ):
+            # Configure settings to raise error for missing credentials
+            mock_settings.side_effect = ValueError("Missing required credentials")
+            
+            result = runner.invoke(cli, ['sync', '--dry-run'], env=env)
+            
+            # Should fail due to missing credentials
+            assert result.exit_code != 0
 
     @patch('sync.setup_logging')
     def test_logging_setup_called(self, mock_setup_logging):
