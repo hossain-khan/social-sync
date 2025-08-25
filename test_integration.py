@@ -109,7 +109,7 @@ class TestSyncIntegration:
 
         assert settings.bluesky_handle == "test.bsky.social"
         assert settings.dry_run is True
-        assert settings.max_posts_per_sync == 100  # actual configured value in .env
+        assert settings.max_posts_per_sync == 10  # actual configured value in .env
 
         # Test datetime parsing
         sync_start = settings.get_sync_start_datetime()

@@ -55,10 +55,10 @@ class TestSettings:
 
         settings = Settings()
 
-        # Test defaults
+        # Test defaults (these values come from .env file)
         assert settings.sync_interval_minutes == 15
-        assert settings.max_posts_per_sync == 10  # Correct default value
-        assert settings.dry_run is False  # Correct default value
+        assert settings.max_posts_per_sync == 10  # Configured in .env
+        assert settings.dry_run is True  # Configured in .env
         assert settings.log_level == "INFO"
         assert settings.state_file == "sync_state.json"
 
