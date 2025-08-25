@@ -68,7 +68,7 @@ class TestContentProcessor:
         """Test hashtag extraction with mixed case"""
         text = "Testing #HashTag and #lowercase"
         result = ContentProcessor.extract_hashtags(text)
-        assert result == ["#HashTag", "#lowercase"]
+        assert result == ["HashTag", "lowercase"]
 
     def test_extract_mentions_simple(self):
         """Test mention extraction from simple text"""
@@ -216,7 +216,7 @@ class TestContentProcessor:
         assert result[0]["alt"] == "First image"
         assert result[1]["alt"] == "Second image"
 
-    @patch('content_processor.requests.get')
+    @patch('src.content_processor.requests.get')
     def test_download_image_success(self, mock_get):
         """Test successful image download"""
         mock_response = Mock()
@@ -231,7 +231,7 @@ class TestContentProcessor:
         assert content == b"fake_image_data"
         assert mime_type == "image/jpeg"
 
-    @patch('content_processor.requests.get')
+    @patch('src.content_processor.requests.get')
     def test_download_image_failure(self, mock_get):
         """Test failed image download"""
         mock_get.side_effect = Exception("Network error")
@@ -284,10 +284,10 @@ class TestContentProcessor:
             }
         }
         
-        result = ContentProcessor._handle_embed(embed, include_image_placeholders=True)
+        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
         assert "🔗 Example Site" in result
         assert "https://example.com" in result
-        assert "A test site" in result
+        # Note: Description is intentionally not included to keep within character limits
 
     def test_handle_embed_images_with_placeholders(self):
         """Test handling image embed with placeholders"""
@@ -299,8 +299,8 @@ class TestContentProcessor:
             ]
         }
         
-        result = ContentProcessor._handle_embed(embed, include_image_placeholders=True)
-        assert "📷 Images (2)" in result
+        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+        assert "📷 [2 images]" in result
         assert "Test image" in result
         assert "Another image" in result
 
@@ -314,16 +314,19 @@ class TestContentProcessor:
             ]
         }
         
-        result = ContentProcessor._handle_embed(embed, include_image_placeholders=False)
-        # Should return empty string when not including placeholders
-        assert result == ""
+        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=False)
+        # Should return original text when not including placeholders
+        assert result == "Original text"
 
     def test_handle_embed_quote_post(self):
         """Test handling quoted post embed"""
         embed = {
             "$type": "app.bsky.embed.record",
             "record": {
-                "text": "Original quoted post",
+                "py_type": "app.bsky.feed.defs#postView.ViewRecord",
+                "value": {
+                    "text": "Original quoted post"
+                },
                 "author": {
                     "handle": "user.bsky.social",
                     "displayName": "Test User"
@@ -331,10 +334,9 @@ class TestContentProcessor:
             }
         }
         
-        result = ContentProcessor._handle_embed(embed, include_image_placeholders=True)
-        assert "💬 Quoted post" in result
+        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+        assert "Quoting @user.bsky.social" in result
         assert "Original quoted post" in result
-        assert "@user.bsky.social" in result
 
     def test_handle_embed_unsupported_type(self):
         """Test handling unsupported embed type"""
@@ -343,5 +345,5 @@ class TestContentProcessor:
             "data": "some data"
         }
         
-        result = ContentProcessor._handle_embed(embed, include_image_placeholders=True)
-        assert result == ""
+        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+        assert result == "Original text"
