@@ -47,20 +47,32 @@ class TestSettings:
         assert settings.mastodon_access_token == "test-token"
 
     def test_settings_defaults(self):
-        """Test Settings with default values"""
-        # Set required fields
+        """Test Settings with code defaults (no environment variables)"""
+        # Set only required fields and ensure others are not set
         os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
         os.environ["BLUESKY_PASSWORD"] = "test-password"
         os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+        
+        # Explicitly clear environment variables that might override defaults
+        env_vars_to_clear = [
+            "DRY_RUN", "SYNC_INTERVAL_MINUTES", "MAX_POSTS_PER_SYNC", 
+            "LOG_LEVEL", "STATE_FILE", "MASTODON_API_BASE_URL", "SYNC_START_DATE"
+        ]
+        for var in env_vars_to_clear:
+            if var in os.environ:
+                del os.environ[var]
 
-        settings = Settings()
+        # Create settings with _env_file=None to prevent .env file loading
+        settings = Settings(_env_file=None)
 
-        # Test defaults (these values come from .env file)
+        # Test code defaults (not .env file values)
         assert settings.sync_interval_minutes == 15
-        assert settings.max_posts_per_sync == 10  # Configured in .env
-        assert settings.dry_run is True  # Configured in .env
+        assert settings.max_posts_per_sync == 10
+        assert settings.dry_run is False  # Code default
         assert settings.log_level == "INFO"
         assert settings.state_file == "sync_state.json"
+        assert settings.mastodon_api_base_url == "https://mastodon.social"  # Code default
+        assert settings.sync_start_date is None  # Code default
 
     def test_settings_custom_values(self):
         """Test Settings with custom environment values"""
