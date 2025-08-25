@@ -6,18 +6,18 @@ including reply detection, parent post lookup, and Mastodon reply posting.
 """
 
 import os
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-import sys
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from src.bluesky_client import BlueskyPost
 from src.sync_orchestrator import SocialSyncOrchestrator
 from src.sync_state import SyncState
-from src.bluesky_client import BlueskyPost
 
 
 class TestThreadingSyncFlow:

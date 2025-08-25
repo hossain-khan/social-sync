@@ -6,18 +6,18 @@ They use mocked external dependencies but test real integration between internal
 """
 
 import os
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-import sys
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from src.config import Settings
 from src.sync_orchestrator import SocialSyncOrchestrator
 from src.sync_state import SyncState
-from src.config import Settings
 
 
 class TestSyncIntegration:
