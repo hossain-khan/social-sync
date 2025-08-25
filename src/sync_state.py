@@ -153,7 +153,8 @@ class SyncState:
 
     def get_user_did(self) -> Optional[str]:
         """Get the stored user DID"""
-        return self.state.get("user_did")
+        user_did = self.state.get("user_did")
+        return user_did if isinstance(user_did, str) else None
 
     def set_user_did(self, user_did: str):
         """Set the user DID"""
