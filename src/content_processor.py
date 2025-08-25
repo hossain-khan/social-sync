@@ -90,7 +90,14 @@ class ContentProcessor:
                 features = facet.get("features", [])
                 for feature in features:
                     # Check if this is a link feature
-                    if feature.get("py_type", "").endswith("Link"):
+                    # AT Protocol uses $type, but atproto SDK might convert to py_type
+                    feature_type = feature.get("$type", "") or feature.get(
+                        "py_type", ""
+                    )
+                    if (
+                        feature_type.endswith("Link")
+                        or feature_type == "app.bsky.richtext.facet#link"
+                    ):
                         full_url = feature.get("uri")
                         if full_url:
                             # Convert byte positions to character positions
@@ -123,7 +130,9 @@ class ContentProcessor:
     ) -> str:
         """Handle embedded content from Bluesky posts"""
         embed_type = (
-            embed.get("py_type", "").split(".")[-1] if embed.get("py_type") else ""
+            embed.get("py_type", "").split(".")[-1]
+            if embed.get("py_type")
+            else embed.get("$type", "").split(".")[-1] if embed.get("$type") else ""
         )
 
         if embed_type == "external":
@@ -238,7 +247,9 @@ class ContentProcessor:
             return images
 
         embed_type = (
-            embed.get("py_type", "").split(".")[-1] if embed.get("py_type") else ""
+            embed.get("py_type", "").split(".")[-1]
+            if embed.get("py_type")
+            else embed.get("$type", "").split(".")[-1] if embed.get("$type") else ""
         )
 
         if embed_type == "images":
@@ -271,7 +282,11 @@ class ContentProcessor:
                         if blob.get("ref"):
                             # For AT Protocol, we'll need to construct the blob URL
                             # This will be handled by a separate download method
-                            image_info["blob_ref"] = blob["ref"]
+                            ref = blob["ref"]
+                            if isinstance(ref, dict) and "$link" in ref:
+                                image_info["blob_ref"] = ref["$link"]
+                            else:
+                                image_info["blob_ref"] = ref
 
                 if image_info["url"] or image_info.get("blob_ref"):
                     images.append(image_info)

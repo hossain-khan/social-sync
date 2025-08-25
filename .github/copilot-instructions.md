@@ -6,10 +6,10 @@ This is a Python 3.13+ social media synchronization tool that cross-posts betwee
 
 Before committing any code changes, you MUST run these formatting and validation steps in order:
 
-1. **Format code with Black**: Always run `black src/` to ensure proper code formatting
-2. **Sort imports with isort**: Always run `isort src/` to maintain consistent import ordering  
-3. **Type check with mypy**: Run `mypy src/` to catch type annotation issues
-4. **Lint with flake8**: Run `flake8 src/` to check code quality and style
+1. **Format code with Black**: Always run `black .` to ensure proper code formatting across all files
+2. **Sort imports with isort**: Always run `isort .` to maintain consistent import ordering across all files
+3. **Type check with mypy**: Run `mypy src/ tests/` to catch type annotation issues
+4. **Lint with flake8**: Run `flake8 src/ tests/ *.py` to check code quality and style including root directory files
 5. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
 6. **Update CHANGELOG.md**: Document any new features, bug fixes, or breaking changes in the changelog
 

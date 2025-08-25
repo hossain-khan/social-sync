@@ -8,7 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- 🧵 **Thread Support**: Maintain conversation threading when syncing reply posts from Bluesky to Mastodon
+- � **Comprehensive Test Infrastructure**: Complete testing framework with 90+ unit tests covering all major components
+  - pytest-based testing with coverage reporting (60% baseline coverage)
+  - Test runner script (`run_tests.py`) with multiple test categories (unit, integration, threading)
+  - Comprehensive testing documentation (`TESTING.md`)
+  - GitHub Actions CI integration for automated testing
+  - Mock-based testing to avoid external API calls during testing
+  - Environment isolation and proper test configuration management
+
+- �🧵 **Thread Support**: Maintain conversation threading when syncing reply posts from Bluesky to Mastodon
   - Reply posts are automatically detected and synced as proper Mastodon replies
   - Parent post lookup functionality preserves conversation context across platforms
   - Smart attribution handling (skips "(via Bluesky)" for replies to keep them concise)
@@ -18,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical Details
 - Enhanced `SyncOrchestrator.sync_post()` with thread detection logic
 - Added `SyncState.get_mastodon_id_for_bluesky_post()` for parent post lookups
+- Complete test coverage for configuration, sync state, content processing, clients, and CLI
+- pytest configuration with coverage thresholds and HTML reporting
+- Test environment setup with proper Python package imports and mocking strategies
 - Updated Mastodon client integration to support `in_reply_to_id` parameter
 - Thread processing maintains chronological order for proper conversation flow
 

@@ -32,7 +32,13 @@ jobs:
           
       - name: Install development dependencies
         run: |
-          pip install black isort flake8 mypy pylint pytest colorama types-requests
+          pip install black isort flake8 mypy pylint pytest pytest-cov colorama types-requests
+          
+      - name: Run unit tests
+        run: |
+          echo "🧪 Running unit tests with pytest..."
+          python -m pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
+          echo "✅ Unit tests completed"
       
       - name: Check Python syntax and compilation
         run: |
@@ -203,6 +209,28 @@ jobs:
           test -f src/content_processor.py && echo "✅ src/content_processor.py exists"
           
           echo "✅ Project structure is valid"
+
+      - name: Run integration tests
+        env:
+          BLUESKY_HANDLE: test.bsky.social
+          BLUESKY_PASSWORD: test-password
+          MASTODON_ACCESS_TOKEN: test-token-12345
+          MASTODON_API_BASE_URL: https://mastodon.social
+        run: |
+          echo "🔗 Running integration tests..."
+          python test_integration.py
+          echo "✅ Integration tests completed"
+          
+      - name: Run threading tests
+        env:
+          BLUESKY_HANDLE: test.bsky.social
+          BLUESKY_PASSWORD: test-password
+          MASTODON_ACCESS_TOKEN: test-token-12345
+          MASTODON_API_BASE_URL: https://mastodon.social
+        run: |
+          echo "🧵 Running threading tests..."
+          python test_threading.py
+          echo "✅ Threading tests completed"
 
   security-scan:
     runs-on: ubuntu-latest

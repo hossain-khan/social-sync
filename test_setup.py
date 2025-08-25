@@ -2,7 +2,7 @@
 """
 Test script for Social Sync - validates setup and configuration
 """
-import os
+import os  # noqa: F401
 import sys
 from pathlib import Path
 
@@ -26,7 +26,7 @@ def test_imports():
     logger.info("Testing package imports...")
 
     try:
-        import atproto
+        import atproto  # noqa: F401
 
         logger.info("✅ atproto package imported successfully")
     except ImportError as e:
@@ -34,7 +34,7 @@ def test_imports():
         return False
 
     try:
-        import mastodon
+        import mastodon  # noqa: F401
 
         logger.info("✅ mastodon package imported successfully")
     except ImportError as e:
@@ -42,7 +42,7 @@ def test_imports():
         return False
 
     try:
-        from src.config import get_settings
+        from src.config import get_settings  # noqa: F401
 
         logger.info("✅ config module imported successfully")
     except ImportError as e:
@@ -78,7 +78,7 @@ def test_configuration():
 
         logger.info(f"✅ Bluesky handle: {settings.bluesky_handle}")
         logger.info(f"✅ Mastodon instance: {settings.mastodon_api_base_url}")
-        logger.info(f"✅ Configuration validated")
+        logger.info("✅ Configuration validated")
 
         return True
 
