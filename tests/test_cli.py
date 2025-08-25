@@ -62,7 +62,7 @@ class TestCLI:
         
         assert result.returncode == 0
 
-    @patch('sync.SocialSyncOrchestrator')
+    @patch('src.sync_orchestrator.SocialSyncOrchestrator')
     def test_sync_command_dry_run(self, mock_orchestrator_class):
         """Test sync command with dry-run flag"""
         mock_orchestrator = Mock()
@@ -90,7 +90,7 @@ class TestCLI:
         # Should complete successfully
         assert result.returncode == 0
 
-    @patch('sync.SocialSyncOrchestrator')
+    @patch('src.sync_orchestrator.SocialSyncOrchestrator')
     def test_sync_command_since_date(self, mock_orchestrator_class):
         """Test sync command with since-date parameter"""
         mock_orchestrator = Mock()
@@ -116,7 +116,7 @@ class TestCLI:
         
         assert result.returncode == 0
 
-    @patch('sync.SocialSyncOrchestrator')
+    @patch('src.sync_orchestrator.SocialSyncOrchestrator')
     def test_status_command(self, mock_orchestrator_class):
         """Test status command"""
         mock_orchestrator = Mock()
@@ -140,7 +140,7 @@ class TestCLI:
         assert result.returncode == 0
         assert "Sync Status" in result.stdout
 
-    @patch('sync.get_settings')
+    @patch('src.config.get_settings')
     def test_config_command(self, mock_get_settings):
         """Test config command displays settings"""
         mock_settings = Mock()
@@ -160,8 +160,8 @@ class TestCLI:
         assert result.returncode == 0
         assert "Configuration" in result.stdout
 
-    @patch('sync.BlueskyClient')
-    @patch('sync.MastodonClient')
+    @patch('src.bluesky_client.BlueskyClient')
+    @patch('src.mastodon_client.MastodonClient')
     def test_test_command_success(self, mock_mastodon_class, mock_bluesky_class):
         """Test test command with successful connections"""
         # Mock successful authentication
@@ -187,8 +187,8 @@ class TestCLI:
         assert result.returncode == 0
         assert "Connection Test" in result.stdout
 
-    @patch('sync.BlueskyClient')
-    @patch('sync.MastodonClient')
+    @patch('src.bluesky_client.BlueskyClient')
+    @patch('src.mastodon_client.MastodonClient')
     def test_test_command_failure(self, mock_mastodon_class, mock_bluesky_class):
         """Test test command with failed connections"""
         # Mock failed authentication

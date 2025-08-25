@@ -20,32 +20,51 @@ class TestSocialSyncOrchestrator:
 
     def setup_method(self):
         """Set up test fixtures with mocked dependencies"""
-        # Mock all the dependencies
-        with patch('sync_orchestrator.get_settings') as mock_get_settings:
-            mock_settings = Mock()
-            mock_settings.bluesky_handle = 'test.bsky.social'
-            mock_settings.bluesky_password = 'test-password'
-            mock_settings.mastodon_api_base_url = 'https://mastodon.social'
-            mock_settings.mastodon_access_token = 'test-token'
-            mock_settings.max_posts_per_sync = 10
-            mock_settings.dry_run = False
-            mock_settings.state_file = 'test_state.json'
-            mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
-            mock_get_settings.return_value = mock_settings
-            
-            self.orchestrator = SocialSyncOrchestrator()
-            self.orchestrator.settings = mock_settings
-
-        # Mock clients and other dependencies
+        # Start patches that will last for the entire test method
+        self.settings_patcher = patch('src.sync_orchestrator.get_settings')
+        self.bluesky_patcher = patch('src.sync_orchestrator.BlueskyClient')
+        self.mastodon_patcher = patch('src.sync_orchestrator.MastodonClient')
+        self.sync_state_patcher = patch('src.sync_orchestrator.SyncState')
+        self.content_processor_patcher = patch('src.sync_orchestrator.ContentProcessor')
+        
+        mock_get_settings = self.settings_patcher.start()
+        self.mock_bluesky_class = self.bluesky_patcher.start()
+        self.mock_mastodon_class = self.mastodon_patcher.start()
+        self.mock_sync_state_class = self.sync_state_patcher.start()
+        self.mock_content_processor_class = self.content_processor_patcher.start()
+        
+        # Mock settings
+        mock_settings = Mock()
+        mock_settings.bluesky_handle = 'test.bsky.social'
+        mock_settings.bluesky_password = 'test-password'
+        mock_settings.mastodon_api_base_url = 'https://mastodon.social'
+        mock_settings.mastodon_access_token = 'test-token'
+        mock_settings.max_posts_per_sync = 10
+        mock_settings.dry_run = False
+        mock_settings.state_file = 'test_state.json'
+        mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
+        mock_get_settings.return_value = mock_settings
+        
+        # Mock client instances
         self.mock_bluesky_client = Mock()
         self.mock_mastodon_client = Mock()
         self.mock_sync_state = Mock()
         self.mock_content_processor = Mock()
         
-        self.orchestrator.bluesky_client = self.mock_bluesky_client
-        self.orchestrator.mastodon_client = self.mock_mastodon_client  
-        self.orchestrator.sync_state = self.mock_sync_state
-        self.orchestrator.content_processor = self.mock_content_processor
+        self.mock_bluesky_class.return_value = self.mock_bluesky_client
+        self.mock_mastodon_class.return_value = self.mock_mastodon_client
+        self.mock_sync_state_class.return_value = self.mock_sync_state
+        self.mock_content_processor_class.return_value = self.mock_content_processor
+        
+        self.orchestrator = SocialSyncOrchestrator()
+        
+    def teardown_method(self):
+        """Clean up patches after each test"""
+        self.settings_patcher.stop()
+        self.bluesky_patcher.stop()
+        self.mastodon_patcher.stop()
+        self.sync_state_patcher.stop()
+        self.content_processor_patcher.stop()
 
     def test_setup_clients_success(self):
         """Test successful client setup"""

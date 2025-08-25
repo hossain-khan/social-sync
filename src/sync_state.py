@@ -17,6 +17,9 @@ class SyncState:
     def __init__(self, state_file: str = "sync_state.json"):
         self.state_file = Path(state_file)
         self.state = self._load_state()
+        # If file didn't exist, save the initial state
+        if not self.state_file.exists():
+            self._save_state()
 
     def _load_state(self) -> Dict[str, Any]:
         """Load state from file"""
@@ -147,3 +150,21 @@ class SyncState:
             self.state["synced_posts"] = filtered_posts
             self._save_state()
             logger.info(f"Cleaned up {removed_count} old sync records")
+
+    def get_user_did(self) -> Optional[str]:
+        """Get the stored user DID"""
+        return self.state.get("user_did")
+
+    def set_user_did(self, user_did: str):
+        """Set the user DID"""
+        self.state["user_did"] = user_did
+        self._save_state()
+
+    def clear_state(self):
+        """Clear all state data"""
+        self.state = {
+            "last_sync_time": None,
+            "synced_posts": [],
+            "last_bluesky_post_uri": None,
+        }
+        self._save_state()

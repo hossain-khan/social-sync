@@ -21,37 +21,37 @@ class TestBlueskyClient:
         """Set up test fixtures"""
         self.client = BlueskyClient("test.bsky.social", "test-password")
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_init(self, mock_client_class):
         """Test client initialization"""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
-        
+
         client = BlueskyClient("test.bsky.social", "test-password")
-        
+
         assert client.handle == "test.bsky.social"
         assert client.password == "test-password"
         assert client.client == mock_client
-        assert client.session is None
+        assert client._authenticated is False
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_authenticate_success(self, mock_client_class):
         """Test successful authentication"""
         mock_client = Mock()
-        mock_session = Mock()
-        mock_session.handle = "test.bsky.social"
-        mock_session.did = "did:plc:test123"
-        mock_client.login.return_value = mock_session
+        mock_profile = Mock()
+        mock_profile.handle = "test.bsky.social"
+        mock_profile.display_name = "Test User"
+        mock_client.login.return_value = mock_profile
         mock_client_class.return_value = mock_client
-        
+
         client = BlueskyClient("test.bsky.social", "test-password")
         result = client.authenticate()
-        
+
         assert result is True
-        assert client.session == mock_session
+        assert client._authenticated is True
         mock_client.login.assert_called_once_with("test.bsky.social", "test-password")
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_authenticate_failure(self, mock_client_class):
         """Test authentication failure"""
         mock_client = Mock()
@@ -64,7 +64,7 @@ class TestBlueskyClient:
         assert result is False
         assert client.session is None
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_user_did_authenticated(self, mock_client_class):
         """Test getting user DID when authenticated"""
         mock_client = Mock()
@@ -78,7 +78,7 @@ class TestBlueskyClient:
         result = client.get_user_did()
         assert result == "did:plc:test123"
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_user_did_not_authenticated(self, mock_client_class):
         """Test getting user DID when not authenticated"""
         mock_client = Mock()
@@ -90,7 +90,7 @@ class TestBlueskyClient:
         result = client.get_user_did()
         assert result is None
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_recent_posts_empty(self, mock_client_class):
         """Test getting recent posts when no posts exist"""
         mock_client = Mock()
@@ -111,7 +111,7 @@ class TestBlueskyClient:
         assert result == []
         mock_client.get_author_feed.assert_called_once()
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_recent_posts_with_posts(self, mock_client_class):
         """Test getting recent posts with actual posts"""
         mock_client = Mock()
@@ -153,7 +153,7 @@ class TestBlueskyClient:
         assert post.author_handle == "test.bsky.social"
         assert post.author_display_name == "Test User"
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_recent_posts_with_reply(self, mock_client_class):
         """Test getting recent posts including reply posts"""
         mock_client = Mock()
@@ -197,7 +197,7 @@ class TestBlueskyClient:
         post = result[0]
         assert post.reply_to == "at://parent-post-uri"
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_recent_posts_with_since_date_filter(self, mock_client_class):
         """Test getting recent posts with since_date filtering"""
         mock_client = Mock()
@@ -242,7 +242,7 @@ class TestBlueskyClient:
         assert len(result) == 1
         assert result[0].uri == "at://new-post"
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_recent_posts_with_embed(self, mock_client_class):
         """Test getting posts with embed content"""
         mock_client = Mock()
@@ -290,7 +290,7 @@ class TestBlueskyClient:
         assert post.embed is not None
         assert post.embed["$type"] == "app.bsky.embed.external"
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_post_thread(self, mock_client_class):
         """Test getting post thread"""
         mock_client = Mock()
@@ -306,7 +306,7 @@ class TestBlueskyClient:
         assert result == mock_thread_response.thread
         mock_client.get_post_thread.assert_called_once_with("at://test-post-uri")
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     def test_get_post_thread_error(self, mock_client_class):
         """Test getting post thread with error"""
         mock_client = Mock()
@@ -319,7 +319,7 @@ class TestBlueskyClient:
         
         assert result is None
 
-    @patch('bluesky_client.Client')  
+    @patch('src.bluesky_client.AtprotoClient')  
     @patch('bluesky_client.requests.get')
     def test_download_blob_success(self, mock_get, mock_client_class):
         """Test successful blob download"""
@@ -342,7 +342,7 @@ class TestBlueskyClient:
         assert content == b"fake_image_data"
         assert mime_type == "image/jpeg"
 
-    @patch('bluesky_client.Client')
+    @patch('src.bluesky_client.AtprotoClient')
     @patch('bluesky_client.requests.get')
     def test_download_blob_failure(self, mock_get, mock_client_class):
         """Test failed blob download"""

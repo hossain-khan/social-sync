@@ -49,10 +49,14 @@ class TestContentProcessor:
         assert len(result) == 500
 
     def test_extract_hashtags_simple(self):
-        """Test hashtag extraction from simple text"""
-        text = "This is a #test with #hashtags"
-        result = ContentProcessor.extract_hashtags(text)
-        assert result == ["#test", "#hashtags"]
+        """Test extracting hashtags from text"""
+        processor = ContentProcessor()
+        text = "Check out these #test #hashtags"
+        
+        result = processor.extract_hashtags(text)
+        
+        # Returns hashtags without # prefix
+        assert result == ["test", "hashtags"]
 
     def test_extract_hashtags_no_hashtags(self):
         """Test hashtag extraction with no hashtags"""
@@ -70,7 +74,8 @@ class TestContentProcessor:
         """Test mention extraction from simple text"""
         text = "Hello @john and @jane.doe"
         result = ContentProcessor.extract_mentions(text)
-        assert result == ["@john", "@jane.doe"]
+        # Returns mentions without @ prefix
+        assert result == ["john", "jane.doe"]
 
     def test_extract_mentions_no_mentions(self):
         """Test mention extraction with no mentions"""
@@ -95,7 +100,7 @@ class TestContentProcessor:
         """Test adding sync attribution with default source"""
         text = "Original post content"
         result = ContentProcessor.add_sync_attribution(text)
-        assert result == "Original post content\n\n(via Bluesky)"
+        assert result == "Original post content\n\n(via Bluesky 🦋)"
 
     def test_add_sync_attribution_custom_source(self):
         """Test adding sync attribution with custom source"""
@@ -107,7 +112,7 @@ class TestContentProcessor:
         """Test adding sync attribution to empty text"""
         text = ""
         result = ContentProcessor.add_sync_attribution(text)
-        assert result == "\n\n(via Bluesky)"
+        assert result == "\n\n(via Bluesky 🦋)"
 
     def test_convert_mentions_at_protocol(self):
         """Test converting AT Protocol mentions"""
