@@ -15,6 +15,7 @@ from unittest.mock import Mock, patch
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from src.bluesky_client import BlueskyFetchResult
 from src.config import Settings
 from src.sync_orchestrator import SocialSyncOrchestrator
 from src.sync_state import SyncState
@@ -53,7 +54,13 @@ class TestSyncIntegration:
         # Mock successful client setup
         mock_bluesky = Mock()
         mock_bluesky.authenticate.return_value = True
-        mock_bluesky.get_recent_posts.return_value = []
+        mock_bluesky.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
         mock_bluesky_class.return_value = mock_bluesky
 
         mock_mastodon = Mock()
