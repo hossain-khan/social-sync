@@ -1,12 +1,10 @@
 """
 Tests for Content Processor
 """
-import pytest
-from datetime import datetime
-from unittest.mock import patch, Mock
 
 import sys
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 # Add the parent directory to sys.path to import src as a package
 project_root = Path(__file__).parent.parent
@@ -35,7 +33,7 @@ class TestContentProcessor:
         # Create text longer than 500 characters
         long_text = "x" * 600
         result = ContentProcessor._truncate_if_needed(long_text)
-        
+
         assert len(result) <= 500
         assert result.endswith("...")
         # Should truncate to 497 chars plus "..." = 500 total
@@ -52,9 +50,9 @@ class TestContentProcessor:
         """Test extracting hashtags from text"""
         processor = ContentProcessor()
         text = "Check out these #test #hashtags"
-        
+
         result = processor.extract_hashtags(text)
-        
+
         # Returns hashtags without # prefix
         assert result == ["test", "hashtags"]
 
@@ -134,16 +132,13 @@ class TestContentProcessor:
         text = "Check this out!"
         facets = [
             {
-                "index": {
-                    "byteStart": 0,
-                    "byteEnd": 15
-                },
+                "index": {"byteStart": 0, "byteEnd": 15},
                 "features": [
                     {
                         "$type": "app.bsky.richtext.facet#link",
-                        "uri": "https://example.com"
+                        "uri": "https://example.com",
                     }
-                ]
+                ],
             }
         ]
         result = ContentProcessor._expand_urls_from_facets(text, facets)
@@ -158,10 +153,7 @@ class TestContentProcessor:
         """Test image extraction with non-image embed"""
         embed = {
             "$type": "app.bsky.embed.external",
-            "external": {
-                "uri": "https://example.com",
-                "title": "Example Site"
-            }
+            "external": {"uri": "https://example.com", "title": "Example Site"},
         }
         result = ContentProcessor.extract_images_from_embed(embed)
         assert result == []
@@ -177,10 +169,10 @@ class TestContentProcessor:
                         "$type": "blob",
                         "ref": {"$link": "test-blob-ref"},
                         "mimeType": "image/jpeg",
-                        "size": 123456
-                    }
+                        "size": 123456,
+                    },
                 }
-            ]
+            ],
         }
         result = ContentProcessor.extract_images_from_embed(embed)
         assert len(result) == 1
@@ -198,25 +190,25 @@ class TestContentProcessor:
                     "image": {
                         "$type": "blob",
                         "ref": {"$link": "blob-ref-1"},
-                        "mimeType": "image/jpeg"
-                    }
+                        "mimeType": "image/jpeg",
+                    },
                 },
                 {
-                    "alt": "Second image", 
+                    "alt": "Second image",
                     "image": {
                         "$type": "blob",
                         "ref": {"$link": "blob-ref-2"},
-                        "mimeType": "image/png"
-                    }
-                }
-            ]
+                        "mimeType": "image/png",
+                    },
+                },
+            ],
         }
         result = ContentProcessor.extract_images_from_embed(embed)
         assert len(result) == 2
         assert result[0]["alt"] == "First image"
         assert result[1]["alt"] == "Second image"
 
-    @patch('src.content_processor.requests.get')
+    @patch("src.content_processor.requests.get")
     def test_download_image_success(self, mock_get):
         """Test successful image download"""
         mock_response = Mock()
@@ -231,20 +223,18 @@ class TestContentProcessor:
         assert content == b"fake_image_data"
         assert mime_type == "image/jpeg"
 
-    @patch('src.content_processor.requests.get')
+    @patch("src.content_processor.requests.get")
     def test_download_image_failure(self, mock_get):
         """Test failed image download"""
         mock_get.side_effect = Exception("Network error")
-        
+
         result = ContentProcessor.download_image("https://example.com/image.jpg")
         assert result is None
 
     def test_process_bluesky_to_mastodon_simple_text(self):
         """Test processing simple text post"""
         result = self.processor.process_bluesky_to_mastodon(
-            text="Simple test post",
-            embed=None,
-            facets=[]
+            text="Simple test post", embed=None, facets=[]
         )
         assert result == "Simple test post"
 
@@ -252,11 +242,9 @@ class TestContentProcessor:
         """Test processing post with hashtags and mentions"""
         text = "Hello @user this is a #test"
         facets = []  # Simplified for this test
-        
+
         result = self.processor.process_bluesky_to_mastodon(
-            text=text,
-            embed=None,
-            facets=facets
+            text=text, embed=None, facets=facets
         )
         assert "#test" in result
         assert "@user" in result
@@ -264,11 +252,9 @@ class TestContentProcessor:
     def test_process_bluesky_to_mastodon_long_text(self):
         """Test processing text that exceeds character limit"""
         long_text = "x" * 600
-        
+
         result = self.processor.process_bluesky_to_mastodon(
-            text=long_text,
-            embed=None,
-            facets=[]
+            text=long_text, embed=None, facets=[]
         )
         assert len(result) <= 500
         assert result.endswith("...")
@@ -280,11 +266,13 @@ class TestContentProcessor:
             "external": {
                 "uri": "https://example.com",
                 "title": "Example Site",
-                "description": "A test site"
-            }
+                "description": "A test site",
+            },
         }
-        
-        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+
+        result = ContentProcessor._handle_embed(
+            "Original text", embed, include_image_placeholders=True
+        )
         assert "🔗 Example Site" in result
         assert "https://example.com" in result
         # Note: Description is intentionally not included to keep within character limits
@@ -293,13 +281,12 @@ class TestContentProcessor:
         """Test handling image embed with placeholders"""
         embed = {
             "$type": "app.bsky.embed.images",
-            "images": [
-                {"alt": "Test image"},
-                {"alt": "Another image"}
-            ]
+            "images": [{"alt": "Test image"}, {"alt": "Another image"}],
         }
-        
-        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+
+        result = ContentProcessor._handle_embed(
+            "Original text", embed, include_image_placeholders=True
+        )
         assert "📷 [2 images]" in result
         assert "Test image" in result
         assert "Another image" in result
@@ -308,13 +295,12 @@ class TestContentProcessor:
         """Test handling image embed without placeholders"""
         embed = {
             "$type": "app.bsky.embed.images",
-            "images": [
-                {"alt": "Test image"},
-                {"alt": "Another image"}
-            ]
+            "images": [{"alt": "Test image"}, {"alt": "Another image"}],
         }
-        
-        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=False)
+
+        result = ContentProcessor._handle_embed(
+            "Original text", embed, include_image_placeholders=False
+        )
         # Should return original text when not including placeholders
         assert result == "Original text"
 
@@ -324,26 +310,22 @@ class TestContentProcessor:
             "$type": "app.bsky.embed.record",
             "record": {
                 "py_type": "app.bsky.feed.defs#postView.ViewRecord",
-                "value": {
-                    "text": "Original quoted post"
-                },
-                "author": {
-                    "handle": "user.bsky.social",
-                    "displayName": "Test User"
-                }
-            }
+                "value": {"text": "Original quoted post"},
+                "author": {"handle": "user.bsky.social", "displayName": "Test User"},
+            },
         }
-        
-        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+
+        result = ContentProcessor._handle_embed(
+            "Original text", embed, include_image_placeholders=True
+        )
         assert "Quoting @user.bsky.social" in result
         assert "Original quoted post" in result
 
     def test_handle_embed_unsupported_type(self):
         """Test handling unsupported embed type"""
-        embed = {
-            "$type": "app.bsky.embed.unknown",
-            "data": "some data"
-        }
-        
-        result = ContentProcessor._handle_embed("Original text", embed, include_image_placeholders=True)
+        embed = {"$type": "app.bsky.embed.unknown", "data": "some data"}
+
+        result = ContentProcessor._handle_embed(
+            "Original text", embed, include_image_placeholders=True
+        )
         assert result == "Original text"
