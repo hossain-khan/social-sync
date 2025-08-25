@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧵 **Thread Support**: Maintain conversation threading when syncing reply posts from Bluesky to Mastodon
   - Reply posts are automatically detected and synced as proper Mastodon replies
 
+- 📊 **Filtering Statistics & Operational Visibility**: Enhanced logging with comprehensive filtering statistics
+  - New `BlueskyFetchResult` dataclass tracks filtering statistics (replies, reposts, date-filtered posts)
+  - Detailed logging reports showing total retrieved posts, filtered replies, and date-filtered posts
+  - Enhanced operational visibility with post-sync filtering reports
+  - Comprehensive statistics for monitoring sync behavior and troubleshooting
+
 ### Fixed
 - 🔗 **Duplicate Link Bug**: Fixed issue where links could appear twice in synced posts
   - When both facets (URL expansion) and external embeds exist for the same URL, prevent duplicate links

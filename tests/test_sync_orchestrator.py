@@ -12,7 +12,7 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.bluesky_client import BlueskyPost
+from src.bluesky_client import BlueskyFetchResult, BlueskyPost
 from src.sync_orchestrator import SocialSyncOrchestrator
 
 
@@ -108,7 +108,13 @@ class TestSocialSyncOrchestrator:
         self.mock_mastodon_client.authenticate.return_value = True
         self.orchestrator.setup_clients()
 
-        self.mock_bluesky_client.get_recent_posts.return_value = []
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
 
         result = self.orchestrator.get_posts_to_sync()
 
@@ -147,10 +153,13 @@ class TestSocialSyncOrchestrator:
             facets=[],
         )
 
-        self.mock_bluesky_client.get_recent_posts.return_value = [
-            mock_post1,
-            mock_post2,
-        ]
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=[mock_post1, mock_post2],
+            total_retrieved=2,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
         self.mock_sync_state.is_post_synced.return_value = (
             False  # Neither post is synced
         )
@@ -192,10 +201,13 @@ class TestSocialSyncOrchestrator:
             facets=[],
         )
 
-        self.mock_bluesky_client.get_recent_posts.return_value = [
-            mock_post1,
-            mock_post2,
-        ]
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=[mock_post1, mock_post2],
+            total_retrieved=2,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
 
         # Mock sync state: first post is synced, second is not
         def is_post_synced_side_effect(uri):
@@ -436,7 +448,13 @@ class TestSocialSyncOrchestrator:
             ),
         ]
 
-        self.mock_bluesky_client.get_recent_posts.return_value = mock_posts
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=2,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
         self.mock_sync_state.is_post_synced.return_value = False
 
         # Mock successful sync for both posts
@@ -475,7 +493,13 @@ class TestSocialSyncOrchestrator:
         self.mock_mastodon_client.authenticate.return_value = True
 
         # Mock no posts to sync
-        self.mock_bluesky_client.get_recent_posts.return_value = []
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
 
         result = self.orchestrator.run_sync()
 
@@ -519,7 +543,13 @@ class TestSocialSyncOrchestrator:
             ),
         ]
 
-        self.mock_bluesky_client.get_recent_posts.return_value = mock_posts
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=2,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
         self.mock_sync_state.is_post_synced.return_value = False
 
         # Mock mixed success/failure

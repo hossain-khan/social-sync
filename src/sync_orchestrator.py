@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from typing import List
 
-from .bluesky_client import BlueskyClient, BlueskyPost
+from .bluesky_client import BlueskyClient, BlueskyFetchResult, BlueskyPost
 from .config import get_settings
 from .content_processor import ContentProcessor
 from .mastodon_client import MastodonClient
@@ -60,13 +60,29 @@ class SocialSyncOrchestrator:
         since_date = self.settings.get_sync_start_datetime()
         logger.info(f"Looking for posts since: {since_date.isoformat()}")
 
-        recent_posts = self.bluesky_client.get_recent_posts(
+        fetch_result: BlueskyFetchResult = self.bluesky_client.get_recent_posts(
             limit=self.settings.max_posts_per_sync, since_date=since_date
         )
 
+        # Log filtering statistics
+        if fetch_result.total_retrieved > 0:
+            logger.info(
+                f"Retrieved {fetch_result.total_retrieved} total posts from Bluesky API"
+            )
+            if fetch_result.filtered_replies > 0:
+                logger.info(
+                    f"Filtered out {fetch_result.filtered_replies} reply posts (replies are not synced)"
+                )
+            if fetch_result.filtered_reposts > 0:
+                logger.info(f"Filtered out {fetch_result.filtered_reposts} reposts")
+            if fetch_result.filtered_by_date > 0:
+                logger.info(
+                    f"Filtered out {fetch_result.filtered_by_date} posts older than {since_date.isoformat()}"
+                )
+
         # Filter out posts that have already been synced
         new_posts = []
-        for post in recent_posts:
+        for post in fetch_result.posts:
             if not self.sync_state.is_post_synced(post.uri):
                 new_posts.append(post)
 

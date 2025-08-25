@@ -110,7 +110,11 @@ class TestBlueskyClient:
 
         result = client.get_recent_posts()
 
-        assert result == []
+        assert result.posts == []
+        assert result.total_retrieved == 0
+        assert result.filtered_replies == 0
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
         mock_client.get_author_feed.assert_called_once()
 
     @patch("src.bluesky_client.AtprotoClient")
@@ -149,8 +153,13 @@ class TestBlueskyClient:
 
         result = client.get_recent_posts(limit=10)
 
-        assert len(result) == 1
-        post = result[0]
+        assert len(result.posts) == 1
+        assert result.total_retrieved == 1
+        assert result.filtered_replies == 0
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
+
+        post = result.posts[0]
         assert isinstance(post, BlueskyPost)
         assert post.uri == "at://did:plc:test123/app.bsky.feed.post/12345"
         assert post.text == "Test post content"
@@ -203,8 +212,12 @@ class TestBlueskyClient:
 
         result = client.get_recent_posts()
 
-        # Reply posts should be filtered out, so we expect an empty result
-        assert len(result) == 0
+        # Reply posts should be filtered out, so we expect an empty posts list
+        assert len(result.posts) == 0
+        assert result.total_retrieved == 1  # One post was retrieved from API
+        assert result.filtered_replies == 1  # One reply was filtered out
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
 
     @patch("src.bluesky_client.AtprotoClient")
     def test_get_recent_posts_with_since_date_filter(self, mock_client_class):
@@ -266,8 +279,12 @@ class TestBlueskyClient:
         since_date = datetime(2024, 12, 31, tzinfo=timezone.utc)
         result = client.get_recent_posts(since_date=since_date)
 
-        assert len(result) == 1
-        assert result[0].text == "New post"
+        assert len(result.posts) == 1
+        assert result.posts[0].text == "New post"
+        assert result.total_retrieved == 2  # Two posts retrieved
+        assert result.filtered_replies == 0
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 1  # One filtered by date
 
     @patch("src.bluesky_client.AtprotoClient")
     def test_get_recent_posts_with_embed(self, mock_client_class):
@@ -316,8 +333,13 @@ class TestBlueskyClient:
 
         result = client.get_recent_posts()
 
-        assert len(result) == 1
-        post = result[0]
+        assert len(result.posts) == 1
+        assert result.total_retrieved == 1
+        assert result.filtered_replies == 0
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
+
+        post = result.posts[0]
         assert post.embed is not None
         assert post.embed["py_type"] == "dict"
 

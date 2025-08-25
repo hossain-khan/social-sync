@@ -14,6 +14,21 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class BlueskyFetchResult:
+    """
+    Result of fetching posts from Bluesky with filtering statistics.
+
+    This provides visibility into how many posts were retrieved vs filtered.
+    """
+
+    posts: List["BlueskyPost"]
+    total_retrieved: int  # Total posts fetched from API
+    filtered_replies: int  # Number of reply posts filtered out
+    filtered_reposts: int  # Number of reposts filtered out
+    filtered_by_date: int  # Number of posts filtered by date
+
+
+@dataclass
 class BlueskyPost:
     """
     Represents a Bluesky post with metadata and rich content.
@@ -79,12 +94,15 @@ class BlueskyClient:
 
     def get_recent_posts(
         self, limit: int = 10, since_date: Optional[datetime] = None
-    ) -> List[BlueskyPost]:
-        """Get recent posts from authenticated user's feed
+    ) -> BlueskyFetchResult:
+        """Get recent posts from authenticated user's feed with filtering statistics
 
         Args:
             limit: Maximum number of posts to retrieve
             since_date: Only return posts created after this date
+
+        Returns:
+            BlueskyFetchResult with posts and filtering statistics
         """
         if not self._authenticated:
             raise RuntimeError("Client not authenticated. Call authenticate() first.")
@@ -97,13 +115,23 @@ class BlueskyClient:
             )
 
             posts = []
+            filtered_replies = 0
+            filtered_reposts = 0
+            filtered_by_date = 0
+            total_retrieved = len(response.feed)
+
             for feed_item in response.feed:
                 post = feed_item.post
 
-                # Skip reposts (when reason is not None) and replies
-                if (
-                    hasattr(feed_item, "reason") and feed_item.reason is not None
-                ) or post.record.reply:
+                # Track and skip reposts
+                if hasattr(feed_item, "reason") and feed_item.reason is not None:
+                    filtered_reposts += 1
+                    continue
+
+                # Track and skip replies
+                if post.record.reply:
+                    filtered_replies += 1
+                    logger.debug(f"Filtered reply post: {post.uri}")
                     continue
 
                 # Parse the post creation date
@@ -113,6 +141,7 @@ class BlueskyClient:
 
                 # Filter by date if specified
                 if since_date and created_at < since_date:
+                    filtered_by_date += 1
                     continue
 
                 bluesky_post = BlueskyPost(
@@ -150,11 +179,30 @@ class BlueskyClient:
                 f"Retrieved {len(posts)} posts from Bluesky"
                 + (f" since {since_date.isoformat()}" if since_date else "")
             )
-            return posts
+            if filtered_replies > 0:
+                logger.info(f"Filtered out {filtered_replies} reply posts")
+            if filtered_reposts > 0:
+                logger.info(f"Filtered out {filtered_reposts} reposts")
+            if filtered_by_date > 0:
+                logger.info(f"Filtered out {filtered_by_date} posts by date")
+
+            return BlueskyFetchResult(
+                posts=posts,
+                total_retrieved=total_retrieved,
+                filtered_replies=filtered_replies,
+                filtered_reposts=filtered_reposts,
+                filtered_by_date=filtered_by_date,
+            )
 
         except Exception as e:
             logger.error(f"Failed to fetch posts from Bluesky: {e}")
-            return []
+            return BlueskyFetchResult(
+                posts=[],
+                total_retrieved=0,
+                filtered_replies=0,
+                filtered_reposts=0,
+                filtered_by_date=0,
+            )
 
     @staticmethod
     def _extract_facets_data(facets) -> List[Dict[str, Any]]:
