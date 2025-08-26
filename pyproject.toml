@@ -9,7 +9,7 @@ description = "Cross-platform social media synchronization tool for Bluesky and 
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Hossain Khan", email = "hossain@hossainkhan.com"}
+    {name = "Hossain Khan", email = "hello@hossain.dev"}
 ]
 keywords = ["bluesky", "mastodon", "social-media", "sync", "cross-posting", "at-protocol"]
 classifiers = [

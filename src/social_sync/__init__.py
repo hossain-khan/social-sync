@@ -8,7 +8,7 @@ operational visibility.
 
 __version__ = "0.2.0"
 __author__ = "Hossain Khan"
-__email__ = "hossain@hossainkhan.com"
+__email__ = "hello@hossain.dev"
 __license__ = "MIT"
 
 # Version info tuple for programmatic access
