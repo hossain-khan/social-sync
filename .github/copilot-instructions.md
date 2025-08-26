@@ -26,6 +26,75 @@ Always update `CHANGELOG.md` when making changes:
 
 Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format for consistency.
 
+## Release Process
+
+When preparing a new release, follow these steps in order:
+
+### Pre-Release Quality Checks
+1. **Run all quality checks**: `black . && isort . && mypy src/ tests/ && flake8 src/ tests/ *.py`
+2. **Run full test suite**: `python -m pytest -v` (ensure all 120+ tests pass)
+3. **Validate JSON files**: `python -m json.tool sync_state.json > /dev/null`
+4. **Test CLI functionality**: `python sync.py --version` and `python sync.py sync --dry-run`
+
+### Version Management
+The project uses centralized version management following modern Python packaging standards:
+
+1. **Update pyproject.toml**: Change `version = "X.Y.Z"` in the `[project]` section
+2. **Update package __init__.py**: Change `__version__ = "X.Y.Z"` in `src/social_sync/__init__.py`
+3. **Version accessibility**:
+   - CLI: `python sync.py --version`
+   - Programmatic: `from src.social_sync import __version__`
+
+### Changelog Release Preparation
+1. **Move [Unreleased] to versioned section**:
+   ```markdown
+   ## [Unreleased]
+
+   ## [X.Y.Z] - YYYY-MM-DD
+   ### Added
+   - Feature descriptions...
+   ```
+2. **Add release date** in ISO format (YYYY-MM-DD)
+3. **Ensure all changes are properly categorized** under Added/Changed/Fixed/Removed/Security
+
+### Git Release Process
+1. **Commit version changes**:
+   ```bash
+   git add pyproject.toml src/social_sync/__init__.py CHANGELOG.md
+   git commit -m "🏗️ Prepare release vX.Y.Z"
+   ```
+
+2. **Create annotated release tag**:
+   ```bash
+   git tag -a vX.Y.Z -m "Release vX.Y.Z: Brief description
+
+   Major features:
+   - Feature 1
+   - Feature 2
+   
+   Bug fixes:
+   - Fix 1
+   - Fix 2"
+   ```
+
+3. **Push commits and tags**:
+   ```bash
+   git push origin main
+   git push origin vX.Y.Z
+   ```
+
+### Post-Release Preparation
+1. **Prepare for next development cycle**:
+   - Add empty `[Unreleased]` section with categories to CHANGELOG.md
+   - Commit: `git commit -m "📝 Prepare CHANGELOG for next development cycle"`
+   - Push: `git push origin main`
+
+### Version Numbering Guidelines
+Follow [Semantic Versioning](https://semver.org/):
+- **MAJOR** (X.0.0): Breaking changes or major feature additions
+- **MINOR** (X.Y.0): New features, enhancements, significant improvements
+- **PATCH** (X.Y.Z): Bug fixes, minor improvements, security updates
+
 ## JSON File Standards
 
 The project includes JSON configuration and state files that must be properly formatted:
@@ -41,7 +110,9 @@ The project includes JSON configuration and state files that must be properly fo
 ## Project Structure
 
 - `src/` - Main source code directory
+- `src/social_sync/` - Package directory with version information
 - `sync.py` - CLI entry point for the sync tool
+- `pyproject.toml` - Modern Python packaging configuration with project metadata and version
 - `sync_state.json` - Sync history and state persistence (tracked in git)
 - `CHANGELOG.md` - Project changelog following Keep a Changelog format
 - `src/config.py` - Configuration management with Pydantic models
@@ -50,7 +121,16 @@ The project includes JSON configuration and state files that must be properly fo
 - `src/sync_orchestrator.py` - Main sync logic coordinator with threading support
 - `src/sync_state.py` - State persistence for preventing duplicates and parent post lookups
 - `src/content_processor.py` - Content transformation utilities
-- `src/content_processor.py` - Content transformation utilities
+
+## Packaging and Version Management
+
+The project follows modern Python packaging standards (PEP 621):
+
+- **pyproject.toml**: Contains project metadata, dependencies, version, and build configuration
+- **Centralized versioning**: Single source of truth in pyproject.toml `[project]` section
+- **Package structure**: `src/social_sync/__init__.py` provides programmatic version access
+- **CLI integration**: `python sync.py --version` shows current version
+- **Build system**: Configured with setuptools for potential PyPI publishing
 
 ## Key Features
 
@@ -59,7 +139,12 @@ The project includes JSON configuration and state files that must be properly fo
 - **Duplicate Prevention**: State-based tracking prevents re-posting content
 - **Content Processing**: Handles external links, images, quoted posts, and threading
 - **External Link Embedding**: Extracts and formats link metadata for cross-platform compatibility
+- **Filtering Statistics**: Comprehensive operational visibility with detailed filtering reports
+  - BlueskyFetchResult dataclass tracks filtered replies, reposts, and date-filtered posts
+  - Enhanced logging shows total retrieved, filtered, and synced post counts
+  - Post-sync filtering reports for monitoring and troubleshooting
 - **JSON Validation**: Comprehensive validation system for sync state integrity
+- **Modern CLI**: Version support with `--version` flag and comprehensive help system
 
 ## Development Guidelines
 
