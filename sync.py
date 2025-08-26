@@ -16,6 +16,11 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from src.config import get_settings  # noqa: E402
 from src.sync_orchestrator import SocialSyncOrchestrator  # noqa: E402
 
+try:
+    from src.social_sync import __version__
+except ImportError:
+    __version__ = "unknown"
+
 # Load environment variables
 load_dotenv()
 
@@ -33,6 +38,7 @@ def setup_logging(log_level: str):
 
 
 @click.group()
+@click.version_option(version=__version__, prog_name="Social Sync")
 @click.option(
     "--log-level",
     default="INFO",

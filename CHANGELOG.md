@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-08-25
+
 ### Added
-- 🧪 **Comprehensive Test Infrastructure**: Complete testing framework with 90+ unit tests covering all major components
+- 🧪 **Comprehensive Test Infrastructure**: Complete testing framework with 120+ unit tests covering all major components
   - pytest-based testing with coverage reporting (60% baseline coverage)
   - Test runner script (`run_tests.py`) with multiple test categories (unit, integration, threading)
   - Comprehensive testing documentation (`TESTING.md`)
