@@ -61,12 +61,12 @@ The project uses centralized version management following modern Python packagin
 1. **Commit version changes**:
    ```bash
    git add pyproject.toml src/social_sync/__init__.py CHANGELOG.md
-   git commit -m "🏗️ Prepare release vX.Y.Z"
+   git commit -m "🏗️ Prepare release X.Y.Z"
    ```
 
 2. **Create annotated release tag**:
    ```bash
-   git tag -a vX.Y.Z -m "Release vX.Y.Z: Brief description
+   git tag -a X.Y.Z -m "Release X.Y.Z: Brief description
 
    Major features:
    - Feature 1
@@ -80,7 +80,7 @@ The project uses centralized version management following modern Python packagin
 3. **Push commits and tags**:
    ```bash
    git push origin main
-   git push origin vX.Y.Z
+   git push origin X.Y.Z
    ```
 
 ### Post-Release Preparation
@@ -94,6 +94,11 @@ Follow [Semantic Versioning](https://semver.org/):
 - **MAJOR** (X.0.0): Breaking changes or major feature additions
 - **MINOR** (X.Y.0): New features, enhancements, significant improvements
 - **PATCH** (X.Y.Z): Bug fixes, minor improvements, security updates
+
+### Tag Naming Convention
+- Use version numbers without 'v' prefix: `0.1.0`, `0.2.0`, `1.0.0`
+- Maintain consistency with existing tags in the repository
+- Example: `git tag -a 0.2.1 -m "Release 0.2.1: Bug fixes"`
 
 ## JSON File Standards
 
