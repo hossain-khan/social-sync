@@ -4,7 +4,12 @@ Tests for Configuration Management
 
 import os
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
 
 # Add the parent directory to sys.path to import src as a package
 project_root = Path(__file__).parent.parent
@@ -161,11 +166,6 @@ class TestSettings:
 
     def test_sync_start_date_format_validation(self):
         """Test that SYNC_START_DATE formats from .env.example are properly validated"""
-        from datetime import datetime, timezone
-
-        import pytest
-        from pydantic import ValidationError
-
         # Set required credentials for Settings initialization
         os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
         os.environ["BLUESKY_PASSWORD"] = "test-password"
@@ -222,9 +222,6 @@ class TestSettings:
 
     def test_sync_start_date_invalid_formats(self):
         """Test that invalid SYNC_START_DATE formats are properly rejected"""
-        import pytest
-        from pydantic import ValidationError
-
         # Set required credentials for Settings initialization
         os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
         os.environ["BLUESKY_PASSWORD"] = "test-password"
@@ -262,8 +259,6 @@ class TestSettings:
 
     def test_sync_start_date_edge_cases(self):
         """Test edge cases for SYNC_START_DATE handling"""
-        from datetime import datetime, timezone
-
         # Set required credentials for Settings initialization
         os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
         os.environ["BLUESKY_PASSWORD"] = "test-password"
@@ -279,8 +274,6 @@ class TestSettings:
         result = settings.get_sync_start_datetime()
         assert isinstance(result, datetime)
         # Should be approximately 7 days ago (within a few minutes tolerance)
-        import time
-
         expected_timestamp = time.time() - (7 * 24 * 60 * 60)  # 7 days ago
         actual_timestamp = result.timestamp()
         assert (
