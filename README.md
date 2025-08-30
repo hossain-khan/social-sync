@@ -76,7 +76,7 @@ MASTODON_API_BASE_URL=https://your-instance.social
 MASTODON_ACCESS_TOKEN=your-access-token
 
 # Sync Configuration
-SYNC_INTERVAL_MINUTES=15
+SYNC_INTERVAL_MINUTES=60
 MAX_POSTS_PER_SYNC=10
 DRY_RUN=false
 LOG_LEVEL=INFO
@@ -115,7 +115,7 @@ python sync.py test
 
 ### GitHub Actions
 
-The sync runs automatically every 15 minutes via GitHub Actions. You can also:
+The sync runs automatically every 60 minutes via GitHub Actions. You can also:
 
 - **Manual trigger**: Go to Actions → Social Sync → Run workflow
 - **Dry run**: Use the manual trigger with dry-run mode enabled
@@ -191,7 +191,7 @@ Mastodon Result:
 
 | Setting | Environment Variable | Default | Description |
 |---------|---------------------|---------|-------------|
-| Sync Interval | `SYNC_INTERVAL_MINUTES` | 15 | How often to sync (GitHub Actions cron) |
+| Sync Interval | `SYNC_INTERVAL_MINUTES` | 60 | How often to sync (GitHub Actions cron) |
 | Max Posts | `MAX_POSTS_PER_SYNC` | 10 | Maximum posts to process per sync |
 | **Sync Start Date** | `SYNC_START_DATE` | 7 days ago | Start date for syncing posts (ISO format) |
 | Dry Run | `DRY_RUN` | false | Test mode without actual posting |

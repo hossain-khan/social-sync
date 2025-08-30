@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Sync Configuration
     sync_interval_minutes: int = Field(
-        default=15, description="Sync interval in minutes"
+        default=60, description="Sync interval in minutes"
     )
     max_posts_per_sync: int = Field(default=10, description="Maximum posts per sync")
     sync_start_date: Optional[str] = Field(

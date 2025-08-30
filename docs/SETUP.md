@@ -207,7 +207,7 @@ If you're still having issues:
 
 Once setup is complete:
 
-- 🕒 **Automatic syncing** every 15 minutes
+- 🕒 **Automatic syncing** every 60 minutes
 - 📱 **New Bluesky posts** appear on Mastodon
 - 📊 **Activity logs** available in GitHub Actions
 - 🔄 **Duplicate posts** are automatically prevented

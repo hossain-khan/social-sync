@@ -36,7 +36,7 @@ BLUESKY_HANDLE: str          # User's Bluesky handle
 BLUESKY_PASSWORD: str        # Bluesky app password
 MASTODON_API_BASE_URL: str   # Mastodon instance URL
 MASTODON_ACCESS_TOKEN: str   # Mastodon API token
-SYNC_INTERVAL_MINUTES: int   # Sync frequency (default: 15)
+SYNC_INTERVAL_MINUTES: int   # Sync frequency (default: 60)
 MAX_POSTS_PER_SYNC: int     # Max posts per run (default: 10)
 DRY_RUN: bool               # Test mode flag (default: false)
 LOG_LEVEL: str              # Logging level (default: INFO)
