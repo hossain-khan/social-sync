@@ -1,3 +1,5 @@
+[![Code Quality Validation](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml/badge.svg)](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml) [![codecov](https://codecov.io/gh/hossain-khan/social-sync/graph/badge.svg?token=LMUT124IVM)](https://codecov.io/gh/hossain-khan/social-sync) 
+
 # Social Sync 🔄
 
 A Python-based tool to automatically sync posts from Bluesky to Mastodon, designed to run as a GitHub Actions cron job.
