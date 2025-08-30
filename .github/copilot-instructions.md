@@ -2,16 +2,57 @@
 
 This is a Python 3.13+ social media synchronization tool that cross-posts between Bluesky and Mastodon.
 
+## Development Workflow
+
+### Feature Development and Bug Fixes
+For ANY new features, bug fixes, or changes:
+
+1. **Create a new branch first**: Always create a feature branch before making changes
+   ```bash
+   git checkout -b feature/your-feature-name
+   # OR
+   git checkout -b fix/bug-description
+   ```
+
+2. **Use the pre-commit script**: Before committing and pushing, ALWAYS run the quality checks script:
+   ```bash
+   ./scripts/pre-commit-checks.sh
+   ```
+   This script runs all required quality checks (Black, isort, mypy, flake8, pytest, JSON validation) and ensures CI will pass.
+
+3. **Commit and push**: Only commit and push after the pre-commit script passes
+   ```bash
+   git add .
+   git commit -m "descriptive commit message"
+   git push -u origin your-branch-name
+   ```
+
+4. **Create Pull Request**: Create a PR for code review and CI validation before merging to main
+
+### Branch Naming Convention
+- **Features**: `feature/feature-name` (e.g., `feature/add-twitter-support`)
+- **Bug Fixes**: `fix/bug-description` (e.g., `fix/image-attachment-blob-reference`)
+- **Documentation**: `docs/description` (e.g., `docs/update-readme`)
+- **Refactoring**: `refactor/description` (e.g., `refactor/extract-content-processor`)
+
 ## Code Quality Requirements
 
-Before committing any code changes, you MUST run these formatting and validation steps in order:
+Before committing any code changes, you MUST run the pre-commit quality checks:
+
+**Recommended**: Use the automated script for all quality checks:
+```bash
+./scripts/pre-commit-checks.sh
+```
+
+**Manual alternative** - run these formatting and validation steps in order:
 
 1. **Format code with Black**: Always run `black .` to ensure proper code formatting across all files
 2. **Sort imports with isort**: Always run `isort .` to maintain consistent import ordering across all files
 3. **Type check with mypy**: Run `mypy src/ tests/` to catch type annotation issues
 4. **Lint with flake8**: Run `flake8 src/ tests/ *.py` to check code quality and style including root directory files
-5. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
-6. **Update CHANGELOG.md**: Document any new features, bug fixes, or breaking changes in the changelog
+5. **Run tests**: Run `python -m pytest tests/` to ensure all unit tests pass
+6. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
+7. **Update CHANGELOG.md**: Document any new features, bug fixes, or breaking changes in the changelog
 
 ## Changelog Management
 
@@ -31,7 +72,7 @@ Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format for consi
 When preparing a new release, follow these steps in order:
 
 ### Pre-Release Quality Checks
-1. **Run all quality checks**: `black . && isort . && mypy src/ tests/ && flake8 src/ tests/ *.py`
+1. **Run all quality checks**: `./scripts/pre-commit-checks.sh` (comprehensive automated script)
 2. **Run full test suite**: `python -m pytest -v` (ensure all 120+ tests pass)
 3. **Validate JSON files**: `python -m json.tool sync_state.json > /dev/null`
 4. **Test CLI functionality**: `python sync.py --version` and `python sync.py sync --dry-run`
