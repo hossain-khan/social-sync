@@ -158,3 +158,154 @@ class TestSettings:
             os.environ["SYNC_INTERVAL_MINUTES"] = env_value
             settings = Settings()
             assert settings.sync_interval_minutes == expected
+
+    def test_sync_start_date_format_validation(self):
+        """Test that SYNC_START_DATE formats from .env.example are properly validated"""
+        from datetime import datetime, timezone
+
+        import pytest
+        from pydantic import ValidationError
+
+        # Set required credentials for Settings initialization
+        os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
+        os.environ["BLUESKY_PASSWORD"] = "test-password"
+        os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+
+        # Test valid date formats from .env.example
+        valid_formats = [
+            # Date only format: SYNC_START_DATE=2025-01-01
+            ("2025-01-01", datetime(2025, 1, 1, 0, 0, 0)),
+            ("2025-12-31", datetime(2025, 12, 31, 0, 0, 0)),
+            # Datetime format without timezone: SYNC_START_DATE=2025-01-15T10:30:00
+            ("2025-01-15T10:30:00", datetime(2025, 1, 15, 10, 30, 0)),
+            ("2025-06-20T23:59:59", datetime(2025, 6, 20, 23, 59, 59)),
+            # Datetime with timezone: SYNC_START_DATE=2025-01-15T10:30:00-05:00
+            (
+                "2025-01-15T10:30:00-05:00",
+                datetime(2025, 1, 15, 15, 30, 0),
+            ),  # UTC conversion
+            (
+                "2025-01-15T10:30:00+02:00",
+                datetime(2025, 1, 15, 8, 30, 0),
+            ),  # UTC conversion
+            (
+                "2025-01-15T10:30:00Z",
+                datetime(2025, 1, 15, 10, 30, 0),
+            ),  # Z format (UTC)
+        ]
+
+        for date_str, expected_datetime in valid_formats:
+            os.environ["SYNC_START_DATE"] = date_str
+            settings = Settings(_env_file=None)  # Prevent .env file loading
+
+            # Test that validation passes
+            assert (
+                settings.sync_start_date == date_str
+            ), f"Failed to store date string: {date_str}"
+
+            # Test that datetime conversion works correctly
+            result_datetime = settings.get_sync_start_datetime()
+            assert isinstance(
+                result_datetime, datetime
+            ), f"Expected datetime object for: {date_str}"
+
+            # Convert to UTC naive datetime for comparison
+            if result_datetime.tzinfo is not None:
+                result_datetime = result_datetime.astimezone(timezone.utc).replace(
+                    tzinfo=None
+                )
+
+            assert result_datetime == expected_datetime, (
+                f"Date conversion failed for {date_str}: "
+                f"expected {expected_datetime}, got {result_datetime}"
+            )
+
+    def test_sync_start_date_invalid_formats(self):
+        """Test that invalid SYNC_START_DATE formats are properly rejected"""
+        import pytest
+        from pydantic import ValidationError
+
+        # Set required credentials for Settings initialization
+        os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
+        os.environ["BLUESKY_PASSWORD"] = "test-password"
+        os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+
+        # Test invalid date formats
+        invalid_formats = [
+            "2025-13-01",  # Invalid month
+            "2025-01-32",  # Invalid day
+            "2025/01/01",  # Wrong separator
+            "01-01-2025",  # Wrong order
+            "2025-1-1",  # Missing zero padding
+            "2025-01-01 10:30",  # Space separator instead of T
+            "not-a-date",  # Non-date string
+            "2025-01-01T25:00:00",  # Invalid hour
+            "2025-01-01T10:60:00",  # Invalid minute
+            "2025-01-01T10:30:60",  # Invalid second
+            "",  # Empty string
+            "2025",  # Year only
+            "01-01",  # Month-day only
+        ]
+
+        for invalid_date in invalid_formats:
+            os.environ["SYNC_START_DATE"] = invalid_date
+
+            with pytest.raises(ValidationError) as exc_info:
+                Settings(_env_file=None)  # Prevent .env file loading
+
+            # Verify the error message mentions the expected format
+            error_message = str(exc_info.value)
+            assert "sync_start_date must be in ISO format" in error_message, (
+                f"Expected ISO format error message for invalid date: {invalid_date}, "
+                f"but got: {error_message}"
+            )
+
+    def test_sync_start_date_edge_cases(self):
+        """Test edge cases for SYNC_START_DATE handling"""
+        from datetime import datetime, timezone
+
+        # Set required credentials for Settings initialization
+        os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
+        os.environ["BLUESKY_PASSWORD"] = "test-password"
+        os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+
+        # Test None/unset case - prevent .env file loading
+        if "SYNC_START_DATE" in os.environ:
+            del os.environ["SYNC_START_DATE"]
+        settings = Settings(_env_file=None)  # Prevent .env file loading
+        assert settings.sync_start_date is None
+
+        # get_sync_start_datetime() should return 7 days ago when None
+        result = settings.get_sync_start_datetime()
+        assert isinstance(result, datetime)
+        # Should be approximately 7 days ago (within a few minutes tolerance)
+        import time
+
+        expected_timestamp = time.time() - (7 * 24 * 60 * 60)  # 7 days ago
+        actual_timestamp = result.timestamp()
+        assert (
+            abs(actual_timestamp - expected_timestamp) < 300
+        ), f"Expected approximately 7 days ago, got {result}"  # 5 minutes tolerance
+
+        # Test leap year date
+        os.environ["SYNC_START_DATE"] = "2024-02-29"  # Valid leap year date
+        settings = Settings(_env_file=None)
+        result = settings.get_sync_start_datetime()
+        assert result.year == 2024
+        assert result.month == 2
+        assert result.day == 29
+
+        # Test beginning/end of year
+        test_cases = [
+            ("2025-01-01T00:00:00", datetime(2025, 1, 1, 0, 0, 0)),
+            ("2025-12-31T23:59:59", datetime(2025, 12, 31, 23, 59, 59)),
+        ]
+
+        for date_str, expected in test_cases:
+            os.environ["SYNC_START_DATE"] = date_str
+            settings = Settings(_env_file=None)
+            result = settings.get_sync_start_datetime()
+            # Convert to UTC naive datetime for comparison if timezone-aware
+            if result.tzinfo is not None:
+                result = result.astimezone(timezone.utc).replace(tzinfo=None)
+            assert result == expected, f"Edge case failed for {date_str}"
