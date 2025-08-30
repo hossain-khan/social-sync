@@ -56,7 +56,7 @@ Before committing any code changes, you MUST run the pre-commit quality checks:
 
 ## Changelog Management
 
-Always update `CHANGELOG.md` when making changes:
+Always update `docs/CHANGELOG.md` when making changes:
 
 - **New Features**: Add to the `[Unreleased]` section under `### Added`
 - **Bug Fixes**: Add to the `[Unreleased]` section under `### Fixed`
@@ -66,6 +66,29 @@ Always update `CHANGELOG.md` when making changes:
 - **Security Updates**: Add to the `[Unreleased]` section under `### Security`
 
 Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format for consistency.
+
+## Documentation Organization
+
+### Documentation Structure
+All documentation is organized in the `docs/` directory:
+
+- `docs/SETUP.md` - Complete setup and configuration guide
+- `docs/FORK_SETUP.md` - Guide for fork users and personal instances  
+- `docs/CONTRIBUTING.md` - Development workflow and code quality standards
+- `docs/TESTING.md` - Test suite documentation and validation procedures
+- `docs/API.md` - Client APIs and integration details
+- `docs/THREADING_IMPLEMENTATION.md` - Threading architecture and implementation
+- `docs/CHANGELOG.md` - Version history and release notes
+- `docs/PROJECT_SUMMARY.md` - Architecture overview and design decisions
+
+### Documentation Guidelines
+When creating or updating documentation:
+
+1. **New docs**: Always create in `docs/` directory
+2. **README.md**: Keep minimal - link to detailed docs in `docs/`
+3. **Cross-references**: Use relative links to docs: `[Setup Guide](docs/SETUP.md)`
+4. **Structure**: Follow established format with clear headings and sections
+5. **Examples**: Include code examples and practical usage scenarios
 
 ## Release Process
 
@@ -87,7 +110,7 @@ The project uses centralized version management following modern Python packagin
    - Programmatic: `from src.social_sync import __version__`
 
 ### Changelog Release Preparation
-1. **Move [Unreleased] to versioned section**:
+1. **Move [Unreleased] to versioned section in `docs/CHANGELOG.md`**:
    ```markdown
    ## [Unreleased]
 
@@ -101,7 +124,7 @@ The project uses centralized version management following modern Python packagin
 ### Git Release Process
 1. **Commit version changes**:
    ```bash
-   git add pyproject.toml src/social_sync/__init__.py CHANGELOG.md
+   git add pyproject.toml src/social_sync/__init__.py docs/CHANGELOG.md
    git commit -m "🏗️ Prepare release X.Y.Z"
    ```
 
@@ -126,7 +149,7 @@ The project uses centralized version management following modern Python packagin
 
 ### Post-Release Preparation
 1. **Prepare for next development cycle**:
-   - Add empty `[Unreleased]` section with categories to CHANGELOG.md
+   - Add empty `[Unreleased]` section with categories to docs/CHANGELOG.md
    - Commit: `git commit -m "📝 Prepare CHANGELOG for next development cycle"`
    - Push: `git push origin main`
 
@@ -160,7 +183,15 @@ The project includes JSON configuration and state files that must be properly fo
 - `sync.py` - CLI entry point for the sync tool
 - `pyproject.toml` - Modern Python packaging configuration with project metadata and version
 - `sync_state.json` - Sync history and state persistence (tracked in git)
-- `CHANGELOG.md` - Project changelog following Keep a Changelog format
+- `docs/` - Documentation directory containing all markdown files except README.md
+  - `docs/CHANGELOG.md` - Project changelog following Keep a Changelog format
+  - `docs/SETUP.md` - Complete setup and configuration guide
+  - `docs/CONTRIBUTING.md` - Development workflow and code quality standards
+  - `docs/FORK_SETUP.md` - Guide for fork users and personal instances
+  - `docs/TESTING.md` - Test suite documentation
+  - `docs/API.md` - Client APIs and integration details
+  - `docs/THREADING_IMPLEMENTATION.md` - Threading architecture documentation
+  - `docs/PROJECT_SUMMARY.md` - Architecture overview and design decisions
 - `src/config.py` - Configuration management with Pydantic models
 - `src/bluesky_client.py` - AT Protocol client for Bluesky integration
 - `src/mastodon_client.py` - Mastodon API client wrapper

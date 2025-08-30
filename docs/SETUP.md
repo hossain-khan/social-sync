@@ -1,117 +1,38 @@
-# Setup Guide for Social Sync
+# Setup Guide 🛠️
 
-This guide walks you through setting up Social Sync to automatically sync your Bluesky posts to Mastodon.
+Complete installation and configuration guide for Social Sync.
 
-## Quick Start Checklist ✅
+## Prerequisites
 
-- [ ] Bluesky account with app password created
-- [ ] Mastodon account with API access token
-- [ ] GitHub repository forked and secrets configured
-- [ ] Tested locally (optional but recommended)
+- **Bluesky account** with app password capability
+- **Mastodon account** with API access  
+- **GitHub account** (for automated syncing)
+- **Python 3.11+** for local development
 
-## Step 1: Bluesky Setup
+## 1. Get Your Credentials
 
-### Create App Password
+### Bluesky Credentials
+1. Go to **Bluesky Settings** → **App Passwords**
+2. Click **Create App Password**
+3. Note your handle (e.g., `yourusername.bsky.social`) and the generated password
 
-1. **Log in to Bluesky** via web browser
-2. **Go to Settings** → **App Passwords**
-3. **Click "Add App Password"**
-4. **Name it** something like "Social Sync"
-5. **Copy the generated password** (you can't see it again!)
-6. **Note your handle** (e.g., `john.bsky.social`)
+### Mastodon Credentials
+1. Go to your **Mastodon instance** → **Preferences** → **Development**
+2. Click **New application**
+3. **Application name**: `Social Sync` (or any name)
+4. **Scopes**: Ensure `write:statuses` is selected
+5. **Submit** and note your instance URL and **Access Token**
 
-### Important Notes
-- ⚠️ **Save the app password immediately** - you can't retrieve it later
-- 🔒 **App passwords are safer** than using your main password
-- 📝 **Your handle** is what appears after the @ symbol
-
-## Step 2: Mastodon Setup
-
-### Create API Application
-
-1. **Log in to your Mastodon instance**
-2. **Go to Preferences** → **Development** → **New Application**
-3. **Fill out the form:**
-   - **Application name**: "Social Sync"
-   - **Website**: Your GitHub repository URL (optional)
-   - **Scopes**: Select `write:statuses` (required for posting)
-4. **Submit** and **click on your application name**
-5. **Copy the Access Token**
-6. **Note your instance URL** (e.g., `https://mastodon.social`)
-
-### Supported Instances
-- ✅ mastodon.social
-- ✅ mastodon.world  
-- ✅ fosstodon.org
-- ✅ Any Mastodon-compatible instance
-
-## Step 3: GitHub Setup
-
-### Fork the Repository
-
-1. **Visit** the [Social Sync repository](https://github.com/your-username/social-sync)
-2. **Click "Fork"** in the top-right corner
-3. **Choose your account** as the destination
-
-### Configure Secrets
-
-1. **Go to your forked repository**
-2. **Click "Settings"** tab
-3. **Select "Secrets and variables"** → **"Actions"**
-4. **Add the following secrets:**
-
-| Secret Name | Value | Example |
-|-------------|-------|---------|
-| `BLUESKY_HANDLE` | Your Bluesky handle | `john.bsky.social` |
-| `BLUESKY_PASSWORD` | Your Bluesky app password | `abcd-1234-efgh-5678` |
-| `MASTODON_API_BASE_URL` | Your Mastodon instance URL | `https://mastodon.social` |
-| `MASTODON_ACCESS_TOKEN` | Your Mastodon access token | `abc123def456...` |
-
-### Add Each Secret:
-1. **Click "New repository secret"**
-2. **Enter the name** (exactly as shown above)
-3. **Paste the value**
-4. **Click "Add secret"**
-
-## Step 4: Test the Setup
-
-### Enable GitHub Actions
-
-1. **Go to the "Actions" tab** in your repository
-2. **Click "I understand my workflows, go ahead and enable them"**
-3. **Find "Social Sync" workflow**
-4. **Click "Run workflow"** → Select **"Enable dry run"** → **"Run workflow"**
-
-### Check the Results
-
-1. **Wait for the workflow to complete** (usually 1-2 minutes)
-2. **Click on the workflow run** to see details
-3. **Check the logs** for any errors
-4. **Look for**: "✅ Sync completed successfully!"
-
-## Step 5: Customize Settings (Optional)
-
-You can customize the sync behavior by adding these optional secrets:
-
-| Secret Name | Default | Description |
-|-------------|---------|-------------|
-| `MAX_POSTS_PER_SYNC` | 10 | Maximum posts to sync per run |
-| `LOG_LEVEL` | INFO | Logging level (DEBUG, INFO, WARNING, ERROR) |
-
-## Step 6: Local Development (Optional)
-
-If you want to run and test locally:
-
-### Setup Local Environment
+## 2. Local Development Setup
 
 ```bash
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/social-sync.git
+# Clone repository
+git clone https://github.com/your-username/social-sync.git
 cd social-sync
 
-# Create virtual environment
+# Create Python virtual environment  
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -120,96 +41,304 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-### Configure Local Environment
+### Configure Environment Variables
 
-Edit `.env` file:
+Edit `.env` file with your credentials:
 
 ```bash
+# Bluesky Credentials
 BLUESKY_HANDLE=your-handle.bsky.social
 BLUESKY_PASSWORD=your-app-password
+
+# Mastodon Credentials
 MASTODON_API_BASE_URL=https://your-instance.social
 MASTODON_ACCESS_TOKEN=your-access-token
-DRY_RUN=true
-LOG_LEVEL=DEBUG
+
+# Sync Configuration
+SYNC_INTERVAL_MINUTES=60
+MAX_POSTS_PER_SYNC=10
+SYNC_START_DATE=7d  # or specific date: 2025-01-01
+DRY_RUN=false
+LOG_LEVEL=INFO
 ```
 
-### Test Locally
+### Test Your Setup
 
 ```bash
-# Test connections
+# Test API connections
 python sync.py test
 
-# Test sync (dry run)
+# Run a dry sync to verify functionality
 python sync.py sync --dry-run
 
-# Check status
-python sync.py status
+# Check current configuration
+python sync.py config
 ```
 
-## Troubleshooting Common Issues
+## 3. GitHub Actions Automation
 
-### ❌ "Failed to authenticate with Bluesky"
+### Step 1: Fork Repository
 
-**Possible causes:**
-- Incorrect handle format (should include `.bsky.social`)
-- Wrong app password
-- App password was regenerated/deleted
+1. **Fork** this repository to your GitHub account
+2. **Clone** your fork locally
 
-**Solution:**
-- Double-check your handle: `yourname.bsky.social`
-- Generate a new app password if needed
-- Update GitHub secrets
+### Step 2: Create Personal Access Token
 
-### ❌ "Failed to authenticate with Mastodon"
+1. Go to **GitHub Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
+2. Click **Generate new token**
+3. **Repository access**: Select your `social-sync` repository
+4. **Permissions**:
+   - **Contents**: Read and write ✅
+   - **Metadata**: Read ✅
+   - **Pull requests**: Write (optional) ✅
+5. **Generate token** and copy it immediately
 
-**Possible causes:**
-- Incorrect instance URL
-- Invalid access token
-- Insufficient permissions
+### Step 3: Configure Repository Secrets
 
-**Solution:**
-- Verify instance URL format: `https://instance.social`
-- Ensure access token has `write:statuses` scope
-- Regenerate access token if needed
+Go to your repository **Settings** → **Secrets and variables** → **Actions**:
 
-### ❌ "No new posts to sync"
+| Secret Name | Value | Purpose |
+|-------------|--------|---------|
+| `PAT_TOKEN` | Your Personal Access Token | Branch protection bypass |
+| `BLUESKY_HANDLE` | Your Bluesky handle | Authentication |
+| `BLUESKY_PASSWORD` | Your app password | Authentication |
+| `MASTODON_API_BASE_URL` | Your instance URL | API connection |
+| `MASTODON_ACCESS_TOKEN` | Your access token | API authorization |
 
-**This is normal if:**
-- You haven't posted on Bluesky recently
-- Posts were already synced
-- Posts are replies/reposts (not synced)
+### Step 4: Test Automation
 
-### ❌ GitHub Actions not running
+1. Go to **Actions** → **Social Sync** → **Run workflow**
+2. Enable **dry_run** for initial test
+3. Click **Run workflow** and check logs
+4. If successful, run without dry-run mode
 
-**Check:**
-- Actions are enabled in your repository
-- Secrets are properly configured
-- Repository is not archived/disabled
+## Branch Protection & CI Setup
+
+### The Problem
+
+When branch protection rules are enabled on `main`, GitHub Actions cannot push sync state updates by default, causing workflow failures:
+
+- ✅ Posts sync successfully
+- ❌ Sync state isn't saved
+- ⚠️ **Next run re-syncs same posts** (potential duplicates)
+
+### Solution: Personal Access Token (Recommended)
+
+The PAT approach provides reliable branch protection bypass:
+
+1. **Create PAT**: Follow Step 2 above
+2. **Add Secret**: Add `PAT_TOKEN` repository secret  
+3. **Automatic Bypass**: Workflow uses PAT for elevated permissions
+
+**Why this works:** PATs have higher privileges than default `GITHUB_TOKEN` and can bypass protection rules.
+
+### Alternative: GitHub Actions Bypass
+
+If you prefer rulesets configuration:
+
+1. Go to **Repository Settings** → **Rules** → **Rulesets**
+2. **Edit** your main branch ruleset
+3. **Bypass list** → **Add bypass** → **GitHub App**
+4. Add `github-actions` to bypass list
+5. **Save ruleset**
+
+**Note:** This approach may not work with all ruleset configurations.
+
+### Verification
+
+After setup:
+1. **Manual trigger**: Actions → Social Sync → Run workflow  
+2. **Check commits**: Verify sync state commits appear in git history
+3. **Monitor logs**: Ensure no "Failed to push" errors
+
+## Configuration Options
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BLUESKY_HANDLE` | - | Your Bluesky handle (required) |
+| `BLUESKY_PASSWORD` | - | App password (required) |
+| `MASTODON_API_BASE_URL` | - | Instance URL (required) |
+| `MASTODON_ACCESS_TOKEN` | - | Access token (required) |
+| `SYNC_INTERVAL_MINUTES` | 60 | GitHub Actions cron frequency |
+| `MAX_POSTS_PER_SYNC` | 10 | Posts processed per sync |
+| `SYNC_START_DATE` | 7d | Initial sync date |
+| `DRY_RUN` | false | Test mode without posting |
+| `LOG_LEVEL` | INFO | Logging verbosity |
+
+### Sync Start Date Examples
+
+```bash
+# Relative dates
+SYNC_START_DATE=7d        # 7 days ago
+SYNC_START_DATE=1w        # 1 week ago
+SYNC_START_DATE=30d       # 30 days ago
+
+# Specific dates (beginning of day UTC)
+SYNC_START_DATE=2025-01-01
+SYNC_START_DATE=2025-01-15
+
+# Specific datetime (UTC if no timezone)
+SYNC_START_DATE=2025-01-15T10:30:00
+
+# With timezone
+SYNC_START_DATE=2025-01-15T10:30:00-05:00
+
+# CLI override
+python sync.py sync --since-date 2025-01-01
+```
+
+## State Persistence in CI
+
+### How It Works
+
+1. **Before sync**: Workflow downloads existing `sync_state.json` from repository
+2. **During sync**: Application updates sync state with new posts
+3. **After sync**: Workflow commits updated state back to main branch
+4. **Backup**: State also uploaded as workflow artifact
+
+### File Structure
+
+```json
+{
+  "last_sync_time": "2025-08-30T16:38:47.586815",
+  "synced_posts": [
+    {
+      "bluesky_uri": "at://did:plc:example/app.bsky.feed.post/abc123",
+      "mastodon_id": "123456789",  
+      "synced_at": "2025-08-30T16:38:47.586815"
+    }
+  ],
+  "last_bluesky_post_uri": "at://did:plc:example/app.bsky.feed.post/xyz789"
+}
+```
+
+### Benefits
+
+- **Prevents duplicates** across workflow runs
+- **Enables threading** by tracking parent posts
+- **Provides audit trail** of all synced content
+- **Supports recovery** via artifact backups
+
+## Content Processing
+
+### What Gets Synced
+
+- ✅ **Text posts** - Plain text content
+- ✅ **Posts with links** - External URLs with preview
+- ✅ **Posts with images** - Images with alt text
+- ✅ **Quoted posts** - Includes quoted content
+- ✅ **Threaded posts** - Reply posts with conversation context
+
+### What Doesn't Get Synced
+
+- ❌ **Other user replies** - Unless parent was also synced
+- ❌ **Reposts/boosts** - Only original content
+- ❌ **Already synced** - Prevented by state tracking
+
+### Content Adaptations
+
+- **Threading**: Reply posts become Mastodon replies to maintain conversation
+- **Character limits**: Long posts truncated to 500 characters
+- **Link embedding**: Bluesky link cards converted to text with URLs  
+- **Image handling**: Notes image count and preserves alt text
+- **Quote posts**: Includes quoted content with attribution
+- **Attribution**: Adds "(via Bluesky)" to posts (skipped for replies)
+
+## Troubleshooting
+
+### Authentication Issues
+
+**Error**: "Authentication failed"
+- ✅ Verify Bluesky handle format: `username.bsky.social`
+- ✅ Check app password (not account password)
+- ✅ Confirm Mastodon instance URL format: `https://instance.social`
+- ✅ Validate access token has `write:statuses` scope
+
+### GitHub Actions Failures
+
+**Error**: "Failed to push to protected main branch"
+- **Cause**: Branch protection blocking commits
+- **Solution**: Add PAT_TOKEN secret with elevated permissions
+- **Verification**: Check Actions logs for successful push
+
+**Error**: "Repository rule violations found"
+- **Cause**: Repository rulesets requiring PR workflow
+- **Solution**: Use PAT_TOKEN for bypass capability
+- **Alternative**: Configure Actions bypass in rulesets
+
+### Sync Issues
+
+**Posts not syncing**:
+- Check if posts are replies to others (filtered by default)
+- Verify posts aren't already in sync state  
+- Review logs with `LOG_LEVEL=DEBUG`
+
+**Duplicate posts after CI failure**:
+- **Cause**: Sync completed but state not saved
+- **Fix**: Resolve branch protection issue
+- **Recovery**: Manually update sync state if needed
+
+**Character limit issues**:
+- Long posts automatically truncated
+- Check processed content in logs
+- Consider breaking long posts into threads
+
+### Debug Commands
+
+```bash
+# Enable debug logging
+LOG_LEVEL=DEBUG python sync.py sync --dry-run
+
+# Check current sync state
+python sync.py status
+
+# Validate API connections
+python sync.py test  
+
+# View processed configuration
+python sync.py config
+
+# Test specific date range
+python sync.py sync --since-date 2025-01-01 --dry-run
+```
+
+### Common Log Messages
+
+| Message | Meaning | Action |
+|---------|---------|---------|
+| "Authentication successful" | API credentials valid | ✅ Continue |
+| "X posts filtered out" | Posts skipped (replies/reposts) | ✅ Expected |
+| "Already synced" | Duplicate prevention working | ✅ Expected |
+| "Thread parent not found" | Reply without synced parent | ⚠️ Posted standalone |
+| "Failed to push" | Branch protection issue | ❌ Fix PAT setup |
 
 ## Security Best Practices
 
-- 🔒 **Never share your app passwords or tokens**
-- 🔄 **Rotate credentials periodically**
-- 👀 **Monitor your account activity**
-- 🚫 **Don't commit credentials to git**
-- ✅ **Use GitHub Secrets for sensitive data**
+### Credential Management
 
-## Getting Help
+- ✅ **Never commit** credentials to repository
+- ✅ **Use GitHub Secrets** for sensitive data  
+- ✅ **App passwords** preferred over main passwords
+- ✅ **Rotate tokens** regularly
+- ✅ **Minimum scope** - only required permissions
 
-If you're still having issues:
+### Repository Security
 
-1. **Check the logs** in GitHub Actions
-2. **Try dry-run mode** first
-3. **Verify all credentials** are correct
-4. **Open an issue** with error details
+- ✅ **Branch protection** enabled on main
+- ✅ **Required status checks** for PR validation
+- ✅ **PAT with limited scope** for automation
+- ✅ **Secret scanning** enabled
+- ✅ **Dependency updates** via Dependabot
 
-## What Happens Next?
+### Access Control
 
-Once setup is complete:
+- ✅ **Fine-grained PATs** over classic tokens
+- ✅ **Repository-specific** access only
+- ✅ **Time-limited** token expiration
+- ✅ **Audit logs** review periodically
 
-- 🕒 **Automatic syncing** every 60 minutes
-- 📱 **New Bluesky posts** appear on Mastodon
-- 📊 **Activity logs** available in GitHub Actions
-- 🔄 **Duplicate posts** are automatically prevented
+---
 
-Your social media presence is now synchronized! 🎉
+**Need additional help?** Check the [Issues](../../issues) page or create a detailed bug report.
