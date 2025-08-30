@@ -5,7 +5,11 @@ Social Sync CLI - Command line interface for syncing social media posts
 import logging
 import os
 import sys
+import warnings
 from pathlib import Path
+
+# Suppress urllib3 OpenSSL warning on macOS (LibreSSL is functionally equivalent)
+warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL 1.1.1+")
 
 import click
 from dotenv import load_dotenv
