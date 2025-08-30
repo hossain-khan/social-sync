@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 # Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.bluesky_client import BlueskyFetchResult
 from src.config import Settings
@@ -128,7 +128,7 @@ class TestContentProcessingIntegration:
 
     def setup_method(self):
         """Set up content processing tests"""
-        sys.path.insert(0, str(Path(__file__).parent / "src"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from src.content_processor import ContentProcessor
 
         self.processor = ContentProcessor()
