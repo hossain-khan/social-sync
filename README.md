@@ -1,428 +1,122 @@
-[![Code Quality Validation](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml/badge.svg)](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml) [![codecov](https://codecov.io/gh/hossain-khan/social-sync/graph/badge.svg?token=LMUT124IVM)](https://codecov.io/gh/hossain-khan/social-sync) 
-
 # Social Sync 🔄
 
-A Python-based tool to automatically sync posts from Bluesky to Mastodon, designed to run as a GitHub Actions cron job.
+[![Code Quality Validation](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml/badge.svg)](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml) [![codecov](https://codecov.io/gh/hossain-khan/social-sync/graph/badge.svg?token=LMUT124IVM)](https://codecov.io/gh/hossain-khan/social-sync) 
 
-## Features ✨
+A Python-based tool to automatically sync posts from Bluesky to Mastodon with GitHub Actions automation.
 
-- 🔄 **Automated Syncing**: Sync posts from Bluesky to Mastodon on a schedule
-- 🧵 **Thread Support**: Maintains conversation threading when syncing reply posts
-- 🚀 **GitHub Actions Integration**: Runs automatically using GitHub Actions
-- 🎯 **Smart Deduplication**: Tracks synced posts to avoid duplicates
-- 📝 **Content Processing**: Handles embedded links, images, and quoted posts
-- 🔒 **Secure Configuration**: Uses GitHub Secrets for credentials
-- 🧪 **Dry Run Mode**: Test without actually posting
-- 📊 **Comprehensive Logging**: Detailed logs and status reporting
+## ✨ Features
 
-## Quick Start 🚀
+- 🔄 **Automated Syncing**: Schedule posts sync from Bluesky to Mastodon
+- 🧵 **Thread Support**: Maintains conversation threading for reply posts  
+- 🚀 **GitHub Actions**: Run automatically via CI/CD workflows
+- 🎯 **Smart Deduplication**: Prevents duplicate posts across sync runs
+- 📝 **Content Processing**: Handles links, images, and quoted posts
+- 🧪 **Dry Run Mode**: Test functionality without actual posting
+
+## 🚀 Quick Start
 
 ### For Fork Users
-If you're forking this repository, see [FORK_SETUP.md](FORK_SETUP.md) for a complete guide on setting up your own instance.
+**👥 Setting up your own instance?** → [Fork Setup Guide](docs/FORK_SETUP.md)
 
-### For Contributors
-Follow the setup guide below for local development.
+### For Contributors  
+**🛠️ Local development?** → [Contributing Guide](docs/CONTRIBUTING.md)
 
-## Setup Guide 🛠️
+## 📖 Usage
 
-### 1. Prerequisites
-
-- A Bluesky account with an app password
-- A Mastodon account with API access
-- A GitHub account (for automated syncing)
-
-### 2. Get Your Credentials
-
-#### Bluesky Credentials
-1. Go to Bluesky Settings → App Passwords
-2. Create a new app password
-3. Note your handle (e.g., `yourusername.bsky.social`) and the app password
-
-#### Mastodon Credentials
-1. Go to your Mastodon instance → Preferences → Development
-2. Create a new application with `write:statuses` scope
-3. Note your instance URL and access token
-
-### 3. Local Setup
-
+### Command Line
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/social-sync.git
-cd social-sync
+# Sync posts (dry run first)
+python sync.py sync --dry-run
+python sync.py sync
 
-# Set up Python environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your credentials
+# Check status and test connections
+python sync.py status
+python sync.py test
 ```
 
-### 4. Configure Environment Variables
+### GitHub Actions
+- **Automated**: Runs every 60 minutes via cron schedule
+- **Manual**: Actions → Social Sync → Run workflow  
+- **Logs**: Check Actions tab for execution details
 
-Edit `.env` file:
+## ⚙️ Configuration
 
+### Environment Variables
 ```bash
 # Bluesky Credentials
 BLUESKY_HANDLE=your-handle.bsky.social
 BLUESKY_PASSWORD=your-app-password
 
-# Mastodon Credentials
+# Mastodon Credentials  
 MASTODON_API_BASE_URL=https://your-instance.social
 MASTODON_ACCESS_TOKEN=your-access-token
-
-# Sync Configuration
-SYNC_INTERVAL_MINUTES=60
-MAX_POSTS_PER_SYNC=10
-DRY_RUN=false
-LOG_LEVEL=INFO
 ```
 
-### 5. GitHub Actions Setup
-
-1. **Fork this repository**
-
-2. **Create Personal Access Token**:
-   - Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens
-   - Click "Generate new token"
-   - **Repository access**: Select your forked repository
-   - **Permissions**: Contents: **Read and write**, Metadata: **Read**
-   - Copy the generated token
-
-3. **Add Repository Secrets**:
-   - Go to your repository Settings → Secrets and variables → Actions
-   - Add the following secrets:
-     - `PAT_TOKEN`: Your Personal Access Token (for branch protection bypass)
-     - `BLUESKY_HANDLE`: Your Bluesky handle
-     - `BLUESKY_PASSWORD`: Your Bluesky app password
-     - `MASTODON_API_BASE_URL`: Your Mastodon instance URL
-     - `MASTODON_ACCESS_TOKEN`: Your Mastodon access token
-
-## Usage 📖
-
-### Command Line Interface
-
-```bash
-# Run a sync (locally)
-python sync.py sync
-
-# Run in dry-run mode (test without posting)
-python sync.py sync --dry-run
-
-# Check sync status
-python sync.py status
-
-# View configuration
-python sync.py config
-
-# Test connections
-python sync.py test
-```
-
-### GitHub Actions
-
-The sync runs automatically every 60 minutes via GitHub Actions. You can also:
-
-- **Manual trigger**: Go to Actions → Social Sync → Run workflow
-- **Dry run**: Use the manual trigger with dry-run mode enabled
-- **View logs**: Check the Actions tab for execution logs
-
-### ⚠️ Branch Protection & CI Setup
-
-**Important**: If your repository has branch protection rules (rulesets) enabled on the `main` branch, the automated sync workflow needs special configuration to update the sync state file.
-
-#### The Problem
-When branch protection is enabled, GitHub Actions cannot push directly to the `main` branch by default, causing the workflow to fail when trying to save sync state updates. This results in:
-- ✅ Posts get synced successfully
-- ❌ Sync state isn't saved to the repository  
-- ⚠️ **Next run will re-sync the same posts** (potential duplicates)
-
-#### Solutions (Choose One)
-
-##### Option 1: Personal Access Token (Recommended) ⭐
-1. **Create a Personal Access Token**:
-   - Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens
-   - Click "Generate new token"
-   - **Repository access**: Select your `social-sync` repository
-   - **Permissions**: Set the following:
-     - Contents: **Read and write**
-     - Metadata: **Read**
-     - Pull requests: **Write** (if you want PR creation capability)
-
-2. **Add the Token as a Repository Secret**:
-   - Go to your repository Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `PAT_TOKEN`
-   - Value: Your Personal Access Token
-   - Click "Add secret"
-
-**Why this works:** Personal Access Tokens can bypass branch protection rules and have elevated permissions compared to the default `GITHUB_TOKEN`.
-
-##### Option 2: Configure GitHub Actions Bypass (Alternative)
-1. Go to your repository **Settings** → **Rules** → **Rulesets**
-2. Edit your ruleset that applies to the `main` branch
-3. Scroll to **"Bypass list"** section
-4. Click **"Add bypass"** → Select **"GitHub App"**
-5. Add: `github-actions` (allows GitHub Actions to bypass protection)
-6. Save the ruleset
-
-**Note:** This approach may not work with all ruleset configurations.
-
-##### Option 3: Use GitHub App Token (Advanced)
-1. Create a GitHub App with elevated permissions
-2. Generate a private key and get installation token
-3. Add the app token as repository secret
-
-##### Option 3: Temporary Protection Disable (Quick Test)
-- Temporarily disable branch protection for initial setup
-- Re-enable after confirming the workflow works
-
-#### Verification
-After configuring bypass permissions:
-1. Go to **Actions** → **Social Sync** → **Run workflow**
-2. Test with "dry_run" first
-3. Run a live sync to confirm state updates work
-4. Check that sync state commits appear in git history
-
-### 🔄 State Persistence in CI
-
-**Problem**: GitHub Actions runs in fresh environments, which would normally cause duplicate posts every run.
-
-**Solution**: The workflow commits the updated `sync_state.json` file back to the repository:
-
-1. **Before sync**: Uses existing sync state from the repository
-2. **After sync**: Commits updated sync state back to `main` branch  
-3. **Backup**: Also uploads state as artifact for recovery
-
-This ensures duplicate posts are prevented even in automated CI runs! 🎯
-
-## How It Works 🔧
-
-1. **Authentication**: Connects to both Bluesky and Mastodon APIs
-2. **Fetch Posts**: Gets recent posts from your Bluesky feed
-3. **Content Processing**: Adapts content for Mastodon (handles links, images, character limits)
-4. **Thread Detection**: Identifies reply posts and looks up parent posts in sync history
-5. **Deduplication**: Checks against previous syncs to avoid duplicates
-6. **Post Creation**: Creates corresponding posts on Mastodon (with reply threading if applicable)
-7. **State Tracking**: Updates sync state for future runs
-
-### 🧵 Threading Behavior
-
-When a Bluesky thread (conversation) is synced:
-
-- **Parent posts** are synced normally as standalone posts
-- **Reply posts** are automatically detected and synced as Mastodon replies
-- **Conversation context** is preserved across platforms
-- **Sync attribution** is skipped for replies to keep them concise
-
-**Example:**
-```
-Bluesky Thread:
-├── Original post: "Just discovered this amazing library!"
-└── Reply: "Here's how to implement it in your project..."
-
-Mastodon Result:
-├── Post: "Just discovered this amazing library! (via Bluesky)"
-└── Reply: "Here's how to implement it in your project..."
-```
-
-**Note**: Reply posts can only be threaded if their parent post was previously synced to Mastodon. If the parent isn't found in the sync history, the reply will be posted as a standalone post with a warning logged.
-
-## Content Processing 📝
-
-### What Gets Synced
-- ✅ Text posts
-- ✅ Posts with external links (with preview)
-- ✅ Posts with images (with alt text)
-- ✅ Quoted posts (with quote preview)
-- ✅ **Threaded posts (replies)** - maintains conversation context
-
-### What Doesn't Get Synced
-- ❌ Replies to other users (unless the parent post was also synced)
-- ❌ Reposts/boosts
-- ❌ Posts already synced
-
-### Content Adaptations
-- **Thread Handling**: Reply posts are synced as Mastodon replies to maintain conversation flow
-- **Character Limit**: Truncates posts that exceed Mastodon's 500-character limit
-- **Link Embeds**: Converts Bluesky link cards to text with URLs
-- **Image Handling**: Notes image count and includes alt text
-- **Quote Posts**: Includes quoted content with attribution
-- **Attribution**: Adds "(via Bluesky)" to synced posts (skipped for replies to keep them concise)
-
-## Configuration Options ⚙️
-
-| Setting | Environment Variable | Default | Description |
-|---------|---------------------|---------|-------------|
-| Sync Interval | `SYNC_INTERVAL_MINUTES` | 60 | How often to sync (GitHub Actions cron) |
-| Max Posts | `MAX_POSTS_PER_SYNC` | 10 | Maximum posts to process per sync |
-| **Sync Start Date** | `SYNC_START_DATE` | 7 days ago | Start date for syncing posts (ISO format) |
-| Dry Run | `DRY_RUN` | false | Test mode without actual posting |
-| Log Level | `LOG_LEVEL` | INFO | Logging verbosity |
-
-### 📅 Sync Start Date Examples
-
-```bash
-# Start from a specific date (beginning of day UTC)
-SYNC_START_DATE=2025-01-01
-
-# Start from a specific datetime (assumes UTC if no timezone)
-SYNC_START_DATE=2025-01-15T10:30:00
-
-# Start from a specific datetime with timezone
-SYNC_START_DATE=2025-01-15T10:30:00-05:00
-
-# CLI override
-python sync.py sync --since-date 2025-01-01
-python sync.py sync --since-date 2025-01-15T10:30:00
-```
-
-## Project Structure 📁
-
-```
-social-sync/
-├── src/
-│   ├── __init__.py
-│   ├── config.py              # Configuration management
-│   ├── bluesky_client.py      # Bluesky API wrapper
-│   ├── mastodon_client.py     # Mastodon API wrapper
-│   ├── sync_orchestrator.py   # Main sync logic
-│   ├── sync_state.py          # State management
-│   └── content_processor.py   # Content adaptation
-├── .github/workflows/
-│   ├── sync.yml               # Main sync workflow
-│   └── validate.yml           # Code quality validation
-├── sync.py                    # CLI entry point
-├── requirements.txt           # Python dependencies
-├── requirements-dev.txt       # Development dependencies
-├── pyproject.toml            # Tool configurations
-├── .env.example              # Environment template
-└── README.md                 # This file
-```
-
-## Development & Contributing 🛠️
-
-### Code Quality Standards
-
-This project maintains high code quality standards with automated validation:
-
-#### **🔍 Automated Checks (CI)**
-- **Python Compilation**: All Python files must compile successfully
-- **Code Formatting**: Uses [Black](https://black.readthedocs.io/) for consistent formatting
-- **Import Sorting**: Uses [isort](https://pycqa.github.io/isort/) for organized imports
-- **Linting**: Uses [flake8](https://flake8.pycqa.org/) for code quality
-- **Type Checking**: Uses [mypy](https://mypy.readthedocs.io/) for type validation
-- **Security Scanning**: Uses [bandit](https://bandit.readthedocs.io/) for security issues
-- **Dependency Scanning**: Uses [safety](https://pyup.io/safety/) and [pip-audit](https://github.com/pypa/pip-audit)
-
-#### **🧪 Running Quality Checks Locally**
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Format code
-black .
-isort .
-
-# Run linting
-flake8 .
-mypy src/ sync.py
-
-# Security scan
-bandit -r src/ sync.py
-
-# Dependency vulnerability check
-safety check
-pip-audit
-```
-
-#### **⚡ GitHub Actions**
-- **Code Quality Validation**: Runs on every push and PR to `main`
-- **Multi-Python Testing**: Tests against Python 3.11 and 3.12
-- **Comprehensive Reporting**: Uploads security and dependency scan results
-- **Branch Protection**: All checks must pass before merging
-
-## Troubleshooting 🐛
-
-### Common Issues
-
-**Authentication Failed**
-- Verify your Bluesky handle and app password
-- Check Mastodon instance URL and access token
-- Ensure tokens have proper scopes
-
-**GitHub Actions Workflow Failing**
-- **Error**: "Failed to push to protected main branch" or "Repository rule violations found"
-- **Cause**: Repository has branch protection rules blocking direct commits
-- **Solution**: Set up Personal Access Token (recommended - see Branch Protection section above)
-- **Steps**: 
-  1. Create PAT with Contents: Write permission
-  2. Add as `PAT_TOKEN` repository secret
-  3. Workflow automatically uses PAT to bypass protection rules
-- **Alternative**: Configure GitHub Actions bypass in rulesets (may not work with all configurations)
-
-**Posts Not Syncing**
-- Check if posts are replies or reposts (not synced by default)
-- Verify posts aren't already synced (check `sync_state.json`)
-- Look at logs for specific error messages
-
-**Duplicate Posts After CI Failure**
-- **Cause**: Sync completed but state wasn't saved due to branch protection
-- **Result**: Next run re-syncs same posts
-- **Solution**: Fix branch protection issue and manually update sync state if needed
-
-**Character Limit Issues**
-- Long posts are automatically truncated
-- Check processed content in logs
-
-### Debugging
-
-```bash
-# Run with debug logging
-LOG_LEVEL=DEBUG python sync.py sync --dry-run
-
-# Check sync state
-python sync.py status
-
-# Test connections
-python sync.py test
-```
-
-## Contributing 🤝
+### Key Settings
+- `SYNC_START_DATE`: Date to start syncing from (default: 7 days ago)
+- `MAX_POSTS_PER_SYNC`: Maximum posts per sync run (default: 10)
+- `DRY_RUN`: Test mode without posting (default: false)
+
+📚 **Full setup details:** [Setup Guide](docs/SETUP.md)
+
+## 📋 Documentation
+
+| Topic | Description |
+|-------|-------------|
+| [**Setup Guide**](docs/SETUP.md) | Complete installation and configuration |
+| [**Fork Setup**](docs/FORK_SETUP.md) | Guide for forking and personal instances |
+| [**API Documentation**](docs/API.md) | Client APIs and integration details |
+| [**Threading**](docs/THREADING_IMPLEMENTATION.md) | How conversation threading works |
+| [**Contributing**](docs/CONTRIBUTING.md) | Development workflow and standards |
+| [**Testing**](docs/TESTING.md) | Test suite and validation procedures |
+| [**Changelog**](docs/CHANGELOG.md) | Version history and release notes |
+| [**Project Summary**](docs/PROJECT_SUMMARY.md) | Architecture and design overview |
+
+## 🔧 How It Works
+
+1. **Connect** to Bluesky and Mastodon APIs
+2. **Fetch** recent posts from Bluesky feed  
+3. **Process** content (adapt links, images, threading)
+4. **Filter** duplicates using sync state tracking
+5. **Post** to Mastodon with proper threading
+6. **Save** sync state for next run
+
+**🧵 Threading:** Reply posts maintain conversation context across platforms.
+
+## 🐛 Common Issues
+
+**GitHub Actions Failing?**
+- Repository rule violations → Use Personal Access Token
+- Missing secrets → Check repository secrets configuration
+- Branch protection → See [Setup Guide](docs/SETUP.md#branch-protection--ci-setup)
+
+**Posts Not Syncing?**
+- Verify credentials and API access
+- Check for reply/repost filtering
+- Review logs for specific errors
+
+**🔍 Full troubleshooting:** [Setup Guide](docs/SETUP.md#troubleshooting)
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Follow code quality standards: [Contributing Guide](docs/CONTRIBUTING.md)
+4. Run tests: `python -m pytest`
+5. Submit pull request
 
-## Security 🔒
+## 📄 License
 
-- **Never commit credentials** to the repository
-- Use GitHub Secrets for sensitive data
-- App passwords are recommended over main account passwords
-- Regularly rotate access tokens
+MIT License - see [LICENSE](LICENSE) for details.
 
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments 🙏
+## 🙏 Acknowledgments
 
 - [AT Protocol](https://atproto.com/) and [Bluesky](https://bsky.social/) teams
 - [Mastodon.py](https://github.com/halcy/Mastodon.py) library
-- [atproto Python SDK](https://github.com/MarshalX/atproto) by @marshal.dev
+- [atproto Python SDK](https://github.com/MarshalX/atproto)
 
-## Support 💬
+---
 
-If you encounter issues or have questions:
+**Need help?** Check [Issues](../../issues) or create a new one with details.
 
-1. Check the [Issues](../../issues) page
-2. Review the troubleshooting section above
-3. Create a new issue with detailed information
-
-Happy syncing! 🎉
+**Happy syncing! 🎉**
