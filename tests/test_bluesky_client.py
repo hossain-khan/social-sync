@@ -469,3 +469,53 @@ class TestBlueskyClient:
         assert result["py_type"] == "app.bsky.embed.external"
         assert result["external"]["uri"] == "https://example.com"
         assert result["external"]["title"] == "Example"
+
+    def test_extract_embed_data_images_with_blob_reference(self):
+        """Test extracting image embed data with blob reference - fix for image attachment bug"""
+        # Create Mock objects that simulate AT Protocol image embed with blob reference
+        mock_blob_ref = Mock()
+        mock_blob_ref.link = "bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya"
+        
+        mock_image_blob = Mock()
+        mock_image_blob.mime_type = "image/jpeg"
+        mock_image_blob.size = 187302
+        mock_image_blob.ref = mock_blob_ref
+        
+        mock_aspect_ratio = Mock()
+        mock_aspect_ratio.height = 414
+        mock_aspect_ratio.width = 1748
+        mock_aspect_ratio.py_type = "app.bsky.embed.defs#aspectRatio"
+        
+        mock_image = Mock()
+        mock_image.alt = ""
+        mock_image.aspect_ratio = mock_aspect_ratio
+        mock_image.image = mock_image_blob
+        
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.images"
+        mock_embed.images = [mock_image]
+        # Ensure other attributes don't exist
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+            
+        result = BlueskyClient._extract_embed_data(mock_embed)
+        
+        # Verify the result contains proper blob reference
+        assert result is not None
+        assert result["py_type"] == "app.bsky.embed.images"
+        assert "images" in result
+        assert len(result["images"]) == 1
+        
+        image_data = result["images"][0]
+        assert image_data["alt"] == ""
+        assert image_data["aspect_ratio"] == mock_aspect_ratio
+        assert "image" in image_data
+        
+        blob_data = image_data["image"]
+        assert blob_data["mime_type"] == "image/jpeg"
+        assert blob_data["size"] == 187302
+        # This is the key fix - blob reference should be extracted
+        assert "ref" in blob_data
+        assert blob_data["ref"]["$link"] == "bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya"
