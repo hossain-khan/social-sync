@@ -71,7 +71,7 @@ class TestSettings:
         settings = Settings(_env_file=None)
 
         # Test code defaults (not .env file values)
-        assert settings.sync_interval_minutes == 15
+        assert settings.sync_interval_minutes == 60
         assert settings.max_posts_per_sync == 10
         assert settings.dry_run is False  # Code default
         assert settings.log_level == "INFO"

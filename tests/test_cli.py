@@ -216,7 +216,7 @@ def test_sync_command_since_date():
         mock_settings = Mock()
         mock_settings.bluesky_handle = "test.bsky.social"
         mock_settings.mastodon_api_base_url = "https://mastodon.social"
-        mock_settings.sync_interval_minutes = 15
+        mock_settings.sync_interval_minutes = 60
         mock_settings.max_posts_per_sync = 10
         mock_settings.dry_run = False
         mock_settings.log_level = "INFO"
