@@ -121,14 +121,50 @@ The sync runs automatically every 60 minutes via GitHub Actions. You can also:
 - **Dry run**: Use the manual trigger with dry-run mode enabled
 - **View logs**: Check the Actions tab for execution logs
 
+### ⚠️ Branch Protection & CI Setup
+
+**Important**: If your repository has branch protection rules (rulesets) enabled on the `main` branch, the automated sync workflow needs special configuration to update the sync state file.
+
+#### The Problem
+When branch protection is enabled, GitHub Actions cannot push directly to the `main` branch by default, causing the workflow to fail when trying to save sync state updates. This results in:
+- ✅ Posts get synced successfully
+- ❌ Sync state isn't saved to the repository  
+- ⚠️ **Next run will re-sync the same posts** (potential duplicates)
+
+#### Solutions (Choose One)
+
+##### Option 1: Configure GitHub Actions Bypass (Recommended)
+1. Go to your repository **Settings** → **Rules** → **Rulesets**
+2. Edit your ruleset that applies to the `main` branch
+3. Scroll to **"Bypass list"** section
+4. Click **"Add bypass"** → Select **"GitHub App"**
+5. Add: `github-actions` (allows GitHub Actions to bypass protection)
+6. Save the ruleset
+
+##### Option 2: Use GitHub App Token  
+1. Create a GitHub App with elevated permissions
+2. Add the app token as `GH_APP_TOKEN` secret
+3. The workflow will automatically use it: `${{ secrets.GH_APP_TOKEN || github.token }}`
+
+##### Option 3: Temporary Protection Disable
+- Temporarily disable branch protection for initial setup
+- Re-enable after confirming the workflow works
+
+#### Verification
+After configuring bypass permissions:
+1. Go to **Actions** → **Social Sync** → **Run workflow**
+2. Test with "dry_run" first
+3. Run a live sync to confirm state updates work
+4. Check that sync state commits appear in git history
+
 ### 🔄 State Persistence in CI
 
 **Problem**: GitHub Actions runs in fresh environments, which would normally cause duplicate posts every run.
 
-**Solution**: The workflow uses GitHub Actions Cache to persist the `sync_state.json` file between runs:
+**Solution**: The workflow commits the updated `sync_state.json` file back to the repository:
 
-1. **Before sync**: Restores previous sync state from cache
-2. **After sync**: Saves updated sync state to cache for next run
+1. **Before sync**: Uses existing sync state from the repository
+2. **After sync**: Commits updated sync state back to `main` branch  
 3. **Backup**: Also uploads state as artifact for recovery
 
 This ensures duplicate posts are prevented even in automated CI runs! 🎯
@@ -288,10 +324,21 @@ pip-audit
 - Check Mastodon instance URL and access token
 - Ensure tokens have proper scopes
 
+**GitHub Actions Workflow Failing**
+- **Error**: "Failed to push to protected main branch"
+- **Cause**: Repository has branch protection rules blocking direct commits
+- **Solution**: Configure GitHub Actions bypass in rulesets (see Branch Protection section above)
+- **Alternative**: Add `GH_APP_TOKEN` secret with elevated permissions
+
 **Posts Not Syncing**
 - Check if posts are replies or reposts (not synced by default)
 - Verify posts aren't already synced (check `sync_state.json`)
 - Look at logs for specific error messages
+
+**Duplicate Posts After CI Failure**
+- **Cause**: Sync completed but state wasn't saved due to branch protection
+- **Result**: Next run re-syncs same posts
+- **Solution**: Fix branch protection issue and manually update sync state if needed
 
 **Character Limit Issues**
 - Long posts are automatically truncated

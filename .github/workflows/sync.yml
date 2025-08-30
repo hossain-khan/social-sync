@@ -24,6 +24,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Use GitHub App token if available, otherwise fall back to GITHUB_TOKEN
+          token: ${{ secrets.GH_APP_TOKEN || github.token }}
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -150,8 +153,20 @@ jobs:
               - Trigger: ${{ github.event_name }}"
             fi
             
-            git push
-            echo "✅ Sync state successfully committed and pushed"
+            # Push with error handling for protected branches
+            if git push; then
+              echo "✅ Sync state successfully committed and pushed"
+            else
+              echo "❌ Failed to push to protected main branch"
+              echo "💡 Branch protection rules are blocking sync state updates"
+              echo "👀 Please configure GitHub Actions bypass in repository rulesets"
+              echo "📖 See README.md for detailed setup instructions"
+              echo ""
+              echo "⚠️  IMPORTANT: Posts were synced but state wasn't saved!"
+              echo "   Next sync run will attempt to re-sync the same posts"
+              echo "   This could result in duplicate posts on Mastodon"
+              exit 1
+            fi
           fi
       
       - name: Upload logs
