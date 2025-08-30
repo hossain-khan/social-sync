@@ -311,6 +311,17 @@ class BlueskyClient:
                                 image.image, "size", None
                             ),  # File size in bytes
                         }
+                        # Extract blob reference for downloading the image
+                        if hasattr(image.image, "ref"):
+                            # Convert AT Protocol blob reference to dict
+                            ref = image.image.ref
+                            if hasattr(ref, "link"):
+                                image_data["image"]["ref"] = {"$link": ref.link}
+                            elif hasattr(ref, "$link"):
+                                image_data["image"]["ref"] = {"$link": ref["$link"]}
+                            else:
+                                # Try to extract as dict
+                                image_data["image"]["ref"] = ref
                     images_data.append(image_data)
                 embed_dict["images"] = images_data
                 # ContentProcessor will format as: "📷 [N images]\nAlt text: ..."

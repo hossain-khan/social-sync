@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
+- 🖼️ **Image Attachment Bug**: Fixed critical issue where images in Bluesky posts synced as placeholder text instead of actual media attachments
+  - Images were appearing as "📷 [1 image]" text in Mastodon posts instead of proper image attachments
+  - Root cause: Missing blob reference extraction in `_extract_embed_data` method
+  - Enhanced `BlueskyClient._extract_embed_data()` to properly extract AT Protocol blob references needed for image downloads
+  - Added comprehensive unit test `test_extract_embed_data_images_with_blob_reference` to prevent regression
+  - Now correctly processes blob references like `bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya` for image download
+  - Complete image sync pipeline now functions: detect → extract blob_ref → download → upload to Mastodon → attach
 
 ### Removed
 

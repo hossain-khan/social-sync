@@ -469,3 +469,147 @@ class TestBlueskyClient:
         assert result["py_type"] == "app.bsky.embed.external"
         assert result["external"]["uri"] == "https://example.com"
         assert result["external"]["title"] == "Example"
+
+    def test_extract_embed_data_images_with_blob_reference(self):
+        """Test extracting image embed data with blob reference - fix for image attachment bug"""
+        # Create Mock objects that simulate AT Protocol image embed with blob reference
+        mock_blob_ref = Mock()
+        mock_blob_ref.link = (
+            "bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya"
+        )
+
+        mock_image_blob = Mock()
+        mock_image_blob.mime_type = "image/jpeg"
+        mock_image_blob.size = 187302
+        mock_image_blob.ref = mock_blob_ref
+
+        mock_aspect_ratio = Mock()
+        mock_aspect_ratio.height = 414
+        mock_aspect_ratio.width = 1748
+        mock_aspect_ratio.py_type = "app.bsky.embed.defs#aspectRatio"
+
+        mock_image = Mock()
+        mock_image.alt = ""
+        mock_image.aspect_ratio = mock_aspect_ratio
+        mock_image.image = mock_image_blob
+
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.images"
+        mock_embed.images = [mock_image]
+        # Ensure other attributes don't exist
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+
+        # Verify the result contains proper blob reference
+        assert result is not None
+        assert result["py_type"] == "app.bsky.embed.images"
+        assert "images" in result
+        assert len(result["images"]) == 1
+
+        image_data = result["images"][0]
+        assert image_data["alt"] == ""
+        assert image_data["aspect_ratio"] == mock_aspect_ratio
+        assert "image" in image_data
+
+        blob_data = image_data["image"]
+        assert blob_data["mime_type"] == "image/jpeg"
+        assert blob_data["size"] == 187302
+        # This is the key fix - blob reference should be extracted
+        assert "ref" in blob_data
+        assert (
+            blob_data["ref"]["$link"]
+            == "bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya"
+        )
+
+    def test_extract_embed_data_multiple_images_with_blob_references(self):
+        """Test extracting multiple image embed data with blob references"""
+        # Create Mock objects for first image
+        mock_blob_ref1 = Mock()
+        mock_blob_ref1.link = (
+            "bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya"
+        )
+
+        mock_image_blob1 = Mock()
+        mock_image_blob1.mime_type = "image/jpeg"
+        mock_image_blob1.size = 187302
+        mock_image_blob1.ref = mock_blob_ref1
+
+        mock_aspect_ratio1 = Mock()
+        mock_aspect_ratio1.height = 414
+        mock_aspect_ratio1.width = 1748
+
+        mock_image1 = Mock()
+        mock_image1.alt = "First image"
+        mock_image1.aspect_ratio = mock_aspect_ratio1
+        mock_image1.image = mock_image_blob1
+
+        # Create Mock objects for second image
+        mock_blob_ref2 = Mock()
+        mock_blob_ref2.link = (
+            "bafkreiabcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnop"
+        )
+
+        mock_image_blob2 = Mock()
+        mock_image_blob2.mime_type = "image/png"
+        mock_image_blob2.size = 245678
+        mock_image_blob2.ref = mock_blob_ref2
+
+        mock_aspect_ratio2 = Mock()
+        mock_aspect_ratio2.height = 800
+        mock_aspect_ratio2.width = 600
+
+        mock_image2 = Mock()
+        mock_image2.alt = "Second image"
+        mock_image2.aspect_ratio = mock_aspect_ratio2
+        mock_image2.image = mock_image_blob2
+
+        # Create embed with multiple images
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.images"
+        mock_embed.images = [mock_image1, mock_image2]
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+
+        # Verify the result contains both images with proper blob references
+        assert result is not None
+        assert result["py_type"] == "app.bsky.embed.images"
+        assert "images" in result
+        assert len(result["images"]) == 2
+
+        # Verify first image
+        image1_data = result["images"][0]
+        assert image1_data["alt"] == "First image"
+        assert image1_data["aspect_ratio"] == mock_aspect_ratio1
+        assert "image" in image1_data
+
+        blob1_data = image1_data["image"]
+        assert blob1_data["mime_type"] == "image/jpeg"
+        assert blob1_data["size"] == 187302
+        assert "ref" in blob1_data
+        assert (
+            blob1_data["ref"]["$link"]
+            == "bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya"
+        )
+
+        # Verify second image
+        image2_data = result["images"][1]
+        assert image2_data["alt"] == "Second image"
+        assert image2_data["aspect_ratio"] == mock_aspect_ratio2
+        assert "image" in image2_data
+
+        blob2_data = image2_data["image"]
+        assert blob2_data["mime_type"] == "image/png"
+        assert blob2_data["size"] == 245678
+        assert "ref" in blob2_data
+        assert (
+            blob2_data["ref"]["$link"]
+            == "bafkreiabcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnop"
+        )
