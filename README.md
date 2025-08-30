@@ -84,13 +84,23 @@ LOG_LEVEL=INFO
 
 ### 5. GitHub Actions Setup
 
-1. Fork this repository
-2. Go to Settings → Secrets and variables → Actions
-3. Add the following secrets:
-   - `BLUESKY_HANDLE`: Your Bluesky handle
-   - `BLUESKY_PASSWORD`: Your Bluesky app password
-   - `MASTODON_API_BASE_URL`: Your Mastodon instance URL
-   - `MASTODON_ACCESS_TOKEN`: Your Mastodon access token
+1. **Fork this repository**
+
+2. **Create Personal Access Token**:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens
+   - Click "Generate new token"
+   - **Repository access**: Select your forked repository
+   - **Permissions**: Contents: **Read and write**, Metadata: **Read**
+   - Copy the generated token
+
+3. **Add Repository Secrets**:
+   - Go to your repository Settings → Secrets and variables → Actions
+   - Add the following secrets:
+     - `PAT_TOKEN`: Your Personal Access Token (for branch protection bypass)
+     - `BLUESKY_HANDLE`: Your Bluesky handle
+     - `BLUESKY_PASSWORD`: Your Bluesky app password
+     - `MASTODON_API_BASE_URL`: Your Mastodon instance URL
+     - `MASTODON_ACCESS_TOKEN`: Your Mastodon access token
 
 ## Usage 📖
 
@@ -133,7 +143,26 @@ When branch protection is enabled, GitHub Actions cannot push directly to the `m
 
 #### Solutions (Choose One)
 
-##### Option 1: Configure GitHub Actions Bypass (Recommended) ⭐
+##### Option 1: Personal Access Token (Recommended) ⭐
+1. **Create a Personal Access Token**:
+   - Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens
+   - Click "Generate new token"
+   - **Repository access**: Select your `social-sync` repository
+   - **Permissions**: Set the following:
+     - Contents: **Read and write**
+     - Metadata: **Read**
+     - Pull requests: **Write** (if you want PR creation capability)
+
+2. **Add the Token as a Repository Secret**:
+   - Go to your repository Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `PAT_TOKEN`
+   - Value: Your Personal Access Token
+   - Click "Add secret"
+
+**Why this works:** Personal Access Tokens can bypass branch protection rules and have elevated permissions compared to the default `GITHUB_TOKEN`.
+
+##### Option 2: Configure GitHub Actions Bypass (Alternative)
 1. Go to your repository **Settings** → **Rules** → **Rulesets**
 2. Edit your ruleset that applies to the `main` branch
 3. Scroll to **"Bypass list"** section
@@ -141,13 +170,12 @@ When branch protection is enabled, GitHub Actions cannot push directly to the `m
 5. Add: `github-actions` (allows GitHub Actions to bypass protection)
 6. Save the ruleset
 
-**Why this works:** The workflow uses the default `GITHUB_TOKEN` with `contents: write` permission. When bypass is configured, this token can commit directly to protected branches while maintaining security for human contributors.
+**Note:** This approach may not work with all ruleset configurations.
 
-##### Option 2: Use GitHub App Token (Advanced)
+##### Option 3: Use GitHub App Token (Advanced)
 1. Create a GitHub App with elevated permissions
 2. Generate a private key and get installation token
-3. Add the app token as `GH_APP_TOKEN` secret
-4. The workflow supports this but defaults to `GITHUB_TOKEN`
+3. Add the app token as repository secret
 
 ##### Option 3: Temporary Protection Disable (Quick Test)
 - Temporarily disable branch protection for initial setup
@@ -328,11 +356,14 @@ pip-audit
 - Ensure tokens have proper scopes
 
 **GitHub Actions Workflow Failing**
-- **Error**: "Failed to push to protected main branch"
+- **Error**: "Failed to push to protected main branch" or "Repository rule violations found"
 - **Cause**: Repository has branch protection rules blocking direct commits
-- **Solution**: Configure GitHub Actions bypass in rulesets (recommended - see Branch Protection section above)
-- **How it works**: Workflow uses default `GITHUB_TOKEN` with `contents: write` permission, which can bypass rules when configured
-- **Alternative**: Use GitHub App token (advanced setup)
+- **Solution**: Set up Personal Access Token (recommended - see Branch Protection section above)
+- **Steps**: 
+  1. Create PAT with Contents: Write permission
+  2. Add as `PAT_TOKEN` repository secret
+  3. Workflow automatically uses PAT to bypass protection rules
+- **Alternative**: Configure GitHub Actions bypass in rulesets (may not work with all configurations)
 
 **Posts Not Syncing**
 - Check if posts are replies or reposts (not synced by default)

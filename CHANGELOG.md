@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 🔧 **GitHub Actions Workflow Enhancement**: Improved error handling and token configuration for CI/CD pipeline
-  - **Simplified token configuration**: Now uses default `GITHUB_TOKEN` directly for cleaner setup
-  - Enhanced checkout action with `contents: write` permission for bypassing branch protection rules
+  - **Switched to Personal Access Token**: Now uses `PAT_TOKEN` secret for reliable branch protection bypass
+  - Enhanced checkout action with PAT authentication for consistent repository access
   - Better compatibility with repositories using GitHub rulesets for branch protection
-  - Removed dependency on optional `GH_APP_TOKEN` secret (still supported but not required)
-  - Aligns with GitHub's recommended approach for automated workflows
+  - Simplified setup process with clear PAT creation instructions
+  - More reliable than default `GITHUB_TOKEN` bypass configurations
 
 ### Fixed
 - 🛡️ **Branch Protection CI Issue**: Fixed silent failures when GitHub Actions cannot commit to protected branches
