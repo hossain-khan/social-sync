@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [0.3.0] - 2025-08-30
+
+### Added
 - 🧵 **Self-Reply Threading Support**: Enable syncing of Bluesky self-reply threads as properly threaded posts on Mastodon
   - Self-replies to your own posts now sync as connected thread on Mastodon instead of being filtered out
   - Maintains chronological order and parent-child relationships in thread chains
@@ -18,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive test coverage including DID extraction validation and thread chain handling
 
 ### Changed
+- N/A
 
 ### Fixed
 - 🖼️ **Image Attachment Bug**: Fixed critical issue where images in Bluesky posts synced as placeholder text instead of actual media attachments
@@ -29,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Complete image sync pipeline now functions: detect → extract blob_ref → download → upload to Mastodon → attach
 
 ### Removed
+- N/A
 
 ## [0.2.0] - 2025-08-25
 
