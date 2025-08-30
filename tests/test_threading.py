@@ -316,7 +316,47 @@ class TestThreadingSyncFlow:
 
 
 class TestThreadingEdgeCases:
-    """Test edge cases in threading functionality"""
+    """Test edge cases and error conditions in threading"""
+
+    def test_did_extraction_from_at_uris(self):
+        """Test DID extraction from AT Protocol URIs"""
+        from src.bluesky_client import BlueskyClient
+
+        # Create client instance
+        client = BlueskyClient("test.bsky.social", "password")
+
+        # Test valid DIDs
+        test_cases = [
+            (
+                "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3lxmsjwv7v22t",
+                "did:plc:sek23f2vucrxxyaaud2emnxe",
+            ),
+            (
+                "at://did:plc:abcd1234efgh5678/app.bsky.feed.post/xyz789",
+                "did:plc:abcd1234efgh5678",
+            ),
+            (
+                "at://did:web:example.com/app.bsky.feed.post/test123",
+                "did:web:example.com",
+            ),
+        ]
+
+        for uri, expected_did in test_cases:
+            result = client._extract_did_from_uri(uri)
+            assert result == expected_did, f"Failed to extract DID from: {uri}"
+
+        # Test invalid cases
+        invalid_cases = [
+            "",  # Empty string
+            "not-an-at-uri",  # No at:// prefix
+            "at://not-a-did/path",  # Invalid DID format
+            "at://did/incomplete",  # Incomplete DID
+            "at://did:plc:/path",  # Empty DID identifier
+        ]
+
+        for invalid_uri in invalid_cases:
+            result = client._extract_did_from_uri(invalid_uri)
+            assert result is None, f"Should return None for invalid URI: {invalid_uri}"
 
     def test_reply_to_field_extraction(self):
         """Test various reply_to field formats"""
