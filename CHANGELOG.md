@@ -10,8 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- 🔧 **GitHub Actions Workflow Enhancement**: Improved error handling and token configuration for CI/CD pipeline
+  - Added support for `GH_APP_TOKEN` secret with fallback to default `GITHUB_TOKEN`
+  - Enhanced checkout action with configurable token for bypassing branch protection rules
+  - Better compatibility with repositories using GitHub rulesets for branch protection
 
 ### Fixed
+- 🛡️ **Branch Protection CI Issue**: Fixed silent failures when GitHub Actions cannot commit to protected branches
+  - Workflow now properly fails with clear error messages when branch protection blocks sync state updates
+  - Replaced silent success (`exit 0`) with proper failure (`exit 1`) on push errors
+  - Added comprehensive error messages guiding users to configure GitHub Actions bypass
+  - Prevents duplicate posts by failing fast when sync state cannot be saved
+  - Includes actionable instructions for repository ruleset configuration
 
 ## [0.3.0] - 2025-08-30
 
