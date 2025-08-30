@@ -34,7 +34,7 @@ flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 echo "✅ Critical linting passed"
 
 echo
-echo "5️⃣ Unit Tests (pytest)..."
+echo "5️⃣ All Tests (pytest)..."
 python -m pytest tests/ --tb=short | grep -E "(passed|failed|error)"
 echo "✅ All tests passed"
 
