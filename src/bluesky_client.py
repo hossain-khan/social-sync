@@ -92,7 +92,7 @@ class BlueskyClient:
             logger.error(f"Failed to get user DID: {e}")
             return None
 
-    def _extract_did_from_uri(self, uri: str) -> str | None:
+    def _extract_did_from_uri(self, uri: str) -> Optional[str]:
         """Extract DID from AT Protocol URI
 
         Args:
