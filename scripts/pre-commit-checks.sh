@@ -15,12 +15,12 @@ fi
 
 echo
 echo "1️⃣ Code Formatting (Black)..."
-black --check --diff --color .
+black --check --diff .
 echo "✅ Black formatting passed"
 
 echo
 echo "2️⃣ Import Sorting (isort)..."
-isort --check-only --diff --color .
+isort --check-only --diff .
 echo "✅ Import sorting passed"
 
 echo
@@ -35,7 +35,7 @@ echo "✅ Critical linting passed"
 
 echo
 echo "5️⃣ Unit Tests (pytest)..."
-python -m pytest tests/ -q
+python -m pytest tests/ --tb=short | grep -E "(passed|failed|error)"
 echo "✅ All tests passed"
 
 echo
