@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- 🧵 **Self-Reply Threading Support**: Enable syncing of Bluesky self-reply threads as properly threaded posts on Mastodon
+  - Self-replies to your own posts now sync as connected thread on Mastodon instead of being filtered out
+  - Maintains chronological order and parent-child relationships in thread chains
+  - Added robust DID extraction from AT Protocol URIs for self-reply detection (`_extract_did_from_uri`)
+  - Enhanced filtering logic to allow self-replies while continuing to filter replies from other users
+  - Thread posts sync in proper sequence: parent post → reply → reply-to-reply → etc.
+  - Graceful fallback: orphaned replies (missing parent) post as standalone rather than failing
+  - Comprehensive test coverage including DID extraction validation and thread chain handling
 
 ### Changed
 

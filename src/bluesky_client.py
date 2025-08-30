@@ -92,6 +92,45 @@ class BlueskyClient:
             logger.error(f"Failed to get user DID: {e}")
             return None
 
+    def _extract_did_from_uri(self, uri: str) -> str | None:
+        """Extract DID from AT Protocol URI
+
+        Args:
+            uri: AT Protocol URI like at://did:plc:abc123/app.bsky.feed.post/xyz
+
+        Returns:
+            DID string like "did:plc:abc123" or None if invalid
+        """
+        try:
+            if not uri or not uri.startswith("at://"):
+                return None
+
+            # Remove at:// prefix and split by /
+            path_part = uri[5:]  # Remove "at://"
+            parts = path_part.split("/")
+
+            if not parts or not parts[0]:
+                return None
+
+            did_candidate = parts[0]
+
+            # Basic DID validation: should start with "did:" and have at least 3 parts
+            if not did_candidate.startswith("did:"):
+                return None
+
+            did_parts = did_candidate.split(":")
+            if len(did_parts) < 3:  # e.g., ["did", "plc", "identifier"]
+                return None
+
+            # Check that identifier is not empty
+            if not did_parts[2]:  # Empty identifier like "did:plc:"
+                return None
+
+            return did_candidate
+
+        except (IndexError, AttributeError):
+            return None
+
     def get_recent_posts(
         self, limit: int = 10, since_date: Optional[datetime] = None
     ) -> BlueskyFetchResult:
@@ -108,6 +147,11 @@ class BlueskyClient:
             raise RuntimeError("Client not authenticated. Call authenticate() first.")
 
         try:
+            # Get user's DID for self-reply detection
+            user_did = self.get_user_did()
+            if not user_did:
+                logger.warning("Could not get user DID for self-reply detection")
+
             # Get the user's own posts (AT Protocol max is 100)
             actual_limit = min(limit * 2, 100)  # Ensure we don't exceed API limit
             response = self.client.get_author_feed(
@@ -128,11 +172,25 @@ class BlueskyClient:
                     filtered_reposts += 1
                     continue
 
-                # Track and skip replies
+                # Handle replies: allow self-replies, filter others
+                is_self_reply = False
+                reply_parent_uri = None
                 if post.record.reply:
-                    filtered_replies += 1
-                    logger.debug(f"Filtered reply post: {post.uri}")
-                    continue
+                    reply_parent_uri = post.record.reply.parent.uri
+                    # Extract DID from parent post URI to check if it's a self-reply
+                    if reply_parent_uri and user_did:
+                        parent_did = self._extract_did_from_uri(reply_parent_uri)
+                        is_self_reply = parent_did == user_did
+
+                    if not is_self_reply:
+                        # Filter out replies to other people's posts
+                        filtered_replies += 1
+                        logger.debug(f"Filtered non-self reply post: {post.uri}")
+                        continue
+                    else:
+                        logger.debug(
+                            f"Including self-reply post: {post.uri} -> {reply_parent_uri}"
+                        )
 
                 # Parse the post creation date
                 created_at = datetime.fromisoformat(
@@ -180,7 +238,7 @@ class BlueskyClient:
                 + (f" since {since_date.isoformat()}" if since_date else "")
             )
             if filtered_replies > 0:
-                logger.info(f"Filtered out {filtered_replies} reply posts")
+                logger.info(f"Filtered out {filtered_replies} non-self reply posts")
             if filtered_reposts > 0:
                 logger.info(f"Filtered out {filtered_reposts} reposts")
             if filtered_by_date > 0:
