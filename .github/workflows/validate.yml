@@ -44,8 +44,8 @@ jobs:
         run: |
           echo "🐍 Checking Python syntax and compilation..."
           python -m py_compile sync.py
-          python -m py_compile test_setup.py
           find src -name "*.py" -exec python -m py_compile {} \;
+          find tests -name "*.py" -exec python -m py_compile {} \;
           echo "✅ All Python files compile successfully"
       
       - name: Check code formatting with Black
@@ -218,7 +218,7 @@ jobs:
           MASTODON_API_BASE_URL: https://mastodon.social
         run: |
           echo "🔗 Running integration tests..."
-          python test_integration.py
+          python tests/test_integration.py
           echo "✅ Integration tests completed"
           
       - name: Run threading tests
@@ -229,7 +229,7 @@ jobs:
           MASTODON_API_BASE_URL: https://mastodon.social
         run: |
           echo "🧵 Running threading tests..."
-          python test_threading.py
+          python tests/test_threading.py
           echo "✅ Threading tests completed"
 
   security-scan:
