@@ -133,7 +133,7 @@ When branch protection is enabled, GitHub Actions cannot push directly to the `m
 
 #### Solutions (Choose One)
 
-##### Option 1: Configure GitHub Actions Bypass (Recommended)
+##### Option 1: Configure GitHub Actions Bypass (Recommended) ⭐
 1. Go to your repository **Settings** → **Rules** → **Rulesets**
 2. Edit your ruleset that applies to the `main` branch
 3. Scroll to **"Bypass list"** section
@@ -141,12 +141,15 @@ When branch protection is enabled, GitHub Actions cannot push directly to the `m
 5. Add: `github-actions` (allows GitHub Actions to bypass protection)
 6. Save the ruleset
 
-##### Option 2: Use GitHub App Token  
-1. Create a GitHub App with elevated permissions
-2. Add the app token as `GH_APP_TOKEN` secret
-3. The workflow will automatically use it: `${{ secrets.GH_APP_TOKEN || github.token }}`
+**Why this works:** The workflow uses the default `GITHUB_TOKEN` with `contents: write` permission. When bypass is configured, this token can commit directly to protected branches while maintaining security for human contributors.
 
-##### Option 3: Temporary Protection Disable
+##### Option 2: Use GitHub App Token (Advanced)
+1. Create a GitHub App with elevated permissions
+2. Generate a private key and get installation token
+3. Add the app token as `GH_APP_TOKEN` secret
+4. The workflow supports this but defaults to `GITHUB_TOKEN`
+
+##### Option 3: Temporary Protection Disable (Quick Test)
 - Temporarily disable branch protection for initial setup
 - Re-enable after confirming the workflow works
 
@@ -327,8 +330,9 @@ pip-audit
 **GitHub Actions Workflow Failing**
 - **Error**: "Failed to push to protected main branch"
 - **Cause**: Repository has branch protection rules blocking direct commits
-- **Solution**: Configure GitHub Actions bypass in rulesets (see Branch Protection section above)
-- **Alternative**: Add `GH_APP_TOKEN` secret with elevated permissions
+- **Solution**: Configure GitHub Actions bypass in rulesets (recommended - see Branch Protection section above)
+- **How it works**: Workflow uses default `GITHUB_TOKEN` with `contents: write` permission, which can bypass rules when configured
+- **Alternative**: Use GitHub App token (advanced setup)
 
 **Posts Not Syncing**
 - Check if posts are replies or reposts (not synced by default)
