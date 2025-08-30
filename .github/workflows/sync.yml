@@ -25,8 +25,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Use GitHub App token if available, otherwise fall back to GITHUB_TOKEN
-          token: ${{ secrets.GH_APP_TOKEN || github.token }}
+          # Use default GITHUB_TOKEN which can bypass protection when configured
+          token: ${{ github.token }}
       
       - name: Set up Python
         uses: actions/setup-python@v5
