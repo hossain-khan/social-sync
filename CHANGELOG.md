@@ -25,9 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Graceful fallback: orphaned replies (missing parent) post as standalone rather than failing
   - Comprehensive test coverage including DID extraction validation and thread chain handling
 
-### Changed
-- N/A
-
 ### Fixed
 - 🖼️ **Image Attachment Bug**: Fixed critical issue where images in Bluesky posts synced as placeholder text instead of actual media attachments
   - Images were appearing as "📷 [1 image]" text in Mastodon posts instead of proper image attachments
@@ -36,9 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive unit test `test_extract_embed_data_images_with_blob_reference` to prevent regression
   - Now correctly processes blob references like `bafkreihitajnhlutyalbqxutmfifkjxxrdqgl5basih3i7z2rjnmwpo4ya` for image download
   - Complete image sync pipeline now functions: detect → extract blob_ref → download → upload to Mastodon → attach
-
-### Removed
-- N/A
 
 ## [0.2.0] - 2025-08-25
 
