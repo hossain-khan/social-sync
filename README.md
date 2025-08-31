@@ -24,6 +24,9 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 ## 📖 Usage
 
 ### Command Line
+
+<img src="https://github.com/user-attachments/assets/78d49bf8-d71e-432f-b00d-010d171f9de7" align="right" width="350" alt="CLI help preview" />
+
 ```bash
 # Sync posts (dry run first)
 python sync.py sync --dry-run
