@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import logging
 
+import pytest
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -19,6 +20,39 @@ load_dotenv()
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+
+def is_ci_environment():
+    """Check if running in CI environment"""
+    return os.getenv("GITHUB_ACTIONS") == "true" or os.getenv("CI") == "true"
+
+
+def has_valid_credentials():
+    """Check if valid credentials are available"""
+    # Check for real credentials (not test/example values)
+    bluesky_handle = os.getenv("BLUESKY_HANDLE", "")
+    bluesky_password = os.getenv("BLUESKY_PASSWORD", "")
+    mastodon_token = os.getenv("MASTODON_ACCESS_TOKEN", "")
+
+    # Skip if using test/example credentials or empty values
+    test_values = [
+        "",
+        "your-handle.bsky.social",
+        "your-app-password",
+        "your-access-token",
+        "test.bsky.social",
+        "test-password",
+        "test-token-12345",
+    ]
+
+    if (
+        bluesky_handle in test_values
+        or bluesky_password in test_values
+        or mastodon_token in test_values
+    ):
+        return False
+
+    return bool(bluesky_handle and bluesky_password and mastodon_token)
 
 
 def test_imports():
@@ -57,6 +91,12 @@ def test_configuration():
     """Test configuration loading"""
     logger.info("Testing configuration...")
 
+    # Skip test if in CI environment or no valid credentials
+    if is_ci_environment() or not has_valid_credentials():
+        pytest.skip(
+            "Skipping configuration test - no valid credentials available in CI environment"
+        )
+
     try:
         from src.config import get_settings
 
@@ -89,6 +129,12 @@ def test_configuration():
 def test_client_connections():
     """Test client authentication"""
     logger.info("Testing client connections...")
+
+    # Skip test if in CI environment or no valid credentials
+    if is_ci_environment() or not has_valid_credentials():
+        pytest.skip(
+            "Skipping client connection test - no valid credentials available in CI environment"
+        )
 
     try:
         from src.bluesky_client import BlueskyClient
@@ -132,6 +178,12 @@ def test_client_connections():
 def test_sync_functionality():
     """Test basic sync functionality"""
     logger.info("Testing sync functionality...")
+
+    # Skip test if in CI environment or no valid credentials
+    if is_ci_environment() or not has_valid_credentials():
+        pytest.skip(
+            "Skipping sync functionality test - no valid credentials available in CI environment"
+        )
 
     try:
         from src.sync_orchestrator import SocialSyncOrchestrator
