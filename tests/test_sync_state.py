@@ -288,3 +288,80 @@ class TestSyncState:
         # Should have default empty state
         assert sync_state.get_synced_posts_count() == 0
         assert sync_state.get_last_sync_time() is None
+
+    def test_partial_json_corruption(self):
+        """Test recovery from partially corrupted JSON state file"""
+        # Write partial JSON that's missing closing braces
+        with open(self.state_file_path, "w") as f:
+            f.write('{"last_sync_time": "2024-01-01T00:00:00Z", "synced_posts": [')
+
+        # Should create new state without crashing
+        sync_state = SyncState(self.state_file_path)
+
+        # Should have default empty state
+        assert sync_state.get_synced_posts_count() == 0
+        assert sync_state.get_last_sync_time() is None
+
+    def test_empty_state_file(self):
+        """Test handling of completely empty state file"""
+        # Write empty file
+        with open(self.state_file_path, "w") as f:
+            f.write("")
+
+        # Should create new state without crashing
+        sync_state = SyncState(self.state_file_path)
+
+        # Should have default empty state
+        assert sync_state.get_synced_posts_count() == 0
+        assert sync_state.get_last_sync_time() is None
+
+    def test_state_file_write_permission_error(self):
+        """Test handling of state file write permission errors"""
+        import os
+        import stat
+        import tempfile
+
+        # Create a temporary directory and make it read-only
+        with tempfile.TemporaryDirectory() as temp_dir:
+            readonly_dir = os.path.join(temp_dir, "readonly")
+            os.makedirs(readonly_dir)
+            os.chmod(readonly_dir, stat.S_IRUSR | stat.S_IXUSR)  # Read and execute only
+
+            readonly_state_file = os.path.join(readonly_dir, "sync_state.json")
+
+            try:
+                # This should handle the permission error gracefully
+                sync_state = SyncState(readonly_state_file)
+
+                # Attempting to mark a post should not crash the application
+                # but may not persist the change
+                sync_state.mark_post_synced("at://test-readonly", "12345")
+
+                # The state should still function in memory
+                assert sync_state.is_post_synced("at://test-readonly") == True
+
+            finally:
+                # Restore write permissions for cleanup
+                os.chmod(readonly_dir, stat.S_IRWXU)
+
+    def test_malformed_datetime_in_state(self):
+        """Test recovery from malformed datetime in state file"""
+        # Write JSON with invalid datetime format
+        malformed_state = {
+            "last_sync_time": "not-a-datetime",
+            "synced_posts": [],
+            "last_bluesky_post_uri": None,
+            "user_did": None,
+        }
+
+        with open(self.state_file_path, "w") as f:
+            import json
+
+            json.dump(malformed_state, f)
+
+        # Should create new state and handle invalid datetime gracefully
+        sync_state = SyncState(self.state_file_path)
+
+        # Should have default empty state
+        assert sync_state.get_synced_posts_count() == 0
+        assert sync_state.get_last_sync_time() is None

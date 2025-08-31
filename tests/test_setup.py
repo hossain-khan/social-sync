@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import logging
 
+import pytest
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -21,40 +22,80 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
+def is_ci_environment():
+    """Check if running in CI environment"""
+    return os.getenv("GITHUB_ACTIONS") == "true" or os.getenv("CI") == "true"
+
+
+def has_valid_credentials():
+    """Check if valid credentials are available"""
+    # Check for real credentials (not test/example values)
+    bluesky_handle = os.getenv("BLUESKY_HANDLE", "")
+    bluesky_password = os.getenv("BLUESKY_PASSWORD", "")
+    mastodon_token = os.getenv("MASTODON_ACCESS_TOKEN", "")
+
+    # Skip if using test/example credentials or empty values
+    test_values = [
+        "",
+        "your-handle.bsky.social",
+        "your-app-password",
+        "your-access-token",
+        "test.bsky.social",
+        "test-password",
+        "test-token-12345",
+    ]
+
+    if (
+        bluesky_handle in test_values
+        or bluesky_password in test_values
+        or mastodon_token in test_values
+    ):
+        return False
+
+    return bool(bluesky_handle and bluesky_password and mastodon_token)
+
+
 def test_imports():
     """Test that all required packages can be imported"""
     logger.info("Testing package imports...")
 
+    # Test atproto import
     try:
         import atproto  # noqa: F401
 
         logger.info("✅ atproto package imported successfully")
     except ImportError as e:
         logger.error(f"❌ Failed to import atproto: {e}")
-        return False
+        assert False, f"Failed to import atproto: {e}"
 
+    # Test mastodon import
     try:
         import mastodon  # noqa: F401
 
         logger.info("✅ mastodon package imported successfully")
     except ImportError as e:
         logger.error(f"❌ Failed to import mastodon: {e}")
-        return False
+        assert False, f"Failed to import mastodon: {e}"
 
+    # Test config import
     try:
         from src.config import get_settings  # noqa: F401
 
         logger.info("✅ config module imported successfully")
     except ImportError as e:
         logger.error(f"❌ Failed to import config: {e}")
-        return False
-
-    return True
+        assert False, f"Failed to import config: {e}"
 
 
 def test_configuration():
     """Test configuration loading"""
     logger.info("Testing configuration...")
+
+    # Skip test if in CI environment or no valid credentials
+    if is_ci_environment() or not has_valid_credentials():
+        pytest.skip(
+            "Skipping configuration test - no valid credentials available in CI environment"
+        )
 
     try:
         from src.config import get_settings
@@ -64,32 +105,36 @@ def test_configuration():
         logger.info("✅ Configuration loaded successfully")
 
         # Check if example values are still being used
-        if settings.bluesky_handle == "your-handle.bsky.social":
-            logger.warning("⚠️  Bluesky handle is still set to example value")
-            return False
+        assert (
+            settings.bluesky_handle != "your-handle.bsky.social"
+        ), "Bluesky handle is still set to example value"
 
-        if settings.bluesky_password == "your-app-password":
-            logger.warning("⚠️  Bluesky password is still set to example value")
-            return False
+        assert (
+            settings.bluesky_password != "your-app-password"
+        ), "Bluesky password is still set to example value"
 
-        if settings.mastodon_access_token == "your-access-token":
-            logger.warning("⚠️  Mastodon access token is still set to example value")
-            return False
+        assert (
+            settings.mastodon_access_token != "your-access-token"
+        ), "Mastodon access token is still set to example value"
 
         logger.info(f"✅ Bluesky handle: {settings.bluesky_handle}")
         logger.info(f"✅ Mastodon instance: {settings.mastodon_api_base_url}")
         logger.info("✅ Configuration validated")
 
-        return True
-
     except Exception as e:
         logger.error(f"❌ Configuration error: {e}")
-        return False
+        assert False, f"Configuration error: {e}"
 
 
 def test_client_connections():
     """Test client authentication"""
     logger.info("Testing client connections...")
+
+    # Skip test if in CI environment or no valid credentials
+    if is_ci_environment() or not has_valid_credentials():
+        pytest.skip(
+            "Skipping client connection test - no valid credentials available in CI environment"
+        )
 
     try:
         from src.bluesky_client import BlueskyClient
@@ -104,11 +149,12 @@ def test_client_connections():
             handle=settings.bluesky_handle, password=settings.bluesky_password
         )
 
-        if bluesky_client.authenticate():
+        bluesky_auth_result = bluesky_client.authenticate()
+        if bluesky_auth_result:
             logger.info("✅ Bluesky authentication successful")
         else:
             logger.error("❌ Bluesky authentication failed")
-            return False
+            assert False, "Bluesky authentication failed"
 
         # Test Mastodon client
         logger.info("Testing Mastodon connection...")
@@ -117,22 +163,27 @@ def test_client_connections():
             access_token=settings.mastodon_access_token,
         )
 
-        if mastodon_client.authenticate():
+        mastodon_auth_result = mastodon_client.authenticate()
+        if mastodon_auth_result:
             logger.info("✅ Mastodon authentication successful")
         else:
             logger.error("❌ Mastodon authentication failed")
-            return False
-
-        return True
+            assert False, "Mastodon authentication failed"
 
     except Exception as e:
         logger.error(f"❌ Client connection error: {e}")
-        return False
+        assert False, f"Client connection error: {e}"
 
 
 def test_sync_functionality():
     """Test basic sync functionality"""
     logger.info("Testing sync functionality...")
+
+    # Skip test if in CI environment or no valid credentials
+    if is_ci_environment() or not has_valid_credentials():
+        pytest.skip(
+            "Skipping sync functionality test - no valid credentials available in CI environment"
+        )
 
     try:
         from src.sync_orchestrator import SocialSyncOrchestrator
@@ -141,9 +192,10 @@ def test_sync_functionality():
         orchestrator = SocialSyncOrchestrator()
 
         # Test setup clients
-        if not orchestrator.setup_clients():
+        client_setup_result = orchestrator.setup_clients()
+        if not client_setup_result:
             logger.error("❌ Failed to setup clients")
-            return False
+            assert False, "Failed to setup clients"
 
         logger.info("✅ Client setup successful")
 
@@ -155,11 +207,12 @@ def test_sync_functionality():
         status = orchestrator.get_sync_status()
         logger.info(f"✅ Sync status retrieved: {status}")
 
-        return True
+        # Ensure we get a valid status response
+        assert status is not None, "Sync status should not be None"
 
     except Exception as e:
         logger.error(f"❌ Sync functionality error: {e}")
-        return False
+        assert False, f"Sync functionality error: {e}"
 
 
 def main():
@@ -178,7 +231,12 @@ def main():
     for test_name, test_func in tests:
         logger.info(f"📋 {test_name}")
         try:
-            results[test_name] = test_func()
+            test_func()
+            results[test_name] = True
+            logger.info("✅ Test passed")
+        except AssertionError as e:
+            logger.error(f"❌ Test assertion failed: {e}")
+            results[test_name] = False
         except Exception as e:
             logger.error(f"❌ Unexpected error in {test_name}: {e}")
             results[test_name] = False

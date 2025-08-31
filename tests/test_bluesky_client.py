@@ -613,3 +613,59 @@ class TestBlueskyClient:
             blob2_data["ref"]["$link"]
             == "bafkreiabcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnop"
         )
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_authenticate_network_timeout(self, mock_client_class):
+        """Test authentication failure due to network timeout"""
+        mock_client = Mock()
+        mock_client.login.side_effect = ConnectionError("Connection timeout")
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        result = client.authenticate()
+
+        assert result is False
+        assert client._authenticated is False
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_authenticate_rate_limit_error(self, mock_client_class):
+        """Test authentication failure due to rate limiting"""
+        mock_client = Mock()
+        mock_client.login.side_effect = Exception("Rate limit exceeded")
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        result = client.authenticate()
+
+        assert result is False
+        assert client._authenticated is False
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_get_recent_posts_network_error(self, mock_client_class):
+        """Test get_recent_posts handling network errors gracefully"""
+        mock_client = Mock()
+        mock_client.get_author_feed.side_effect = ConnectionError("Network unreachable")
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True  # Simulate authenticated state
+
+        # Should return empty result instead of crashing
+        result = client.get_recent_posts()
+
+        assert isinstance(result, type(client.get_recent_posts()))
+        assert result.total_retrieved == 0
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_get_post_thread_network_error(self, mock_client_class):
+        """Test get_post_thread handling network errors gracefully"""
+        mock_client = Mock()
+        mock_client.get_post_thread.side_effect = ConnectionError("Network unreachable")
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True  # Simulate authenticated state
+
+        result = client.get_post_thread("at://test-uri")
+
+        assert result is None

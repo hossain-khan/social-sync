@@ -211,10 +211,11 @@ class TestContentProcessor:
     @patch("src.content_processor.requests.get")
     def test_download_image_success(self, mock_get):
         """Test successful image download"""
-        mock_response = Mock()
+        # Use spec to make mock more restrictive and catch attribute errors
+        mock_response = Mock(spec=["content", "headers", "raise_for_status"])
         mock_response.content = b"fake_image_data"
         mock_response.headers = {"content-type": "image/jpeg"}
-        mock_response.raise_for_status = Mock()
+        mock_response.raise_for_status.return_value = None  # Successful status check
         mock_get.return_value = mock_response
 
         result = ContentProcessor.download_image("https://example.com/image.jpg")
@@ -230,6 +231,31 @@ class TestContentProcessor:
 
         result = ContentProcessor.download_image("https://example.com/image.jpg")
         assert result is None
+
+    @patch("src.content_processor.requests.get")
+    def test_download_image_http_error(self, mock_get):
+        """Test HTTP error during image download"""
+        mock_response = Mock(spec=["raise_for_status"])
+        mock_response.raise_for_status.side_effect = Exception("HTTP 404 Not Found")
+        mock_get.return_value = mock_response
+
+        result = ContentProcessor.download_image("https://example.com/image.jpg")
+        assert result is None
+
+    @patch("src.content_processor.requests.get")
+    def test_download_image_missing_content_type(self, mock_get):
+        """Test image download with missing content-type header"""
+        mock_response = Mock(spec=["content", "headers", "raise_for_status"])
+        mock_response.content = b"fake_image_data"
+        mock_response.headers = {}  # Missing content-type
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        result = ContentProcessor.download_image("https://example.com/image.jpg")
+        assert result is not None
+        content, mime_type = result
+        assert content == b"fake_image_data"
+        assert mime_type == "image/jpeg"  # Default MIME type when missing
 
     def test_process_bluesky_to_mastodon_simple_text(self):
         """Test processing simple text post"""

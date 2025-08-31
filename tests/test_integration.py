@@ -51,8 +51,8 @@ class TestSyncIntegration:
         self, mock_mastodon_class, mock_bluesky_class
     ):
         """Test complete sync workflow with state persistence"""
-        # Mock successful client setup
-        mock_bluesky = Mock()
+        # Mock successful client setup with proper specifications
+        mock_bluesky = Mock(spec=["authenticate", "get_recent_posts"])
         mock_bluesky.authenticate.return_value = True
         mock_bluesky.get_recent_posts.return_value = BlueskyFetchResult(
             posts=[],
@@ -63,7 +63,7 @@ class TestSyncIntegration:
         )
         mock_bluesky_class.return_value = mock_bluesky
 
-        mock_mastodon = Mock()
+        mock_mastodon = Mock(spec=["authenticate", "post_status"])
         mock_mastodon.authenticate.return_value = True
         mock_mastodon_class.return_value = mock_mastodon
 

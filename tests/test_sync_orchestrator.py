@@ -34,8 +34,19 @@ class TestSocialSyncOrchestrator:
         self.mock_sync_state_class = self.sync_state_patcher.start()
         self.mock_content_processor_class = self.content_processor_patcher.start()
 
-        # Mock settings
-        mock_settings = Mock()
+        # Mock settings with proper specification
+        mock_settings = Mock(
+            spec=[
+                "bluesky_handle",
+                "bluesky_password",
+                "mastodon_api_base_url",
+                "mastodon_access_token",
+                "max_posts_per_sync",
+                "dry_run",
+                "state_file",
+                "get_sync_start_datetime",
+            ]
+        )
         mock_settings.bluesky_handle = "test.bsky.social"
         mock_settings.bluesky_password = "test-password"
         mock_settings.mastodon_api_base_url = "https://mastodon.social"
@@ -46,11 +57,37 @@ class TestSocialSyncOrchestrator:
         mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
         mock_get_settings.return_value = mock_settings
 
-        # Mock client instances
-        self.mock_bluesky_client = Mock()
-        self.mock_mastodon_client = Mock()
-        self.mock_sync_state = Mock()
-        self.mock_content_processor = Mock()
+        # Mock client instances with proper specifications
+        self.mock_bluesky_client = Mock(
+            spec=[
+                "authenticate",
+                "get_recent_posts",
+                "get_post_thread",
+                "download_blob",
+            ]
+        )
+        self.mock_mastodon_client = Mock(
+            spec=["authenticate", "post_status", "upload_media"]
+        )
+        self.mock_sync_state = Mock(
+            spec=[
+                "is_post_synced",
+                "mark_post_synced",
+                "get_mastodon_id_for_bluesky_post",
+                "get_last_sync_time",
+                "update_sync_time",
+                "get_synced_posts_count",
+                "cleanup_old_records",
+            ]
+        )
+        self.mock_content_processor = Mock(
+            spec=[
+                "process_bluesky_to_mastodon",
+                "download_image",
+                "extract_images_from_embed",
+                "add_sync_attribution",
+            ]
+        )
 
         self.mock_bluesky_class.return_value = self.mock_bluesky_client
         self.mock_mastodon_class.return_value = self.mock_mastodon_client
