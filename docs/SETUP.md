@@ -7,7 +7,7 @@ Complete installation and configuration guide for Social Sync.
 - **Bluesky account** with app password capability
 - **Mastodon account** with API access  
 - **GitHub account** (for automated syncing)
-- **Python 3.11+** for local development
+- **Python 3.9+** for local development (3.11+ recommended for full feature support)
 
 ## 1. Get Your Credentials
 

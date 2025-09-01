@@ -6,4 +6,3 @@ requests>=2.31.0
 click>=8.1.7
 pydantic>=2.5.0
 pydantic-settings>=2.0.0
-requests>=2.31.0
