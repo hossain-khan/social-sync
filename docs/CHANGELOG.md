@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better compatibility with repositories using GitHub rulesets for branch protection
   - Simplified setup process with clear PAT creation instructions
   - More reliable than default `GITHUB_TOKEN` bypass configurations
+- 📋 **Documentation Updates**: Updated documentation to reflect accurate implementation details
+  - Fixed GitHub Actions schedule documentation (daily at 2:00 AM UTC, not hourly)
+  - Updated Python version requirements to reflect 3.9+ compatibility
+  - Corrected dependency versions to match current implementation
+  - Updated technology stack references in project documentation
 
 ### Fixed
 - 🛡️ **Branch Protection CI Issue**: Fixed silent failures when GitHub Actions cannot commit to protected branches
@@ -24,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive error messages guiding users to configure GitHub Actions bypass
   - Prevents duplicate posts by failing fast when sync state cannot be saved
   - Includes actionable instructions for repository ruleset configuration
+- 🐍 **Python 3.9 Compatibility**: Fixed type annotation compatibility for Python 3.9+
+  - Replaced modern union syntax (`str | None`) with `Optional[str]` for broader Python version support
+  - Added warning suppression for urllib3 OpenSSL compatibility warning on macOS systems
+  - Updated project configuration to officially support Python 3.9, 3.10, 3.11, 3.12, and 3.13
 
 ## [0.3.0] - 2025-08-30
 

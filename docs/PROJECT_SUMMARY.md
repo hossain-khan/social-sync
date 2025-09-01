@@ -17,7 +17,7 @@ social-sync/
 │   ├── sync_state.py            # State management & duplicate prevention
 │   └── content_processor.py     # Content adaptation for cross-platform compatibility
 ├── .github/workflows/
-│   └── sync.yml                 # GitHub Actions workflow (runs every 60 minutes)
+│   └── sync.yml                 # GitHub Actions workflow (runs daily at 2:00 AM UTC)
 ├── docs/                        # Comprehensive documentation
 │   ├── SETUP.md                # Step-by-step setup guide
 │   └── API.md                  # Technical API documentation
@@ -54,8 +54,8 @@ social-sync/
 - **Error Recovery**: Graceful handling of API failures with detailed logging
 
 ### ✅ **GitHub Actions Automation**
-- **Scheduled Execution**: Runs automatically every 60 minutes
-- **Manual Triggers**: Support for on-demand syncing
+- **Scheduled Execution**: Runs automatically daily at 2:00 AM UTC
+- **Manual Triggers**: Support for on-demand syncing with dry-run option
 - **Dry Run Mode**: Test without actually posting
 - **Secure Credential Management**: Uses GitHub Secrets
 
@@ -76,7 +76,7 @@ social-sync/
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Language** | Python 3.11+ | Core implementation |
+| **Language** | Python 3.9+ (3.11+ recommended) | Core implementation |
 | **Bluesky API** | atproto SDK | Official AT Protocol client |
 | **Mastodon API** | Mastodon.py | Mature Mastodon client library |
 | **Configuration** | Pydantic + python-dotenv | Type-safe settings management |
@@ -104,9 +104,9 @@ social-sync/
 - Enable dry run mode for testing
 
 ### 4. **Enjoy Automated Syncing!**
-- Posts sync every 60 minutes automatically
+- Posts sync daily at 2:00 AM UTC automatically
 - View logs in GitHub Actions
-- Manual triggers available
+- Manual triggers available with optional dry-run mode
 
 ## 📖 Documentation Provided
 
