@@ -7,6 +7,7 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 ## ✨ Features
 
 - 🔄 **Automated Syncing**: Schedule posts sync from Bluesky to Mastodon
+- 🎯 **User-Friendly Setup**: Interactive setup wizard with helpful error messages
 - 🧵 **Thread Support**: Maintains conversation threading for reply posts  
 - 🚀 **GitHub Actions**: Run automatically via CI/CD workflows
 - 🎯 **Smart Deduplication**: Prevents duplicate posts across sync runs
@@ -18,6 +19,16 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 ### For Fork Users
 **👥 Setting up your own instance?** → [Fork Setup Guide](docs/FORK_SETUP.md)
 
+**🔧 First time setup:**
+```bash
+# Interactive setup wizard
+python sync.py setup
+
+# Or manual setup:
+cp .env.example .env
+# Edit .env with your credentials
+```
+
 ### For Contributors  
 **🛠️ Local development?** → [Contributing Guide](docs/CONTRIBUTING.md)
 
@@ -28,12 +39,15 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 <img src="https://github.com/user-attachments/assets/78d49bf8-d71e-432f-b00d-010d171f9de7" align="right" width="350" alt="CLI help preview" />
 
 ```bash
+# Interactive setup wizard (first time)
+python sync.py setup
+
 # Sync posts (dry run first)
 python sync.py sync --dry-run
 python sync.py sync
 
-# Check status and test connections
-python sync.py status
+# Check configuration and test connections
+python sync.py config
 python sync.py test
 ```
 
@@ -94,7 +108,8 @@ MASTODON_ACCESS_TOKEN=your-access-token
 - Branch protection → See [Setup Guide](docs/SETUP.md#branch-protection--ci-setup)
 
 **Posts Not Syncing?**
-- Verify credentials and API access
+- Run `python sync.py setup` for first-time configuration
+- Verify credentials and API access with `python sync.py test`
 - Check for reply/repost filtering
 - Review logs for specific errors
 
