@@ -4,7 +4,7 @@ Social Sync CLI - Command line interface for syncing social media posts
 """
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 import warnings
 from pathlib import Path
