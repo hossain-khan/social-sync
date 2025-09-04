@@ -25,6 +25,8 @@ Complete installation and configuration guide for Social Sync.
 
 ## 2. Local Development Setup
 
+### Interactive Setup (Recommended)
+
 ```bash
 # Clone repository
 git clone https://github.com/your-username/social-sync.git
@@ -37,6 +39,21 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Interactive setup wizard
+python sync.py setup
+```
+
+The setup wizard will:
+- Copy `.env.example` to `.env` 
+- Provide step-by-step configuration guidance
+- Offer to open the file for editing
+- Guide you through testing your configuration
+
+### Manual Setup
+
+If you prefer manual configuration:
+
+```bash
 # Copy environment template
 cp .env.example .env
 ```
@@ -64,16 +81,25 @@ LOG_LEVEL=INFO
 
 ### Test Your Setup
 
+Social Sync provides helpful error messages and guidance for configuration issues:
+
 ```bash
-# Test API connections
+# Test API connections (shows detailed configuration errors)
 python sync.py test
+
+# Check current configuration (validates all settings)
+python sync.py config
 
 # Run a dry sync to verify functionality
 python sync.py sync --dry-run
-
-# Check current configuration
-python sync.py config
 ```
+
+**Common Configuration Errors:**
+- **Missing .env file**: The tool will guide you to copy `.env.example` 
+- **Incomplete credentials**: Clear messages show which variables need to be set
+- **Invalid API credentials**: Connection tests provide specific error details
+
+If you see configuration errors, run `python sync.py setup` to restart the setup process.
 
 ## 3. GitHub Actions Automation
 

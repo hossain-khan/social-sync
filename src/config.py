@@ -3,10 +3,17 @@ Configuration management for Social Sync
 """
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
+
+
+class ConfigurationError(Exception):
+    """Raised when configuration is missing or invalid."""
+
+    pass
 
 
 class Settings(BaseSettings):
@@ -104,6 +111,44 @@ class Settings(BaseSettings):
         return datetime.now(timezone.utc) - timedelta(days=7)
 
 
+def check_env_file_exists() -> bool:
+    """Check if .env file exists in the current directory."""
+    return Path(".env").exists()
+
+
 def get_settings() -> Settings:
-    """Get application settings"""
-    return Settings()
+    """Get application settings with user-friendly error handling."""
+    env_file_exists = check_env_file_exists()
+
+    try:
+        return Settings()
+    except Exception as e:
+        # Check if this is a validation error due to missing credentials
+        if "Please set a valid" in str(e):
+            if not env_file_exists:
+                raise ConfigurationError(
+                    "Configuration file missing!\n\n"
+                    "To get started:\n"
+                    "1. Copy the example configuration file:\n"
+                    "   cp .env.example .env\n\n"
+                    "2. Edit .env with your credentials:\n"
+                    "   - Set your Bluesky handle and app password\n"
+                    "   - Set your Mastodon instance URL and access token\n"
+                    "   - Optionally configure sync settings\n\n"
+                    "3. Run the command again\n\n"
+                    "For detailed setup instructions, see: docs/SETUP.md"
+                ) from e
+            else:
+                raise ConfigurationError(
+                    "Configuration incomplete!\n\n"
+                    "Your .env file exists but is missing required credentials.\n"
+                    "Please check your .env file and ensure these are set:\n"
+                    "- BLUESKY_HANDLE (your Bluesky handle)\n"
+                    "- BLUESKY_PASSWORD (your Bluesky app password)\n"
+                    "- MASTODON_ACCESS_TOKEN (your Mastodon access token)\n\n"
+                    "For detailed setup instructions, see: docs/SETUP.md\n\n"
+                    f"Original error: {e}"
+                ) from e
+
+        # Re-raise other types of errors
+        raise

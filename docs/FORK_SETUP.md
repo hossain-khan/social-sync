@@ -20,7 +20,27 @@ The forked repository contains the original author's sync state with 54+ synced 
 
 ### 2. Configure Your Credentials
 
-Set up the following GitHub repository secrets:
+**For Local Development (Optional):**
+If you want to test locally before setting up GitHub Actions:
+
+```bash
+# Clone your fork locally
+git clone https://github.com/YOUR_USERNAME/social-sync.git
+cd social-sync
+
+# Install dependencies  
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Interactive setup wizard
+python sync.py setup
+```
+
+The setup wizard provides helpful guidance for getting your credentials and testing the configuration.
+
+**For GitHub Actions (Required):**
+Set up the following GitHub repository secrets in your fork:
 - `BLUESKY_HANDLE` - Your Bluesky handle (e.g., "yourname.bsky.social")
 - `BLUESKY_PASSWORD` - Your Bluesky app password
 - `MASTODON_API_BASE_URL` - Your Mastodon instance URL

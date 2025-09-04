@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- 🎯 **User-Friendly Configuration Error Handling**: Dramatically improved first-time user experience with helpful setup guidance
+  - **New Setup Command**: Added `python sync.py setup` for guided initial configuration with interactive wizard
+  - **Smart Error Detection**: Automatically detects missing `.env` file vs incomplete configuration scenarios
+  - **Actionable Error Messages**: Replaced cryptic Pydantic validation errors with clear, step-by-step setup instructions
+  - **Custom ConfigurationError**: New exception class provides structured error handling for configuration issues
+  - **Enhanced CLI Commands**: All commands (`sync`, `config`, `test`, `status`) now handle configuration errors gracefully
+  - **Helpful Guidance**: Error messages include specific commands and point to documentation for detailed setup
+  - **Interactive Setup**: Setup wizard offers to copy `.env.example` and open file for editing automatically
 
 ### Changed
 - 🔧 **GitHub Actions Workflow Enhancement**: Improved error handling and token configuration for CI/CD pipeline
