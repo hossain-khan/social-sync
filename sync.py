@@ -156,25 +156,30 @@ def setup():
     """Interactive setup wizard to configure Social Sync."""
     try:
         click.echo("🚀 Welcome to Social Sync Setup!\n")
-        
+
         # Check if .env already exists
         env_path = Path(".env")
         if env_path.exists():
-            if not click.confirm("⚠️  .env file already exists. Do you want to overwrite it?"):
-                click.echo("Setup cancelled. Use 'python sync.py config' to view current configuration.")
+            if not click.confirm(
+                "⚠️  .env file already exists. Do you want to overwrite it?"
+            ):
+                click.echo(
+                    "Setup cancelled. Use 'python sync.py config' to view current configuration."
+                )
                 return
-        
+
         # Copy .env.example to .env
         example_path = Path(".env.example")
         if not example_path.exists():
             click.echo("❌ Error: .env.example file not found!")
             sys.exit(1)
-        
+
         # Copy the example file
         import shutil
+
         shutil.copy2(example_path, env_path)
         click.echo("✅ Created .env file from .env.example")
-        
+
         click.echo("\n📝 Next steps:")
         click.echo("1. Edit the .env file with your credentials:")
         click.echo("   - BLUESKY_HANDLE: Your Bluesky handle (e.g., user.bsky.social)")
@@ -186,13 +191,13 @@ def setup():
         click.echo("\n3. Run your first sync:")
         click.echo("   python sync.py sync --dry-run")
         click.echo("\n📖 For detailed setup instructions, see: docs/SETUP.md")
-        
+
         # Offer to open the file for editing
         if click.confirm("\n🔧 Would you like to open .env for editing now?"):
-            editor = os.environ.get('EDITOR', 'nano')
+            editor = os.environ.get("EDITOR", "nano")
             click.echo(f"Opening .env with {editor}...")
             os.system(f"{editor} .env")
-        
+
     except Exception as e:
         click.echo(f"❌ Error during setup: {e}", err=True)
         sys.exit(1)

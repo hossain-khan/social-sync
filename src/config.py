@@ -12,6 +12,7 @@ from pydantic_settings import BaseSettings
 
 class ConfigurationError(Exception):
     """Raised when configuration is missing or invalid."""
+
     pass
 
 
@@ -118,7 +119,7 @@ def check_env_file_exists() -> bool:
 def get_settings() -> Settings:
     """Get application settings with user-friendly error handling."""
     env_file_exists = check_env_file_exists()
-    
+
     try:
         return Settings()
     except Exception as e:
@@ -148,6 +149,6 @@ def get_settings() -> Settings:
                     "For detailed setup instructions, see: docs/SETUP.md\n\n"
                     f"Original error: {e}"
                 ) from e
-        
+
         # Re-raise other types of errors
         raise
