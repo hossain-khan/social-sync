@@ -102,7 +102,7 @@ def test_sync_command_dry_run():
     ):
         # Configure mocks
         mock_settings_instance = Mock()
-        mock_settings_instance.state_file = "/tmp/test_state.json"
+        mock_settings_instance.state_file = "/tmp/test_state.json"  # nosec B108
         mock_settings.return_value = mock_settings_instance
 
         mock_orchestrator_instance = Mock()
@@ -145,7 +145,7 @@ def test_sync_command_since_date():
     ):
         # Configure mocks
         mock_settings_instance = Mock()
-        mock_settings_instance.state_file = "/tmp/test_state.json"
+        mock_settings_instance.state_file = "/tmp/test_state.json"  # nosec B108
         mock_settings.return_value = mock_settings_instance
 
         mock_orchestrator_instance = Mock()
@@ -250,7 +250,7 @@ def test_test_command_success():
     ):
         # Configure settings mocks
         mock_settings_instance = Mock()
-        mock_settings_instance.state_file = "/tmp/test_state.json"
+        mock_settings_instance.state_file = "/tmp/test_state.json"  # nosec B108
         mock_settings_instance.bluesky_handle = "test.bsky.social"
         mock_settings_instance.bluesky_password = "test-password"
         mock_settings_instance.mastodon_api_base_url = "https://mastodon.social"

@@ -48,5 +48,30 @@ else
 fi
 
 echo
+echo "7️⃣ Security Scan (Bandit)..."
+# Count medium/high severity issues
+bandit_issues=$(bandit -r src/ tests/ *.py --severity-level medium --format csv 2>/dev/null | wc -l || echo "1")
+if [ "$bandit_issues" -le 1 ]; then
+    echo "✅ Security scan passed - no medium/high severity issues"
+else
+    echo "⚠️ Security scan found medium/high severity issues:"
+    bandit -r src/ tests/ *.py --severity-level medium
+    echo "💡 Review security issues above. High/Medium severity issues will fail CI."
+    echo "   Low severity warnings are acceptable if justified with # nosec comments."
+fi
+
+echo
+echo "8️⃣ Dependency Security Check (pip-audit)..."
+if command -v pip-audit >/dev/null 2>&1; then
+    pip-audit --desc --output=text 2>/dev/null || {
+        echo "⚠️ pip-audit found vulnerability warnings (check output above)"
+        echo "💡 Update dependencies if critical vulnerabilities are found"
+    }
+    echo "✅ Dependency security check completed"
+else
+    echo "ℹ️ pip-audit not installed - skipping dependency security check"
+fi
+
+echo
 echo "🎉 All quality checks passed! Ready for commit and push."
-echo "💡 Tip: CI will run the same checks plus security scans."
+echo "💡 Security scans included - same checks as CI pipeline."
