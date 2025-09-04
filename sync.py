@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 # Add src to Python path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from src.config import get_settings  # noqa: E402
+from src.config import ConfigurationError, get_settings  # noqa: E402
 from src.sync_orchestrator import SocialSyncOrchestrator  # noqa: E402
 
 try:
@@ -87,6 +87,9 @@ def sync(dry_run, since_date):
             click.echo(f"❌ Sync failed: {result.get('error', 'Unknown error')}")
             sys.exit(1)
 
+    except ConfigurationError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     except Exception as e:
         logging.exception("Unexpected error during sync")
         click.echo(f"❌ Unexpected error: {e}")
@@ -107,6 +110,9 @@ def status():
             f"   • Dry run mode: {'ON' if status_info['dry_run_mode'] else 'OFF'}"
         )
 
+    except ConfigurationError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     except Exception as e:
         logging.exception("Error getting status")
         click.echo(f"❌ Error getting status: {e}")
@@ -137,8 +143,58 @@ def config():
         click.echo(f"   • Dry run: {settings.dry_run}")
         click.echo(f"   • Log level: {settings.log_level}")
 
+    except ConfigurationError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     except Exception as e:
         click.echo(f"❌ Error reading configuration: {e}")
+        sys.exit(1)
+
+
+@cli.command()
+def setup():
+    """Interactive setup wizard to configure Social Sync."""
+    try:
+        click.echo("🚀 Welcome to Social Sync Setup!\n")
+        
+        # Check if .env already exists
+        env_path = Path(".env")
+        if env_path.exists():
+            if not click.confirm("⚠️  .env file already exists. Do you want to overwrite it?"):
+                click.echo("Setup cancelled. Use 'python sync.py config' to view current configuration.")
+                return
+        
+        # Copy .env.example to .env
+        example_path = Path(".env.example")
+        if not example_path.exists():
+            click.echo("❌ Error: .env.example file not found!")
+            sys.exit(1)
+        
+        # Copy the example file
+        import shutil
+        shutil.copy2(example_path, env_path)
+        click.echo("✅ Created .env file from .env.example")
+        
+        click.echo("\n📝 Next steps:")
+        click.echo("1. Edit the .env file with your credentials:")
+        click.echo("   - BLUESKY_HANDLE: Your Bluesky handle (e.g., user.bsky.social)")
+        click.echo("   - BLUESKY_PASSWORD: Your Bluesky app password")
+        click.echo("   - MASTODON_ACCESS_TOKEN: Your Mastodon access token")
+        click.echo("   - MASTODON_API_BASE_URL: Your Mastodon instance URL")
+        click.echo("\n2. Test your configuration:")
+        click.echo("   python sync.py test")
+        click.echo("\n3. Run your first sync:")
+        click.echo("   python sync.py sync --dry-run")
+        click.echo("\n📖 For detailed setup instructions, see: docs/SETUP.md")
+        
+        # Offer to open the file for editing
+        if click.confirm("\n🔧 Would you like to open .env for editing now?"):
+            editor = os.environ.get('EDITOR', 'nano')
+            click.echo(f"Opening .env with {editor}...")
+            os.system(f"{editor} .env")
+        
+    except Exception as e:
+        click.echo(f"❌ Error during setup: {e}", err=True)
         sys.exit(1)
 
 
@@ -156,6 +212,9 @@ def test():
             click.echo("❌ Client authentication failed!")
             sys.exit(1)
 
+    except ConfigurationError as e:
+        click.echo(f"❌ {e}", err=True)
+        sys.exit(1)
     except Exception as e:
         logging.exception("Error testing connections")
         click.echo(f"❌ Error testing connections: {e}")
