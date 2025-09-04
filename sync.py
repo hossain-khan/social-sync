@@ -4,6 +4,7 @@ Social Sync CLI - Command line interface for syncing social media posts
 """
 import logging
 import os
+import subprocess
 import sys
 import warnings
 from pathlib import Path
@@ -195,8 +196,27 @@ def setup():
         # Offer to open the file for editing
         if click.confirm("\n🔧 Would you like to open .env for editing now?"):
             editor = os.environ.get("EDITOR", "nano")
-            click.echo(f"Opening .env with {editor}...")
-            os.system(f"{editor} .env")
+
+            # Whitelist of safe editors to prevent command injection
+            safe_editors = ["nano", "vim", "vi", "emacs", "code", "notepad"]
+            editor_cmd = editor.split()[0]  # Get just the command name, not args
+
+            if editor_cmd in safe_editors:
+                click.echo(f"Opening .env with {editor}...")
+                try:
+                    subprocess.run([editor_cmd, ".env"], check=True)  # nosec B603
+                except subprocess.CalledProcessError:
+                    click.echo(
+                        f"⚠️  Could not open {editor_cmd}. Please edit .env manually."
+                    )
+                except FileNotFoundError:
+                    click.echo(
+                        f"⚠️  Editor '{editor_cmd}' not found. Please edit .env manually."
+                    )
+            else:
+                click.echo(
+                    f"⚠️  Editor '{editor_cmd}' not in safe list. Please edit .env manually."
+                )
 
     except Exception as e:
         click.echo(f"❌ Error during setup: {e}", err=True)
