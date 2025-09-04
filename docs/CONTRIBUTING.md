@@ -25,6 +25,10 @@ Be respectful, inclusive, and collaborative. We're all here to make social media
 
 3. **Set up environment variables**
    ```bash
+   # Interactive setup (recommended)
+   python sync.py setup
+   
+   # Or manual setup:
    cp .env.example .env
    # Edit .env with your test credentials
    ```

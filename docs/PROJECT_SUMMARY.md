@@ -60,6 +60,7 @@ social-sync/
 - **Secure Credential Management**: Uses GitHub Secrets
 
 ### ✅ **Comprehensive CLI**
+- `python sync.py setup` - Interactive setup wizard for first-time configuration
 - `python sync.py sync` - Run sync process
 - `python sync.py sync --dry-run` - Test sync without posting
 - `python sync.py status` - Check sync status
@@ -67,7 +68,8 @@ social-sync/
 - `python sync.py test` - Test client connections
 
 ### ✅ **Production Ready Features**
-- **Robust Error Handling**: Comprehensive error catching and logging
+- **User-Friendly Setup**: Interactive wizard with helpful error messages for configuration issues
+- **Robust Error Handling**: Comprehensive error catching and logging with actionable guidance
 - **Configurable Settings**: Environment-based configuration
 - **Detailed Logging**: Multiple log levels with file output
 - **Security Best Practices**: No hardcoded credentials
