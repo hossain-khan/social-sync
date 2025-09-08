@@ -257,6 +257,28 @@ class TestSocialSyncOrchestrator:
         assert len(result) == 1
         assert result[0].uri == "at://new-uri"
 
+    def test_get_posts_to_sync_with_logging_stats(self):
+        """Test getting posts with logging stats triggered"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=10,
+            filtered_replies=2,
+            filtered_reposts=3,
+            filtered_by_date=1,
+        )
+        self.mock_sync_state.is_post_synced.return_value = False
+
+        # We don't need to check the result, just that the method runs without error
+        # and the logging lines are covered.
+        self.orchestrator.get_posts_to_sync()
+
+        self.mock_bluesky_client.get_recent_posts.assert_called_once()
+
     def test_sync_post_simple_text_success(self):
         """Test syncing a simple text post successfully"""
         # Set up clients first
@@ -453,6 +475,362 @@ class TestSocialSyncOrchestrator:
         # Should not mark as synced if posting fails
         self.mock_sync_state.mark_post_synced.assert_not_called()
 
+    def test_sync_post_with_image_success(self):
+        """Test syncing a post with an image successfully"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with image",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = "media-id-1"
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_bluesky_client.download_blob.assert_called_once()
+        self.mock_mastodon_client.upload_media.assert_called_once()
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=["media-id-1"],
+        )
+        self.mock_sync_state.mark_post_synced.assert_called_once()
+
+    def test_sync_post_with_image_from_url_success(self):
+        """Test syncing a post with an image from a URL successfully"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with image from URL",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={
+                "images": [{"url": "http://example.com/image.jpg", "alt": "alt text"}]
+            },
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"url": "http://example.com/image.jpg", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_content_processor.download_image.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = "media-id-1"
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_content_processor.download_image.assert_called_once()
+        self.mock_mastodon_client.upload_media.assert_called_once()
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=["media-id-1"],
+        )
+        self.mock_sync_state.mark_post_synced.assert_called_once()
+
+    def test_sync_post_with_multiple_images(self):
+        """Test syncing a post with multiple images"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with multiple images",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={
+                "images": [
+                    {"blob_ref": "blob1", "alt": "alt1"},
+                    {"blob_ref": "blob2", "alt": "alt2"},
+                ]
+            },
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt1"},
+            {"blob_ref": "blob2", "alt": "alt2"},
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.side_effect = [
+            (b"imagedata1", "image/jpeg"),
+            (b"imagedata2", "image/png"),
+        ]
+        self.mock_mastodon_client.upload_media.side_effect = [
+            "media-id-1",
+            "media-id-2",
+        ]
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        assert self.mock_bluesky_client.download_blob.call_count == 2
+        assert self.mock_mastodon_client.upload_media.call_count == 2
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=["media-id-1", "media-id-2"],
+        )
+
+    def test_sync_post_image_download_fails(self):
+        """Test syncing a post where image download fails"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with failing image",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = None  # Download fails
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_mastodon_client.upload_media.assert_not_called()
+        # Should post without media
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=None,
+        )
+
+    def test_sync_post_image_upload_fails(self):
+        """Test syncing a post where image upload fails"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with failing upload",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = None  # Upload fails
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_mastodon_client.upload_media.assert_called_once()
+        # Should post without media since upload failed
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=None,
+        )
+
+    def test_sync_post_with_image_dry_run(self):
+        """Test syncing a post with an image in dry-run mode"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+        self.orchestrator.settings.dry_run = True
+
+        mock_post = BlueskyPost(
+            uri="at://dry-run-uri",
+            cid="test-cid",
+            text="Dry run with image",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_bluesky_client.download_blob.assert_not_called()
+        self.mock_mastodon_client.upload_media.assert_not_called()
+        self.mock_mastodon_client.post_status.assert_not_called()
+        self.mock_sync_state.mark_post_synced.assert_not_called()
+
+    def test_sync_post_reply_with_parent_and_image(self):
+        """Test syncing a reply with an image when parent is found"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/reply",
+            cid="test-cid-reply",
+            text="Reply with image",
+            created_at=datetime(2025, 1, 1, 11, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to="at://parent-uri",
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_sync_state.get_mastodon_id_for_bluesky_post.return_value = (
+            "parent-mastodon-id"
+        )
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed reply text"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = "media-id-1"
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-reply-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed reply text",
+            in_reply_to_id="parent-mastodon-id",
+            media_ids=["media-id-1"],
+        )
+        # Attribution should not be added to replies
+        self.mock_content_processor.add_sync_attribution.assert_not_called()
+
+    def test_sync_image_download_exception(self):
+        """Test that an exception during image download is handled."""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with failing image",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.side_effect = Exception("Download error")
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        self.mock_mastodon_client.upload_media.assert_not_called()
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=None,
+        )
+
     def test_run_sync_success(self):
         """Test successful sync run"""
         # Mock client setup
@@ -547,6 +925,52 @@ class TestSocialSyncOrchestrator:
 
         # Should still update sync time even with no posts
         self.mock_sync_state.update_sync_time.assert_called_once()
+
+    def test_sync_post_mastodon_falsy_response(self):
+        """Test syncing a post when Mastodon returns a falsy response (e.g. None)"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://error-uri",
+            cid="test-cid",
+            text="Error post",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Error post"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Error post\n\n(via Bluesky)"
+        )
+        self.mock_mastodon_client.post_status.return_value = None
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is False
+        self.mock_sync_state.mark_post_synced.assert_not_called()
+
+    def test_run_sync_get_posts_error(self):
+        """Test sync run with an error during post fetching"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.mock_bluesky_client.get_recent_posts.side_effect = Exception(
+            "API fetch error"
+        )
+
+        result = self.orchestrator.run_sync()
+
+        assert result["success"] is False
+        assert "Failed to get posts" in result["error"]
+        assert result["synced_count"] == 0
 
     def test_run_sync_partial_failure(self):
         """Test sync run with some posts failing"""
