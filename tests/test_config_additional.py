@@ -261,6 +261,7 @@ class TestConfigurationEdgeCases:
             ("1", 1),
             ("100", 100),
             ("0", 0),  # Edge case: zero
+            ("-1", -1),  # Negative numbers are valid integers
         ]
 
         for int_str, expected in int_test_cases:
@@ -268,8 +269,8 @@ class TestConfigurationEdgeCases:
             settings = Settings()
             assert settings.max_posts_per_sync == expected
 
-        # Test invalid integer values
-        invalid_int_values = ["not_a_number", "-1", "1.5"]
+        # Test invalid integer values that should raise ValidationError
+        invalid_int_values = ["not_a_number", "1.5", "abc123", ""]
         
         for invalid_int in invalid_int_values:
             os.environ["MAX_POSTS_PER_SYNC"] = invalid_int

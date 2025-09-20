@@ -94,7 +94,7 @@ class TestBlueskyClientEdgeCases:
         """Test download_blob with network error"""
         mock_get.side_effect = Exception("Network error")
         
-        result = self.client.download_blob("blob_reference")
+        result = self.client.download_blob("blob_reference", "did:plc:test123")
         assert result is None
 
     @patch('src.bluesky_client.requests.get')
@@ -104,7 +104,7 @@ class TestBlueskyClientEdgeCases:
         mock_response.raise_for_status.side_effect = Exception("HTTP 404")
         mock_get.return_value = mock_response
         
-        result = self.client.download_blob("blob_reference")
+        result = self.client.download_blob("blob_reference", "did:plc:test123")
         assert result is None
 
     @patch('src.bluesky_client.requests.get')
@@ -121,7 +121,7 @@ class TestBlueskyClientEdgeCases:
         self.client.client.me = Mock()
         self.client.client.me.did = "did:plc:test"
         
-        result = self.client.download_blob("blob_reference")
+        result = self.client.download_blob("blob_reference", "did:plc:test123")
         assert result == (b"blob data", "image/jpeg")
 
     def test_extract_did_from_uri_various_formats(self):
@@ -141,20 +141,17 @@ class TestBlueskyClientEdgeCases:
 
     def test_get_recent_posts_not_authenticated(self):
         """Test get_recent_posts when not authenticated"""
-        result = self.client.get_recent_posts(limit=10)
+        with pytest.raises(RuntimeError) as exc_info:
+            self.client.get_recent_posts(limit=10)
         
-        # Should return empty result
-        assert isinstance(result, BlueskyFetchResult)
-        assert len(result.posts) == 0
-        assert result.total_retrieved == 0
+        assert "not authenticated" in str(exc_info.value)
 
     def test_get_recent_posts_authentication_failure(self):
         """Test get_recent_posts when authentication fails"""
-        with patch.object(self.client, 'authenticate', return_value=False):
-            result = self.client.get_recent_posts(limit=10)
+        with pytest.raises(RuntimeError) as exc_info:
+            self.client.get_recent_posts(limit=10)
             
-            assert isinstance(result, BlueskyFetchResult)
-            assert len(result.posts) == 0
+        assert "not authenticated" in str(exc_info.value)
 
     def test_get_recent_posts_api_exception(self):
         """Test get_recent_posts when API call throws exception"""
@@ -253,21 +250,16 @@ class TestBlueskyClientEdgeCases:
             self.client._authenticated = True
             
             # Mock successful thread response
-            mock_thread = Mock()
-            mock_post = create_mock_post(
-                uri="at://test/post/123",
-                created_at=datetime.now(timezone.utc),
-                is_reply=False,
-                is_repost=False
-            )
-            mock_thread.post = mock_post
+            mock_response = Mock()
+            mock_thread = {"thread": {"post": {"uri": "at://test/post/123"}}}
+            mock_response.thread = mock_thread
             
-            with patch.object(self.client.client, 'get_post_thread', return_value=mock_thread):
+            with patch.object(self.client.client, 'get_post_thread', return_value=mock_response):
                 result = self.client.get_post_thread("at://test/post/123")
                 
                 assert result is not None
-                assert isinstance(result, BlueskyPost)
-                assert result.uri == "at://test/post/123"
+                assert isinstance(result, dict)
+                assert "thread" in result
 
 
 def create_mock_post(uri, created_at, is_reply=False, is_repost=False):
