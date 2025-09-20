@@ -5,7 +5,7 @@ Additional tests for Bluesky Client module to improve coverage
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, PropertyMock
 
 import pytest
 
@@ -80,10 +80,14 @@ class TestBlueskyClientEdgeCases:
         """Test get_user_did when an exception occurs"""
         with patch.object(self.client, 'authenticate', return_value=True):
             self.client._authenticated = True
-            # Mock an exception when accessing client.me
-            with patch.object(self.client.client, 'me', side_effect=Exception("API error")):
-                user_did = self.client.get_user_did()
-                assert user_did is None
+            # Mock an exception when accessing client.me property
+            mock_client = Mock()
+            # Configure the mock to raise an exception when .me is accessed
+            type(mock_client).me = PropertyMock(side_effect=Exception("API error"))
+            self.client.client = mock_client
+            
+            user_did = self.client.get_user_did()
+            assert user_did is None
 
     @patch('src.bluesky_client.requests.get')
     def test_download_blob_network_error(self, mock_get):
