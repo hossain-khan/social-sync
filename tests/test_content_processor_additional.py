@@ -46,7 +46,9 @@ class TestContentProcessorEdgeCases:
         # Create text that leaves room for attribution
         # Attribution "\n\n(via Bluesky 🦋)" is ~17 chars
         base_text = "A" * (ContentProcessor.MASTODON_CHAR_LIMIT - 25)  # Leave more room
-        processed = self.processor.process_bluesky_to_mastodon(base_text)
+        processed = self.processor.process_bluesky_to_mastodon(
+            base_text, include_sync_attribution=True
+        )
 
         # Should include attribution since there's room
         assert len(processed) <= ContentProcessor.MASTODON_CHAR_LIMIT
