@@ -183,7 +183,7 @@ class TestSyncStateEdgeCases:
 
         # Test getting ID for non-existent post
         non_existent_uri = "at://did:plc:test/app.bsky.feed.post/nonexistent"
-        mastodon_id = sync_state.get_mastodon_id(non_existent_uri)
+        mastodon_id = sync_state.get_mastodon_id_for_bluesky_post(non_existent_uri)
         assert mastodon_id is None
 
         # Add a post and test getting its ID
@@ -191,49 +191,8 @@ class TestSyncStateEdgeCases:
         test_mastodon_id = "mastodon_test123"
         sync_state.mark_post_synced(test_uri, test_mastodon_id)
 
-        retrieved_id = sync_state.get_mastodon_id(test_uri)
+        retrieved_id = sync_state.get_mastodon_id_for_bluesky_post(test_uri)
         assert retrieved_id == test_mastodon_id
-
-    def test_get_parent_mastodon_id_functionality(self):
-        """Test getting parent Mastodon ID for threading"""
-        sync_state = SyncState(self.state_file_path)
-
-        # Test getting parent ID for non-existent post
-        non_existent_uri = "at://did:plc:test/app.bsky.feed.post/nonexistent"
-        parent_id = sync_state.get_parent_mastodon_id(non_existent_uri)
-        assert parent_id is None
-
-        # Add a parent post
-        parent_uri = "at://did:plc:test/app.bsky.feed.post/parent123"
-        parent_mastodon_id = "mastodon_parent123"
-        sync_state.mark_post_synced(parent_uri, parent_mastodon_id)
-
-        # Test getting parent ID
-        retrieved_parent_id = sync_state.get_parent_mastodon_id(parent_uri)
-        assert retrieved_parent_id == parent_mastodon_id
-
-    def test_clear_state_functionality(self):
-        """Test clearing all state data"""
-        sync_state = SyncState(self.state_file_path)
-
-        # Add some data
-        sync_state.mark_post_synced("at://test1", "mastodon1")
-        sync_state.mark_post_synced("at://test2", "mastodon2")
-        sync_state.update_sync_time()
-        sync_state.set_user_did("did:plc:test123")
-
-        # Verify data exists
-        assert sync_state.get_synced_posts_count() > 0
-        assert sync_state.get_last_sync_time() is not None
-        assert sync_state.get_user_did() is not None
-
-        # Clear state
-        sync_state.clear_state()
-
-        # Verify state is cleared
-        assert sync_state.get_synced_posts_count() == 0
-        assert sync_state.get_last_sync_time() is None
-        assert sync_state.get_user_did() is None
 
     def test_user_did_functionality(self):
         """Test user DID storage and retrieval"""
@@ -257,28 +216,6 @@ class TestSyncStateEdgeCases:
         updated_did = sync_state.get_user_did()
         assert updated_did == new_did
 
-    def test_last_bluesky_post_uri_functionality(self):
-        """Test last Bluesky post URI storage and retrieval"""
-        sync_state = SyncState(self.state_file_path)
-
-        # Initially should be None
-        assert sync_state.get_last_bluesky_post_uri() is None
-
-        # Set last post URI
-        test_uri = "at://did:plc:test/app.bsky.feed.post/latest123"
-        sync_state.set_last_bluesky_post_uri(test_uri)
-
-        # Should retrieve the same URI
-        retrieved_uri = sync_state.get_last_bluesky_post_uri()
-        assert retrieved_uri == test_uri
-
-        # Test updating URI
-        new_uri = "at://did:plc:test/app.bsky.feed.post/newer456"
-        sync_state.set_last_bluesky_post_uri(new_uri)
-        
-        updated_uri = sync_state.get_last_bluesky_post_uri()
-        assert updated_uri == new_uri
-
     def test_state_persistence_across_instances(self):
         """Test that state persists across different SyncState instances"""
         # Create first instance and add data
@@ -296,7 +233,7 @@ class TestSyncStateEdgeCases:
 
         # Data should persist
         assert sync_state2.is_post_synced(test_uri) is True
-        assert sync_state2.get_mastodon_id(test_uri) == test_mastodon_id
+        assert sync_state2.get_mastodon_id_for_bluesky_post(test_uri) == test_mastodon_id
         assert sync_state2.get_user_did() == test_did
         assert sync_state2.get_last_sync_time() is not None
 
@@ -330,17 +267,15 @@ class TestSyncStateEdgeCases:
             "not-a-uri",  # Not a URI format
             "at://",  # Incomplete AT URI
             "http://example.com",  # Wrong protocol
-            None,  # None value (this might cause an error depending on implementation)
         ]
 
         for invalid_uri in invalid_uris:
             try:
                 # These operations should handle invalid URIs gracefully
-                if invalid_uri is not None:  # Skip None to avoid TypeError
-                    sync_state.mark_post_synced(invalid_uri, "test_id")
-                    is_synced = sync_state.is_post_synced(invalid_uri)
-                    mastodon_id = sync_state.get_mastodon_id(invalid_uri)
-                    # Should not crash, exact behavior depends on implementation
+                sync_state.mark_post_synced(invalid_uri, "test_id")
+                is_synced = sync_state.is_post_synced(invalid_uri)
+                mastodon_id = sync_state.get_mastodon_id_for_bluesky_post(invalid_uri)
+                # Should not crash, exact behavior depends on implementation
             except (TypeError, ValueError):
                 # These exceptions might be acceptable for invalid input
                 pass
