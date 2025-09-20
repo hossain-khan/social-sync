@@ -28,7 +28,7 @@ class TestContentProcessorEdgeCases:
         # Text exactly at the limit
         text_at_limit = "A" * ContentProcessor.MASTODON_CHAR_LIMIT
         processed = self.processor.process_bluesky_to_mastodon(text_at_limit)
-        
+
         assert len(processed) == ContentProcessor.MASTODON_CHAR_LIMIT
         assert processed == text_at_limit
 
@@ -37,7 +37,7 @@ class TestContentProcessorEdgeCases:
         # Text just over the limit
         text_over_limit = "A" * (ContentProcessor.MASTODON_CHAR_LIMIT + 1)
         processed = self.processor.process_bluesky_to_mastodon(text_over_limit)
-        
+
         assert len(processed) <= ContentProcessor.MASTODON_CHAR_LIMIT
         assert processed.endswith("...")  # Should be truncated with ellipsis
 
@@ -47,7 +47,7 @@ class TestContentProcessorEdgeCases:
         # Attribution "\n\n(via Bluesky 🦋)" is ~17 chars
         base_text = "A" * (ContentProcessor.MASTODON_CHAR_LIMIT - 25)  # Leave more room
         processed = self.processor.process_bluesky_to_mastodon(base_text)
-        
+
         # Should include attribution since there's room
         assert len(processed) <= ContentProcessor.MASTODON_CHAR_LIMIT
         assert "(via Bluesky 🦋)" in processed
@@ -65,7 +65,7 @@ class TestContentProcessorEdgeCases:
         ]
 
         base_text = "Test text"
-        
+
         for embed in malformed_embeds:
             # Should handle gracefully without throwing exceptions
             processed = self.processor.process_bluesky_to_mastodon(
@@ -80,7 +80,10 @@ class TestContentProcessorEdgeCases:
             ("Check out ftp://example.com", []),  # Non-HTTP protocol
             ("Visit www.example.com", []),  # No protocol
             ("See http://", []),  # Incomplete URL
-            ("Link: http://[invalid", ["http://[invalid"]),  # Malformed but starts with http
+            (
+                "Link: http://[invalid",
+                ["http://[invalid"],
+            ),  # Malformed but starts with http
             ("text://not-a-url", []),  # Not a URL
             ("https://", []),  # Incomplete HTTPS
             ("http:// space.com", []),  # Space in URL (invalid)
@@ -95,12 +98,24 @@ class TestContentProcessorEdgeCases:
         mention_test_cases = [
             ("@", []),  # Just @ symbol
             ("@ user", []),  # @ with space
-            ("@user@domain", ["user", "domain"]),  # Multiple @ symbols - pattern matches both parts
+            (
+                "@user@domain",
+                ["user", "domain"],
+            ),  # Multiple @ symbols - pattern matches both parts
             ("email@example.com", ["example.com"]),  # Email (picked up by pattern)
-            ("@verylongusernamethatmightbreak.bsky.social", ["verylongusernamethatmightbreak.bsky.social"]),
-            ("@@doubleatsign", ["doubleatsign"]),  # Double @ at start - pattern matches the second part
+            (
+                "@verylongusernamethatmightbreak.bsky.social",
+                ["verylongusernamethatmightbreak.bsky.social"],
+            ),
+            (
+                "@@doubleatsign",
+                ["doubleatsign"],
+            ),  # Double @ at start - pattern matches the second part
             ("text@middle.com", ["middle.com"]),  # @ in middle
-            ("@user.bsky.socialextratext", ["user.bsky.socialextratext"]),  # Handle with extra text
+            (
+                "@user.bsky.socialextratext",
+                ["user.bsky.socialextratext"],
+            ),  # Handle with extra text
             ("@123numeric.com", ["123numeric.com"]),  # Numeric start
             ("@-invalid.com", []),  # Invalid character start
         ]
@@ -114,14 +129,23 @@ class TestContentProcessorEdgeCases:
         hashtag_test_cases = [
             ("#", []),  # Just # symbol
             ("# space", []),  # # with space
-            ("#hashtag#another", ["hashtag", "another"]),  # Adjacent hashtags - pattern matches both
+            (
+                "#hashtag#another",
+                ["hashtag", "another"],
+            ),  # Adjacent hashtags - pattern matches both
             ("#123", ["123"]),  # Numeric hashtag
             ("#_underscore", ["_underscore"]),  # Underscore hashtag
-            ("#-invalid", ["-invalid"]),  # Dash character - pattern matches non-space/hash chars
+            (
+                "#-invalid",
+                ["-invalid"],
+            ),  # Dash character - pattern matches non-space/hash chars
             ("##double", []),  # Double # at start
             ("text#middle", []),  # # in middle (no space before)
             ("#emoji🦋test", ["emoji🦋test"]),  # Emoji in hashtag
-            ("#verylonghashtagnamethatmightbreakthingsorsomething", ["verylonghashtagnamethatmightbreakthingsorsomething"]),
+            (
+                "#verylonghashtagnamethatmightbreakthingsorsomething",
+                ["verylonghashtagnamethatmightbreakthingsorsomething"],
+            ),
         ]
 
         for text, expected_hashtags in hashtag_test_cases:
@@ -135,13 +159,20 @@ class TestContentProcessorEdgeCases:
             [{"no_index": "invalid"}],  # Missing index
             [{"index": {"byteStart": 0}}],  # Missing byteEnd
             [{"index": {"byteStart": 10, "byteEnd": 5}}],  # Invalid range (start > end)
-            [{"index": {"byteStart": 0, "byteEnd": 100}, "features": []}],  # Empty features
-            [{"index": {"byteStart": 0, "byteEnd": 5}, "features": [{"$type": "unknown"}]}],  # Unknown feature type
+            [
+                {"index": {"byteStart": 0, "byteEnd": 100}, "features": []}
+            ],  # Empty features
+            [
+                {
+                    "index": {"byteStart": 0, "byteEnd": 5},
+                    "features": [{"$type": "unknown"}],
+                }
+            ],  # Unknown feature type
             [{"index": {"byteStart": None, "byteEnd": None}}],  # Null indices
         ]
 
         base_text = "Test text with some content"
-        
+
         for facets in complex_facets_cases:
             # Should handle gracefully without throwing exceptions
             processed = self.processor.process_bluesky_to_mastodon(
@@ -159,7 +190,11 @@ class TestContentProcessorEdgeCases:
             {"images": [{"image": {"ref": None}}]},  # Null ref
             {"images": [{"image": {"ref": {"$link": None}}}]},  # Null link
             {"images": [{"alt": "Alt text only"}]},  # Missing image data
-            {"images": [{"image": {"ref": {"$link": "valid_ref"}}, "alt": "Alt text"}]},  # Valid case
+            {
+                "images": [
+                    {"image": {"ref": {"$link": "valid_ref"}}, "alt": "Alt text"}
+                ]
+            },  # Valid case
             {"images": None},  # Null images
         ]
 
@@ -190,14 +225,14 @@ class TestContentProcessorEdgeCases:
                 "external": {
                     "uri": "https://example.com",
                     "title": "Example Site",
-                    "description": "A test site"
+                    "description": "A test site",
                 }
             },
             {
                 "external": {
                     "uri": "https://example.com",
                     "title": "",  # Empty title
-                    "description": "Description only"
+                    "description": "Description only",
                 }
             },
             {
@@ -206,16 +241,11 @@ class TestContentProcessorEdgeCases:
                     # Missing title and description
                 }
             },
-            {
-                "external": {
-                    "uri": "",  # Empty URI
-                    "title": "Title without URI"
-                }
-            }
+            {"external": {"uri": "", "title": "Title without URI"}},  # Empty URI
         ]
 
         base_text = "Check this out: "
-        
+
         for embed in external_link_cases:
             processed = self.processor.process_bluesky_to_mastodon(
                 base_text, embed=embed
@@ -223,18 +253,18 @@ class TestContentProcessorEdgeCases:
             assert isinstance(processed, str)
             assert base_text in processed
 
-    @patch('src.content_processor.requests.get')
+    @patch("src.content_processor.requests.get")
     def test_download_image_error_handling(self, mock_get):
         """Test image download error handling"""
         # Test network error
         mock_get.side_effect = Exception("Network error")
-        
+
         result = ContentProcessor.download_image("https://example.com/image.jpg")
         assert result is None
 
         # Test timeout error
         mock_get.side_effect = TimeoutError("Request timeout")
-        
+
         result = ContentProcessor.download_image("https://example.com/image.jpg")
         assert result is None
 
@@ -242,11 +272,11 @@ class TestContentProcessorEdgeCases:
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = Exception("HTTP 404")
         mock_get.return_value = mock_response
-        
+
         result = ContentProcessor.download_image("https://example.com/image.jpg")
         assert result is None
 
-    @patch('src.content_processor.requests.get')
+    @patch("src.content_processor.requests.get")
     def test_download_image_success(self, mock_get):
         """Test successful image download"""
         mock_response = Mock()
@@ -254,9 +284,9 @@ class TestContentProcessorEdgeCases:
         mock_response.headers = {"content-type": "image/jpeg"}
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
-        
+
         result = ContentProcessor.download_image("https://example.com/image.jpg")
-        
+
         assert result is not None
         assert result[0] == b"fake image data"
         assert result[1] == "image/jpeg"
@@ -267,7 +297,10 @@ class TestContentProcessorEdgeCases:
             ("@user.bsky.social", "@user.bsky.social"),  # Standard mention
             ("@user@domain.com", "@user@domain.com"),  # Email-like format
             ("Check out @test.handle", "Check out @test.handle"),  # In sentence
-            ("Multiple @user1.bsky.social and @user2.handle mentions", "Multiple @user1.bsky.social and @user2.handle mentions"),
+            (
+                "Multiple @user1.bsky.social and @user2.handle mentions",
+                "Multiple @user1.bsky.social and @user2.handle mentions",
+            ),
             ("", ""),  # Empty string
             ("No mentions here", "No mentions here"),  # No mentions
         ]
@@ -284,42 +317,56 @@ class TestContentProcessorEdgeCases:
             # Valid facet with link
             {
                 "text": "Check out example.com/short",
-                "facets": [{
-                    "index": {"byteStart": 10, "byteEnd": 27},
-                    "features": [{
-                        "$type": "app.bsky.richtext.facet#link",
-                        "uri": "https://example.com/very/long/url/path"
-                    }]
-                }]
+                "facets": [
+                    {
+                        "index": {"byteStart": 10, "byteEnd": 27},
+                        "features": [
+                            {
+                                "$type": "app.bsky.richtext.facet#link",
+                                "uri": "https://example.com/very/long/url/path",
+                            }
+                        ],
+                    }
+                ],
             },
             # Facet with invalid byte range
             {
                 "text": "Short text",
-                "facets": [{
-                    "index": {"byteStart": 100, "byteEnd": 200},  # Beyond text length
-                    "features": [{
-                        "$type": "app.bsky.richtext.facet#link",
-                        "uri": "https://example.com"
-                    }]
-                }]
+                "facets": [
+                    {
+                        "index": {
+                            "byteStart": 100,
+                            "byteEnd": 200,
+                        },  # Beyond text length
+                        "features": [
+                            {
+                                "$type": "app.bsky.richtext.facet#link",
+                                "uri": "https://example.com",
+                            }
+                        ],
+                    }
+                ],
             },
             # Facet with missing URI
             {
                 "text": "Text with link",
-                "facets": [{
-                    "index": {"byteStart": 0, "byteEnd": 4},
-                    "features": [{
-                        "$type": "app.bsky.richtext.facet#link"
-                        # Missing uri field
-                    }]
-                }]
-            }
+                "facets": [
+                    {
+                        "index": {"byteStart": 0, "byteEnd": 4},
+                        "features": [
+                            {
+                                "$type": "app.bsky.richtext.facet#link"
+                                # Missing uri field
+                            }
+                        ],
+                    }
+                ],
+            },
         ]
 
         for test_case in facets_test_cases:
             processed = self.processor.process_bluesky_to_mastodon(
-                test_case["text"], 
-                facets=test_case["facets"]
+                test_case["text"], facets=test_case["facets"]
             )
             assert isinstance(processed, str)
 
@@ -333,18 +380,16 @@ class TestContentProcessorEdgeCases:
                     "image": {
                         "ref": {"$link": "blob_reference_123"},
                         "mimeType": "image/jpeg",
-                        "size": 123456
-                    }
+                        "size": 123456,
+                    },
                 }
-            ]
+            ],
         }
 
         processed = self.processor.process_bluesky_to_mastodon(
-            "Beautiful photo:", 
-            embed=image_embed,
-            include_image_placeholders=True
+            "Beautiful photo:", embed=image_embed, include_image_placeholders=True
         )
-        
+
         assert isinstance(processed, str)
         assert "📷" in processed  # Should include image placeholder
 
@@ -354,14 +399,13 @@ class TestContentProcessorEdgeCases:
             "$type": "app.bsky.embed.record",
             "record": {
                 "uri": "at://did:plc:test/app.bsky.feed.post/123",
-                "cid": "test_cid"
-            }
+                "cid": "test_cid",
+            },
         }
 
         processed = self.processor.process_bluesky_to_mastodon(
-            "Quoting this post:",
-            embed=record_embed
+            "Quoting this post:", embed=record_embed
         )
-        
+
         assert isinstance(processed, str)
         # Should handle record embeds gracefully

@@ -31,6 +31,7 @@ class TestSyncStateEdgeCases:
     def teardown_method(self):
         """Clean up test fixtures"""
         import shutil
+
         shutil.rmtree(self.temp_dir)
 
     def test_corrupted_json_file_recovery(self):
@@ -79,19 +80,19 @@ class TestSyncStateEdgeCases:
             # Create a file and make it read-only
             with open(self.state_file_path, "w") as f:
                 json.dump({"test": "data"}, f)
-            
+
             os.chmod(self.state_file_path, 0o444)  # Read-only
-            
+
             # Try to create SyncState (might fail on write operations)
             sync_state = SyncState(self.state_file_path)
-            
+
             # Try to mark a post as synced (should handle gracefully)
             try:
                 sync_state.mark_post_synced("at://test", "123")
             except (PermissionError, OSError):
                 # Expected behavior - should handle gracefully
                 pass
-            
+
         except (OSError, PermissionError):
             pytest.skip("File permission test not supported on this system")
         finally:
@@ -116,16 +117,20 @@ class TestSyncStateEdgeCases:
         assert sync_state.get_synced_posts_count() == 100
 
         # Test lookup performance for a recent post (should be found)
-        test_uri = "at://did:plc:test/app.bsky.feed.post/000999"  # One of the last posts
+        test_uri = (
+            "at://did:plc:test/app.bsky.feed.post/000999"  # One of the last posts
+        )
         start_time = time.time()
         is_synced = sync_state.is_post_synced(test_uri)
         lookup_time = time.time() - start_time
-        
+
         assert is_synced is True
         assert lookup_time < 1.0  # Should be fast even with many records
 
         # Test lookup of old post that was evicted (should not be found)
-        old_uri = "at://did:plc:test/app.bsky.feed.post/000001"  # One of the first posts
+        old_uri = (
+            "at://did:plc:test/app.bsky.feed.post/000001"  # One of the first posts
+        )
         is_synced = sync_state.is_post_synced(old_uri)
         assert is_synced is False
 
@@ -144,20 +149,20 @@ class TestSyncStateEdgeCases:
         # Manually add some old posts by manipulating the state
         # (This is a bit hacky but necessary to test cleanup without waiting)
         old_timestamp = (datetime.now() - timedelta(days=35)).isoformat()
-        
+
         # Access internal state to add old records
         with open(self.state_file_path, "r") as f:
             state_data = json.load(f)
-        
+
         # Add old records
         for i in range(3):
             old_post = {
                 "bluesky_uri": f"at://did:plc:test/app.bsky.feed.post/old_{i}",
                 "mastodon_id": f"mastodon_old_{i}",
-                "synced_at": old_timestamp
+                "synced_at": old_timestamp,
             }
             state_data["synced_posts"].append(old_post)
-        
+
         with open(self.state_file_path, "w") as f:
             json.dump(state_data, f)
 
@@ -212,7 +217,7 @@ class TestSyncStateEdgeCases:
         # Test updating DID
         new_did = "did:plc:xyz789"
         sync_state.set_user_did(new_did)
-        
+
         updated_did = sync_state.get_user_did()
         assert updated_did == new_did
 
@@ -223,7 +228,7 @@ class TestSyncStateEdgeCases:
         test_uri = "at://did:plc:test/app.bsky.feed.post/persist123"
         test_mastodon_id = "mastodon_persist123"
         test_did = "did:plc:persistent"
-        
+
         sync_state1.mark_post_synced(test_uri, test_mastodon_id)
         sync_state1.set_user_did(test_did)
         sync_state1.update_sync_time()
@@ -233,7 +238,9 @@ class TestSyncStateEdgeCases:
 
         # Data should persist
         assert sync_state2.is_post_synced(test_uri) is True
-        assert sync_state2.get_mastodon_id_for_bluesky_post(test_uri) == test_mastodon_id
+        assert (
+            sync_state2.get_mastodon_id_for_bluesky_post(test_uri) == test_mastodon_id
+        )
         assert sync_state2.get_user_did() == test_did
         assert sync_state2.get_last_sync_time() is not None
 
@@ -245,13 +252,13 @@ class TestSyncStateEdgeCases:
 
         # Add data through first instance
         sync_state1.mark_post_synced("at://test1", "mastodon1")
-        
+
         # Add data through second instance
         sync_state2.mark_post_synced("at://test2", "mastodon2")
 
         # Create fresh instance to see final state
         sync_state3 = SyncState(self.state_file_path)
-        
+
         # At least one of the posts should be there
         # (behavior depends on timing and implementation)
         total_posts = sync_state3.get_synced_posts_count()
@@ -287,8 +294,14 @@ class TestSyncStateEdgeCases:
         # Test with special characters
         special_test_cases = [
             ("at://did:plc:test/app.bsky.feed.post/emoji🦋test", "mastodon_emoji_123"),
-            ("at://did:plc:test/app.bsky.feed.post/unicode-测试", "mastodon_unicode_456"),
-            ("at://did:plc:test/app.bsky.feed.post/spaces test", "mastodon with spaces"),
+            (
+                "at://did:plc:test/app.bsky.feed.post/unicode-测试",
+                "mastodon_unicode_456",
+            ),
+            (
+                "at://did:plc:test/app.bsky.feed.post/spaces test",
+                "mastodon with spaces",
+            ),
             ("at://did:plc:test/app.bsky.feed.post/symbols!@#$%", "mastodon!@#$%"),
         ]
 
@@ -314,9 +327,9 @@ class TestSyncStateEdgeCases:
         # Get the timestamp
         last_sync = sync_state.get_last_sync_time()
         assert last_sync is not None
-        
+
         # Should be a datetime object
         assert isinstance(last_sync, datetime)
-        
+
         # Should be between before and after
         assert before_update <= last_sync <= after_update

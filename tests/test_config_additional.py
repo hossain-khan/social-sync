@@ -16,7 +16,7 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.config import Settings, ConfigurationError, get_settings, check_env_file_exists
+from src.config import ConfigurationError, Settings, check_env_file_exists, get_settings
 
 
 class TestConfigurationEdgeCases:
@@ -47,7 +47,7 @@ class TestConfigurationEdgeCases:
 
         with pytest.raises(ValidationError) as exc_info:
             Settings()
-        
+
         # Check that all three required fields are in the error
         error_str = str(exc_info.value)
         assert "bluesky_handle" in error_str
@@ -62,7 +62,7 @@ class TestConfigurationEdgeCases:
 
         with pytest.raises(ValidationError) as exc_info:
             Settings()
-        
+
         error_str = str(exc_info.value)
         assert "Please set a valid" in error_str
 
@@ -79,7 +79,7 @@ class TestConfigurationEdgeCases:
             "2023-01-32",  # Invalid day
             "2023/01/01",  # Wrong format
             "01-01-2023",  # Wrong format
-            "2023-1-1",    # Wrong format (should be zero-padded)
+            "2023-1-1",  # Wrong format (should be zero-padded)
             "not-a-date-at-all",
         ]
 
@@ -121,7 +121,7 @@ class TestConfigurationEdgeCases:
             try:
                 with pytest.raises(ConfigurationError) as exc_info:
                     get_settings()
-                
+
                 error_msg = str(exc_info.value)
                 assert "Configuration file missing" in error_msg
                 assert "cp .env.example .env" in error_msg
@@ -137,10 +137,10 @@ class TestConfigurationEdgeCases:
                 # Create an .env file but don't set credentials in environment
                 with open(".env", "w") as f:
                     f.write("# Empty env file\n")
-                
+
                 with pytest.raises(ConfigurationError) as exc_info:
                     get_settings()
-                
+
                 error_msg = str(exc_info.value)
                 assert "Configuration incomplete" in error_msg
                 assert "BLUESKY_HANDLE" in error_msg
@@ -150,18 +150,18 @@ class TestConfigurationEdgeCases:
     def test_check_env_file_exists_function(self):
         """Test check_env_file_exists() function in different scenarios"""
         original_cwd = os.getcwd()
-        
+
         # Test when .env doesn't exist
         with tempfile.TemporaryDirectory() as temp_dir:
             os.chdir(temp_dir)
             assert check_env_file_exists() is False
-            
+
             # Create a .env file and test again
             with open(".env", "w") as f:
                 f.write("TEST=value\n")
-            
+
             assert check_env_file_exists() is True
-        
+
         os.chdir(original_cwd)
 
     def test_sync_start_date_validation_edge_cases(self):
@@ -204,7 +204,7 @@ class TestConfigurationEdgeCases:
             os.environ[key] = value
 
         settings = Settings()
-        
+
         # Verify all settings are correctly set
         assert settings.bluesky_handle == "test.bsky.social"
         assert settings.bluesky_password == "test-password"
@@ -215,7 +215,7 @@ class TestConfigurationEdgeCases:
         assert settings.dry_run is True
         assert settings.log_level == "DEBUG"
         assert settings.state_file == "custom_state.json"
-        
+
         # Test sync date parsing
         sync_datetime = settings.get_sync_start_datetime()
         assert sync_datetime.year == 2023
@@ -271,7 +271,7 @@ class TestConfigurationEdgeCases:
 
         # Test invalid integer values that should raise ValidationError
         invalid_int_values = ["not_a_number", "1.5", "abc123", ""]
-        
+
         for invalid_int in invalid_int_values:
             os.environ["MAX_POSTS_PER_SYNC"] = invalid_int
             with pytest.raises(ValidationError):
