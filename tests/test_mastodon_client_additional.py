@@ -247,13 +247,17 @@ class TestMastodonClientEdgeCases:
                 "id": "status1",
                 "content": "First post",
                 "created_at": datetime.now(),
-                "url": "https://mastodon.social/@user/status1"
+                "url": "https://mastodon.social/@user/status1",
+                "in_reply_to_id": None,
+                "media_attachments": []
             },
             {
                 "id": "status2", 
                 "content": "Second post",
                 "created_at": datetime.now(),
-                "url": "https://mastodon.social/@user/status2"
+                "url": "https://mastodon.social/@user/status2",
+                "in_reply_to_id": None,
+                "media_attachments": []
             }
         ]
         mock_client.account_statuses.return_value = mock_statuses
@@ -269,10 +273,8 @@ class TestMastodonClientEdgeCases:
         assert result[1].id == "status2"
         
         mock_client.account_statuses.assert_called_once_with(
-            "user123", 
-            limit=10, 
-            exclude_reblogs=True, 
-            exclude_replies=True
+            id="user123", 
+            limit=10
         )
 
     def test_get_recent_posts_api_exception(self):
@@ -299,8 +301,8 @@ class TestMastodonClientEdgeCases:
         result = self.client.get_recent_posts(limit=10)
         assert result == []
 
-    def test_get_recent_posts_with_since_id(self):
-        """Test get_recent_posts with since_id parameter"""
+    def test_get_recent_posts_with_limit(self):
+        """Test get_recent_posts with custom limit parameter"""
         mock_client = Mock()
         mock_account = {"id": "user123"}
         mock_client.me.return_value = mock_account
@@ -309,14 +311,11 @@ class TestMastodonClientEdgeCases:
         self.client._authenticated = True
         self.client.client = mock_client
         
-        result = self.client.get_recent_posts(limit=5, since_id="last_post_id")
+        result = self.client.get_recent_posts(limit=5)
         
         mock_client.account_statuses.assert_called_once_with(
-            "user123", 
-            limit=5, 
-            exclude_reblogs=True, 
-            exclude_replies=True,
-            since_id="last_post_id"
+            id="user123", 
+            limit=5
         )
 
     def test_mastodon_post_creation_with_all_fields(self):

@@ -105,18 +105,18 @@ class TestSyncStateEdgeCases:
         """Test performance with large number of synced posts"""
         sync_state = SyncState(self.state_file_path)
 
-        # Add many posts
+        # Add many posts (the system keeps only last 100 to prevent file growth)
         num_posts = 1000
         for i in range(num_posts):
             uri = f"at://did:plc:test/app.bsky.feed.post/{i:06d}"
             mastodon_id = f"mastodon_{i:06d}"
             sync_state.mark_post_synced(uri, mastodon_id)
 
-        # Verify count
-        assert sync_state.get_synced_posts_count() == num_posts
+        # Verify count (system keeps only last 100 posts)
+        assert sync_state.get_synced_posts_count() == 100
 
-        # Test lookup performance
-        test_uri = "at://did:plc:test/app.bsky.feed.post/000500"
+        # Test lookup performance for a recent post (should be found)
+        test_uri = "at://did:plc:test/app.bsky.feed.post/000999"  # One of the last posts
         start_time = time.time()
         is_synced = sync_state.is_post_synced(test_uri)
         lookup_time = time.time() - start_time
@@ -124,9 +124,9 @@ class TestSyncStateEdgeCases:
         assert is_synced is True
         assert lookup_time < 1.0  # Should be fast even with many records
 
-        # Test lookup of non-existent post
-        non_existent_uri = "at://did:plc:test/app.bsky.feed.post/999999"
-        is_synced = sync_state.is_post_synced(non_existent_uri)
+        # Test lookup of old post that was evicted (should not be found)
+        old_uri = "at://did:plc:test/app.bsky.feed.post/000001"  # One of the first posts
+        is_synced = sync_state.is_post_synced(old_uri)
         assert is_synced is False
 
     def test_cleanup_old_records(self):
