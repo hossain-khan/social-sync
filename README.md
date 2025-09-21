@@ -52,7 +52,7 @@ python sync.py test
 ```
 
 ### GitHub Actions
-- **Automated**: Runs daily at 2:00 AM UTC via cron schedule
+- **Automated**: Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) via [cron schedule](.github/workflows/sync.yml)
 - **Manual**: Actions → Social Sync → Run workflow  
 - **Logs**: Check Actions tab for execution details
 
