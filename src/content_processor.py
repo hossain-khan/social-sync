@@ -18,9 +18,10 @@ class ContentProcessor:
     MASTODON_CHAR_LIMIT = 500
 
     # AT Protocol/Bluesky facets patterns
-    MENTION_PATTERN = re.compile(r"@([a-zA-Z0-9.-]+\.?[a-zA-Z]{2,})")
-    HASHTAG_PATTERN = re.compile(r"#([^\s#]+)")
+    MENTION_PATTERN = re.compile(r"@([a-zA-Z0-9][a-zA-Z0-9.-]*\.?[a-zA-Z]{2,})")
     URL_PATTERN = re.compile(r"https?://[^\s]+")
+    # Note: HASHTAG extraction uses custom logic in extract_hashtags() method
+    # due to complex edge cases that can't be handled by a single regex
 
     @staticmethod
     def process_bluesky_to_mastodon(
@@ -28,6 +29,7 @@ class ContentProcessor:
         embed: Optional[Dict[str, Any]] = None,
         facets: Optional[List[Dict[str, Any]]] = None,
         include_image_placeholders: bool = True,
+        include_sync_attribution: bool = False,
     ) -> str:
         """
         Process Bluesky post content for Mastodon compatibility
@@ -37,6 +39,7 @@ class ContentProcessor:
             embed: Embed data from Bluesky
             facets: Facets data containing rich text annotations (URLs, mentions, etc.)
             include_image_placeholders: Whether to add text placeholders for images
+            include_sync_attribution: Whether to add "(via Bluesky 🦋)" attribution
         """
         processed_text = text
 
@@ -55,6 +58,10 @@ class ContentProcessor:
         # Convert AT Protocol mentions to Mastodon format if possible
         # Note: This is a basic conversion - full handle resolution would require more work
         processed_text = ContentProcessor._convert_mentions(processed_text)
+
+        # Add sync attribution before truncation if requested
+        if include_sync_attribution:
+            processed_text = ContentProcessor.add_sync_attribution(processed_text)
 
         # Ensure we stay within Mastodon's character limit
         processed_text = ContentProcessor._truncate_if_needed(processed_text)
@@ -216,7 +223,52 @@ class ContentProcessor:
     @staticmethod
     def extract_hashtags(text: str) -> List[str]:
         """Extract hashtags from text"""
-        return ContentProcessor.HASHTAG_PATTERN.findall(text)
+        # Strategy: find all hashtag-like patterns, then filter based on context
+        hashtags = []
+
+        # Use the original simple pattern
+        original_pattern = re.compile(r"#([^\s#]+)")
+
+        # First, find all hashtag positions that should be excluded
+        excluded_positions = set()
+
+        # Exclude hashtags that start with ##
+        double_hash_pattern = re.compile(r"##[^\s#]+")
+        for match in double_hash_pattern.finditer(text):
+            # Mark both # positions as excluded
+            excluded_positions.add(match.start())
+            excluded_positions.add(match.start() + 1)
+
+        # Now find valid hashtags
+        for match in original_pattern.finditer(text):
+            start_pos = match.start()
+            hashtag_content = match.group(1)
+
+            # Skip if this position was marked as excluded
+            if start_pos in excluded_positions:
+                continue
+
+            # Skip if # is in middle of non-hashtag word
+            if start_pos > 0:
+                prev_char = text[start_pos - 1]
+                # Allow if previous char is not alphanumeric (space, punctuation, etc)
+                # OR if we're in a hashtag context (will be handled by position tracking)
+                if prev_char.isalnum():
+                    # Check if this looks like middle of a word (not hashtag boundary)
+                    # Look backwards to see if this could be start of new hashtag
+
+                    # Find start of the word this # is in
+                    word_start = start_pos - 1
+                    while word_start > 0 and text[word_start - 1].isalnum():
+                        word_start -= 1
+
+                    # If the word doesn't start with #, then this # is in middle of word
+                    if word_start == 0 or text[word_start - 1] != "#":
+                        continue
+
+            hashtags.append(hashtag_content)
+
+        return hashtags
 
     @staticmethod
     def extract_mentions(text: str) -> List[str]:
