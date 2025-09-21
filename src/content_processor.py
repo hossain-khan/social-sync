@@ -19,8 +19,9 @@ class ContentProcessor:
 
     # AT Protocol/Bluesky facets patterns
     MENTION_PATTERN = re.compile(r"@([a-zA-Z0-9][a-zA-Z0-9.-]*\.?[a-zA-Z]{2,})")
-    HASHTAG_PATTERN = re.compile(r"(?<![#\w])#([^\s#]+)")
     URL_PATTERN = re.compile(r"https?://[^\s]+")
+    # Note: HASHTAG extraction uses custom logic in extract_hashtags() method
+    # due to complex edge cases that can't be handled by a single regex
 
     @staticmethod
     def process_bluesky_to_mastodon(
