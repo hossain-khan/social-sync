@@ -96,7 +96,7 @@ When preparing a new release, follow these steps in order:
 
 ### Pre-Release Quality Checks
 1. **Run all quality checks**: `./scripts/pre-commit-checks.sh` (comprehensive automated script)
-2. **Run full test suite**: `python -m pytest -v` (ensure all 120+ tests pass)
+2. **Run full test suite**: `python -m pytest -v` (ensure all 248+ tests pass)
 3. **Validate JSON files**: `python -m json.tool sync_state.json > /dev/null`
 4. **Test CLI functionality**: `python sync.py --version` and `python sync.py sync --dry-run`
 
