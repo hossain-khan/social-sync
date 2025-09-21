@@ -62,7 +62,11 @@ Set up the following GitHub repository secrets in your fork:
 
 ### 5. Enable Scheduled Sync
 
-The workflow is configured to run daily at 2:00 AM UTC. No additional setup needed!
+The workflow is configured to run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) as defined in [`.github/workflows/sync.yml`](../.github/workflows/sync.yml). No additional setup needed!
+
+**Want to change the frequency?** Edit the `cron` schedule in the [sync.yml workflow file](../.github/workflows/sync.yml) to your preferred timing.
+
+**Important:** For the workflow to commit sync state back to your repository, ensure you have proper branch protection setup. See the [Branch Protection & CI Setup](SETUP.md#branch-protection--ci-setup) section in the Setup Guide for detailed instructions.
 
 ## How Fork Detection Works
 
@@ -82,7 +86,7 @@ The workflow automatically detects forks by:
 
 ## What Happens After Setup
 
-- Daily automated sync at 2:00 AM UTC
+- Automated sync every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) as configured in [`.github/workflows/sync.yml`](../.github/workflows/sync.yml)
 - Only new posts (not already synced) will be processed
 - Images, URLs, and text are all synced properly
 - **Threading support**: Reply posts maintain conversation context on Mastodon

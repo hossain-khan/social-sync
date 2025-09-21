@@ -17,7 +17,7 @@ social-sync/
 │   ├── sync_state.py            # State management & duplicate prevention
 │   └── content_processor.py     # Content adaptation for cross-platform compatibility
 ├── .github/workflows/
-│   └── sync.yml                 # GitHub Actions workflow (runs daily at 2:00 AM UTC)
+│   └── sync.yml                 # GitHub Actions workflow (runs every 6 hours)
 ├── docs/                        # Comprehensive documentation
 │   ├── SETUP.md                # Step-by-step setup guide
 │   └── API.md                  # Technical API documentation
@@ -54,7 +54,7 @@ social-sync/
 - **Error Recovery**: Graceful handling of API failures with detailed logging
 
 ### ✅ **GitHub Actions Automation**
-- **Scheduled Execution**: Runs automatically daily at 2:00 AM UTC
+- **Scheduled Execution**: Runs automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
 - **Manual Triggers**: Support for on-demand syncing with dry-run option
 - **Dry Run Mode**: Test without actually posting
 - **Secure Credential Management**: Uses GitHub Secrets
@@ -106,7 +106,7 @@ social-sync/
 - Enable dry run mode for testing
 
 ### 4. **Enjoy Automated Syncing!**
-- Posts sync daily at 2:00 AM UTC automatically
+- Posts sync every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) automatically
 - View logs in GitHub Actions
 - Manual triggers available with optional dry-run mode
 
