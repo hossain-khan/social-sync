@@ -241,6 +241,7 @@ jobs:
           echo "✅ Threading tests completed"
 
   security-scan:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -263,6 +264,7 @@ jobs:
           retention-days: 30
 
   dependency-check:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
