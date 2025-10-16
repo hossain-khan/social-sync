@@ -128,7 +128,8 @@ class SocialSyncOrchestrator:
             )
 
             # Add sync attribution (but not for replies to keep them concise)
-            if not in_reply_to_id:
+            # and only if not disabled via configuration
+            if not in_reply_to_id and not self.settings.disable_source_platform:
                 processed_text = self.content_processor.add_sync_attribution(
                     processed_text
                 )

@@ -45,6 +45,7 @@ class TestSocialSyncOrchestrator:
                 "dry_run",
                 "state_file",
                 "get_sync_start_datetime",
+                "disable_source_platform",
             ]
         )
         mock_settings.bluesky_handle = "test.bsky.social"
@@ -55,6 +56,7 @@ class TestSocialSyncOrchestrator:
         mock_settings.dry_run = False
         mock_settings.state_file = "test_state.json"
         mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
+        mock_settings.disable_source_platform = False
         mock_get_settings.return_value = mock_settings
 
         # Mock client instances with proper specifications
@@ -1050,3 +1052,94 @@ class TestSocialSyncOrchestrator:
         assert result["last_sync_time"] is None
         assert result["total_synced_posts"] == 0
         assert result["dry_run_mode"] is False
+
+    def test_sync_post_with_disable_source_platform(self):
+        """Test that source platform attribution is not added when disabled"""
+        # Enable disable_source_platform setting
+        self.orchestrator.settings.disable_source_platform = True
+
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://test-uri-no-attribution",
+            cid="test-cid",
+            text="Post without attribution",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=[],
+        )
+
+        # Mock content processing
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Post without attribution"
+        )
+
+        # Mock Mastodon posting
+        self.mock_mastodon_client.post_status.return_value = {
+            "id": "mastodon-post-id-no-attr"
+        }
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        # Verify add_sync_attribution was NOT called when disable_source_platform is True
+        self.mock_content_processor.add_sync_attribution.assert_not_called()
+        self.mock_mastodon_client.post_status.assert_called_once()
+        self.mock_sync_state.mark_post_synced.assert_called_once_with(
+            "at://test-uri-no-attribution", "mastodon-post-id-no-attr"
+        )
+
+    def test_sync_post_with_source_platform_enabled(self):
+        """Test that source platform attribution IS added when enabled (default)"""
+        # Ensure disable_source_platform is False (default)
+        self.orchestrator.settings.disable_source_platform = False
+
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://test-uri-with-attribution",
+            cid="test-cid",
+            text="Post with attribution",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=[],
+        )
+
+        # Mock content processing
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Post with attribution"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Post with attribution\n\n(via Bluesky 🦋)"
+        )
+
+        # Mock Mastodon posting
+        self.mock_mastodon_client.post_status.return_value = {
+            "id": "mastodon-post-id-with-attr"
+        }
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        assert result is True
+        # Verify add_sync_attribution WAS called when disable_source_platform is False
+        self.mock_content_processor.add_sync_attribution.assert_called_once_with(
+            "Post with attribution"
+        )
+        self.mock_mastodon_client.post_status.assert_called_once()
+        self.mock_sync_state.mark_post_synced.assert_called_once_with(
+            "at://test-uri-with-attribution", "mastodon-post-id-with-attr"
+        )

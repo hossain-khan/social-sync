@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 🎛️ **CLI Option to Disable Source Platform Attribution**: Added `--disable-source-platform` flag to the `sync` command
+  - Allows users to control whether "(via Bluesky 🦋)" attribution is added to synced posts
+  - Can be configured via CLI flag or `DISABLE_SOURCE_PLATFORM` environment variable
+  - Applies only to root posts (replies never include attribution to maintain conciseness)
+  - Added comprehensive tests for the new functionality
+  - Updated documentation in README, .env.example, and setup guides
+
 ## [0.4.0] - 2025-09-20
 
 ### Added

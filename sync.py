@@ -64,13 +64,21 @@ def cli(ctx, log_level):
     "--since-date",
     help="Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)",
 )
-def sync(dry_run, since_date):
+@click.option(
+    "--disable-source-platform",
+    is_flag=True,
+    help="Disable adding source platform attribution (e.g., 'via Bluesky 🦋') to synced posts",
+)
+def sync(dry_run, since_date, disable_source_platform):
     """Run the sync process"""
     if dry_run:
         os.environ["DRY_RUN"] = "true"
 
     if since_date:
         os.environ["SYNC_START_DATE"] = since_date
+
+    if disable_source_platform:
+        os.environ["DISABLE_SOURCE_PLATFORM"] = "true"
 
     try:
         orchestrator = SocialSyncOrchestrator()

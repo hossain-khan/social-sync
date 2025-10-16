@@ -73,6 +73,7 @@ MASTODON_ACCESS_TOKEN=your-access-token
 - `SYNC_START_DATE`: Date to start syncing from (default: 7 days ago)
 - `MAX_POSTS_PER_SYNC`: Maximum posts per sync run (default: 10)
 - `DRY_RUN`: Test mode without posting (default: false)
+- `DISABLE_SOURCE_PLATFORM`: Disable source attribution (default: false)
 
 📚 **Full setup details:** [Setup Guide](docs/SETUP.md)
 
