@@ -114,7 +114,11 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           LOG_LEVEL: DEBUG
         run: |
-          python sync.py --log-level=$LOG_LEVEL sync --disable-source-platform ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+          python sync.py \
+            --log-level=$LOG_LEVEL \
+            sync \
+            --disable-source-platform \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
       
       - name: Commit and push sync state changes
         if: success() && github.event.inputs.dry_run != 'true'
