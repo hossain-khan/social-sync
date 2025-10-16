@@ -46,6 +46,7 @@ class TestCLI:
         assert result.returncode == 0
         assert "--dry-run" in result.stdout
         assert "--since-date" in result.stdout
+        assert "--disable-source-platform" in result.stdout
 
     def test_cli_status_command_help(self):
         """Test status subcommand help"""
@@ -177,6 +178,54 @@ def test_sync_command_since_date():
 
         # Verify run_sync was called
         mock_orchestrator_instance.run_sync.assert_called_once()
+
+
+def test_sync_command_disable_source_platform():
+    """Test sync command with --disable-source-platform flag"""
+    with (
+        patch("src.sync_orchestrator.SocialSyncOrchestrator") as mock_orchestrator,
+        patch("src.config.Settings") as mock_settings,
+        patch("sync.SocialSyncOrchestrator") as mock_sync_orchestrator_direct,
+    ):
+        # Configure mocks
+        mock_settings_instance = Mock()
+        mock_settings_instance.state_file = "/tmp/test_state.json"  # nosec B108
+        mock_settings.return_value = mock_settings_instance
+
+        mock_orchestrator_instance = Mock()
+        mock_orchestrator.return_value = mock_orchestrator_instance
+
+        # Mock run_sync to return proper dictionary
+        mock_orchestrator_instance.run_sync.return_value = {
+            "success": True,
+            "synced_count": 5,
+            "failed_count": 0,
+            "duration": 2.0,
+            "dry_run": False,
+        }
+
+        # Mock the direct import in sync.py as well
+        mock_sync_orchestrator_direct.return_value = mock_orchestrator_instance
+
+        # Use Click's test runner
+        runner = CliRunner()
+        result = runner.invoke(cli, ["sync", "--disable-source-platform"])
+
+        # Print output for debugging
+        if result.exit_code != 0:
+            print(f"Command output: {result.output}")
+            print(f"Exception: {result.exception}")
+
+        # Verify command executed successfully
+        assert result.exit_code == 0
+
+        # Verify run_sync was called
+        mock_orchestrator_instance.run_sync.assert_called_once()
+
+        # Verify environment variable was set
+        import os
+
+        assert os.environ.get("DISABLE_SOURCE_PLATFORM") == "true"
 
     @patch("src.sync_orchestrator.SocialSyncOrchestrator")
     def test_status_command(self, mock_orchestrator_class):

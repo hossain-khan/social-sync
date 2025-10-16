@@ -39,6 +39,10 @@ class Settings(BaseSettings):
         description="Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS). If not set, starts from 7 days ago",
     )
     dry_run: bool = Field(default=False, description="Run in dry-run mode")
+    disable_source_platform: bool = Field(
+        default=False,
+        description="Disable adding source platform attribution to synced posts",
+    )
 
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")

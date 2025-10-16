@@ -53,7 +53,9 @@ python sync.py test
 
 ### GitHub Actions
 - **Automated**: Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) via [cron schedule](.github/workflows/sync.yml)
-- **Manual**: Actions → Social Sync → Run workflow  
+- **Manual**: Actions → Social Sync → Run workflow
+  - Optional: Enable "Run in dry-run mode" to test without posting
+  - Optional: Enable "Disable source platform attribution" to hide "(via Bluesky 🦋)"
 - **Logs**: Check Actions tab for execution details
 
 ## ⚙️ Configuration
@@ -73,6 +75,7 @@ MASTODON_ACCESS_TOKEN=your-access-token
 - `SYNC_START_DATE`: Date to start syncing from (default: 7 days ago)
 - `MAX_POSTS_PER_SYNC`: Maximum posts per sync run (default: 10)
 - `DRY_RUN`: Test mode without posting (default: false)
+- `DISABLE_SOURCE_PLATFORM`: Disable source attribution (default: false)
 
 📚 **Full setup details:** [Setup Guide](docs/SETUP.md)
 
