@@ -72,6 +72,7 @@ class TestThreadingSyncFlow:
             mock_settings.dry_run = False
             mock_settings.state_file = self.state_file
             mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
+            mock_settings.disable_source_platform = False
             mock_get_settings.return_value = mock_settings
 
             orchestrator = SocialSyncOrchestrator()
@@ -194,6 +195,7 @@ class TestThreadingSyncFlow:
             mock_settings.mastodon_access_token = "test-token"
             mock_settings.dry_run = False
             mock_settings.state_file = self.state_file
+            mock_settings.disable_source_platform = False
             mock_get_settings.return_value = mock_settings
 
             orchestrator = SocialSyncOrchestrator()
