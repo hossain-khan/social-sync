@@ -172,24 +172,31 @@ class BlueskyClient:
                     filtered_reposts += 1
                     continue
 
-                # Handle replies: allow self-replies, filter others
-                is_self_reply = False
+                # Handle replies: allow self-replies to own threads, filter others
+                # Check the root of the thread to determine if this is part of
+                # a conversation started by someone else
+                is_self_thread = False
                 reply_parent_uri = None
                 if post.record.reply:
                     reply_parent_uri = post.record.reply.parent.uri
-                    # Extract DID from parent post URI to check if it's a self-reply
-                    if reply_parent_uri and user_did:
-                        parent_did = self._extract_did_from_uri(reply_parent_uri)
-                        is_self_reply = parent_did == user_did
+                    # Check the root post of the thread (not just immediate parent)
+                    # to ensure we skip replies in threads started by others
+                    reply_root_uri = post.record.reply.root.uri
+                    if reply_root_uri and user_did:
+                        root_did = self._extract_did_from_uri(reply_root_uri)
+                        is_self_thread = root_did == user_did
 
-                    if not is_self_reply:
-                        # Filter out replies to other people's posts
+                    if not is_self_thread:
+                        # Filter out replies in threads started by other people
+                        # This includes direct replies and nested replies
                         filtered_replies += 1
-                        logger.debug(f"Filtered non-self reply post: {post.uri}")
+                        logger.debug(
+                            f"Filtered reply in non-self thread: {post.uri} (root: {reply_root_uri})"
+                        )
                         continue
                     else:
                         logger.debug(
-                            f"Including self-reply post: {post.uri} -> {reply_parent_uri}"
+                            f"Including reply in self-thread: {post.uri} -> {reply_parent_uri} (root: {reply_root_uri})"
                         )
 
                 # Parse the post creation date

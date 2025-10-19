@@ -168,17 +168,19 @@ class TestBlueskyClient:
 
     @patch("src.bluesky_client.AtprotoClient")
     def test_get_recent_posts_with_reply(self, mock_client_class):
-        """Test that reply posts are filtered out from recent posts"""
+        """Test that reply posts to others' posts are filtered out"""
         mock_client = Mock()
-        mock_session = Mock()
-        mock_session.handle = "test.bsky.social"
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
 
-        # Mock reply post record
+        # Mock reply post record - reply to someone else's post
         mock_reply = Mock()
         mock_reply.root = Mock()
-        mock_reply.root.uri = "at://parent-post-uri"
+        # Root belongs to someone else
+        mock_reply.root.uri = "at://did:plc:otheruser456/app.bsky.feed.post/their-post"
         mock_reply.parent = Mock()
-        mock_reply.parent.uri = "at://parent-post-uri"
+        mock_reply.parent.uri = "at://did:plc:otheruser456/app.bsky.feed.post/their-post"
 
         mock_post_record = Mock()
         mock_post_record.text = "This is a reply"
@@ -195,7 +197,7 @@ class TestBlueskyClient:
             delattr(mock_feed_item, "reason")
 
         mock_feed_item.post = Mock()
-        mock_feed_item.post.uri = "at://reply-post-uri"
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/reply-post"
         mock_feed_item.post.cid = "reply-cid"
         mock_feed_item.post.record = mock_post_record
         mock_feed_item.post.author = Mock()
@@ -212,12 +214,188 @@ class TestBlueskyClient:
 
         result = client.get_recent_posts()
 
-        # Reply posts should be filtered out, so we expect an empty posts list
+        # Reply posts to others should be filtered out
         assert len(result.posts) == 0
         assert result.total_retrieved == 1  # One post was retrieved from API
         assert result.filtered_replies == 1  # One reply was filtered out
         assert result.filtered_reposts == 0
         assert result.filtered_by_date == 0
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_get_recent_posts_with_self_reply_to_own_post(self, mock_client_class):
+        """Test that self-replies to own posts are included"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        # Mock self-reply: reply to own post
+        mock_reply = Mock()
+        mock_reply.root = Mock()
+        mock_reply.root.uri = "at://did:plc:test123/app.bsky.feed.post/original-post"
+        mock_reply.parent = Mock()
+        mock_reply.parent.uri = "at://did:plc:test123/app.bsky.feed.post/original-post"
+
+        mock_post_record = Mock()
+        mock_post_record.text = "This is a self-reply"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.embed = None
+        mock_post_record.reply = mock_reply
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/self-reply"
+        mock_feed_item.post.cid = "self-reply-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts()
+
+        # Self-replies should be included
+        assert len(result.posts) == 1
+        assert result.total_retrieved == 1
+        assert result.filtered_replies == 0
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
+        assert result.posts[0].text == "This is a self-reply"
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_get_recent_posts_with_nested_reply_in_others_thread(self, mock_client_class):
+        """Test that nested replies in threads started by others are filtered out
+        
+        This tests the bug fix: A reply to a self-reply that is itself part of
+        someone else's thread should be filtered out.
+        
+        Thread structure:
+        1. Someone else's post (root)
+        2. User's reply to that post (would be filtered, not shown here)
+        3. User's reply to their own reply (should be filtered - this is the bug)
+        """
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        # Mock nested reply: reply to own reply, but root is someone else's post
+        mock_reply = Mock()
+        mock_reply.root = Mock()
+        # Root is someone else's post
+        mock_reply.root.uri = "at://did:plc:otheruser456/app.bsky.feed.post/their-post"
+        mock_reply.parent = Mock()
+        # Parent is user's own reply
+        mock_reply.parent.uri = "at://did:plc:test123/app.bsky.feed.post/users-reply"
+
+        mock_post_record = Mock()
+        mock_post_record.text = "Reply to my reply in someone else's thread"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.embed = None
+        mock_post_record.reply = mock_reply
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/nested-reply"
+        mock_feed_item.post.cid = "nested-reply-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts()
+
+        # Nested reply in someone else's thread should be filtered out
+        assert len(result.posts) == 0
+        assert result.total_retrieved == 1
+        assert result.filtered_replies == 1
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_get_recent_posts_with_deep_nested_self_replies(self, mock_client_class):
+        """Test that deeply nested self-replies in own threads are included
+        
+        Thread structure:
+        1. User's original post (root)
+        2. User's reply to their own post
+        3. User's reply to their reply (deeply nested)
+        """
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        # Mock deeply nested self-reply
+        mock_reply = Mock()
+        mock_reply.root = Mock()
+        # Root is user's own post
+        mock_reply.root.uri = "at://did:plc:test123/app.bsky.feed.post/original-post"
+        mock_reply.parent = Mock()
+        # Parent is also user's own reply
+        mock_reply.parent.uri = "at://did:plc:test123/app.bsky.feed.post/first-reply"
+
+        mock_post_record = Mock()
+        mock_post_record.text = "Deep nested reply in my own thread"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.embed = None
+        mock_post_record.reply = mock_reply
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = (
+            "at://did:plc:test123/app.bsky.feed.post/deep-nested-reply"
+        )
+        mock_feed_item.post.cid = "deep-nested-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts()
+
+        # Deep nested self-replies in own thread should be included
+        assert len(result.posts) == 1
+        assert result.total_retrieved == 1
+        assert result.filtered_replies == 0
+        assert result.filtered_reposts == 0
+        assert result.filtered_by_date == 0
+        assert result.posts[0].text == "Deep nested reply in my own thread"
 
     @patch("src.bluesky_client.AtprotoClient")
     def test_get_recent_posts_with_since_date_filter(self, mock_client_class):
