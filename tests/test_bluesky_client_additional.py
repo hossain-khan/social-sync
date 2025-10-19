@@ -196,13 +196,6 @@ class TestBlueskyClientEdgeCases:
                 is_repost=False,
             )
 
-            repost = create_mock_post(
-                uri="at://did:plc:user123/app.bsky.feed.post/repost",
-                created_at=datetime.now(timezone.utc),
-                is_reply=False,
-                is_repost=True,
-            )
-
             valid_post = create_mock_post(
                 uri="at://did:plc:user123/app.bsky.feed.post/valid",
                 created_at=datetime.now(timezone.utc),
@@ -289,6 +282,9 @@ def create_mock_post(uri, created_at, is_reply=False, is_repost=False):
         mock_record.reply = Mock()
         mock_record.reply.parent = Mock()
         mock_record.reply.parent.uri = "at://parent/post/uri"
+        # Add root attribute for reply detection
+        mock_record.reply.root = Mock()
+        mock_record.reply.root.uri = "at://did:plc:otheruser/app.bsky.feed.post/root"
     else:
         mock_record.reply = None
 
