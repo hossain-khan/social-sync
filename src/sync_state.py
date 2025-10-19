@@ -27,26 +27,31 @@ class SyncState:
             return {
                 "last_sync_time": None,
                 "synced_posts": [],
+                "skipped_posts": [],
                 "last_bluesky_post_uri": None,
             }
 
         try:
             with open(self.state_file, "r") as f:
                 data = json.load(f)
-                return (
-                    data
-                    if isinstance(data, dict)
-                    else {
+                # Ensure skipped_posts field exists for backward compatibility
+                if isinstance(data, dict):
+                    if "skipped_posts" not in data:
+                        data["skipped_posts"] = []
+                    return data
+                else:
+                    return {
                         "last_sync_time": None,
                         "synced_posts": [],
+                        "skipped_posts": [],
                         "last_bluesky_post_uri": None,
                     }
-                )
         except Exception as e:
             logger.error(f"Failed to load state file: {e}")
             return {
                 "last_sync_time": None,
                 "synced_posts": [],
+                "skipped_posts": [],
                 "last_bluesky_post_uri": None,
             }
 
@@ -166,6 +171,52 @@ class SyncState:
         self.state = {
             "last_sync_time": None,
             "synced_posts": [],
+            "skipped_posts": [],
             "last_bluesky_post_uri": None,
         }
         self._save_state()
+
+    def is_post_skipped(self, post_uri: str) -> bool:
+        """Check if a post has been skipped due to #no-sync tag"""
+        skipped_posts = self.state.get("skipped_posts", [])
+        for record in skipped_posts:
+            if isinstance(record, dict) and record.get("bluesky_uri") == post_uri:
+                return True
+            elif isinstance(record, str) and record == post_uri:
+                return True
+        return False
+
+    def mark_post_skipped(self, bluesky_post_uri: str, reason: str = "no-sync-tag"):
+        """Mark a post as skipped
+
+        Args:
+            bluesky_post_uri: The URI of the Bluesky post
+            reason: The reason for skipping (default: "no-sync-tag")
+        """
+        if "skipped_posts" not in self.state:
+            self.state["skipped_posts"] = []
+
+        skip_record = {
+            "bluesky_uri": bluesky_post_uri,
+            "reason": reason,
+            "skipped_at": datetime.now().isoformat(),
+        }
+
+        # Remove existing record if it exists
+        self.state["skipped_posts"] = [
+            record
+            for record in self.state["skipped_posts"]
+            if record.get("bluesky_uri") != bluesky_post_uri
+        ]
+
+        self.state["skipped_posts"].append(skip_record)
+
+        # Keep only the last 100 skipped posts to prevent file from growing too large
+        if len(self.state["skipped_posts"]) > 100:
+            self.state["skipped_posts"] = self.state["skipped_posts"][-100:]
+
+        self._save_state()
+
+    def get_skipped_posts_count(self) -> int:
+        """Get the number of skipped posts"""
+        return len(self.state.get("skipped_posts", []))

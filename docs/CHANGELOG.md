@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- 🚫 **Selective Sync with #no-sync Tag**: Added ability to skip syncing posts with `#no-sync` hashtag
+  - Posts containing `#no-sync` tag (case-insensitive) are automatically skipped during sync
+  - Skipped posts are tracked in `sync_state.json` with `skipped_posts` array to prevent re-processing
+  - New `is_post_skipped()` and `mark_post_skipped()` methods in `SyncState` class
+  - New `has_no_sync_tag()` method in `ContentProcessor` class for tag detection
+  - Skipped posts count included in sync status output via `get_skipped_posts_count()`
+  - Backward compatible with existing `sync_state.json` files (auto-adds `skipped_posts` field)
+  - Comprehensive test coverage with 45+ new tests for all aspects of the feature
+  - Updated documentation in README.md, SETUP.md, and added usage examples
 - 🎛️ **CLI Option to Disable Source Platform Attribution**: Added `--disable-source-platform` flag to the `sync` command
   - Allows users to control whether "(via Bluesky 🦋)" attribution is added to synced posts
   - Can be configured via CLI flag or `DISABLE_SOURCE_PLATFORM` environment variable

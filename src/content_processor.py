@@ -356,6 +356,25 @@ class ContentProcessor:
         return images
 
     @staticmethod
+    def has_no_sync_tag(text: str) -> bool:
+        """Check if text contains the #no-sync tag
+
+        Args:
+            text: The text to check for the #no-sync tag
+
+        Returns:
+            True if the text contains #no-sync tag, False otherwise
+        """
+        if not text:
+            return False
+
+        # Extract all hashtags from the text
+        hashtags = ContentProcessor.extract_hashtags(text)
+
+        # Check if 'no-sync' is in the hashtags (case-insensitive)
+        return any(tag.lower() == "no-sync" for tag in hashtags)
+
+    @staticmethod
     def download_image(image_url: str) -> Optional[Tuple[bytes, str]]:
         """Download image from URL
 

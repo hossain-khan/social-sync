@@ -485,3 +485,47 @@ class TestContentProcessor:
         # Should only appear once
         link_count = result.count("https://github.com/example/awesome-lib")
         assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
+
+    def test_has_no_sync_tag_true(self):
+        """Test detecting #no-sync tag in text"""
+        text = "This is a test post #no-sync"
+        assert ContentProcessor.has_no_sync_tag(text) is True
+
+    def test_has_no_sync_tag_false(self):
+        """Test that posts without #no-sync tag return False"""
+        text = "This is a test post #other #tags"
+        assert ContentProcessor.has_no_sync_tag(text) is False
+
+    def test_has_no_sync_tag_empty_text(self):
+        """Test empty text returns False"""
+        assert ContentProcessor.has_no_sync_tag("") is False
+        assert ContentProcessor.has_no_sync_tag(None) is False
+
+    def test_has_no_sync_tag_case_insensitive(self):
+        """Test that #no-sync tag detection is case-insensitive"""
+        assert ContentProcessor.has_no_sync_tag("Test #no-sync") is True
+        assert ContentProcessor.has_no_sync_tag("Test #No-Sync") is True
+        assert ContentProcessor.has_no_sync_tag("Test #NO-SYNC") is True
+        assert ContentProcessor.has_no_sync_tag("Test #No-sync") is True
+
+    def test_has_no_sync_tag_with_other_tags(self):
+        """Test detecting #no-sync among other hashtags"""
+        text = "Check out #python #no-sync #development #tutorial"
+        assert ContentProcessor.has_no_sync_tag(text) is True
+
+    def test_has_no_sync_tag_middle_of_text(self):
+        """Test detecting #no-sync tag in middle of text"""
+        text = "This is #no-sync a test post"
+        assert ContentProcessor.has_no_sync_tag(text) is True
+
+    def test_has_no_sync_tag_multiple_occurrences(self):
+        """Test detecting #no-sync when it appears multiple times"""
+        text = "Testing #no-sync multiple #no-sync times"
+        assert ContentProcessor.has_no_sync_tag(text) is True
+
+    def test_has_no_sync_tag_partial_match_false(self):
+        """Test that partial matches don't trigger the filter"""
+        # These should NOT be detected as no-sync
+        assert ContentProcessor.has_no_sync_tag("Test #no-synchronization") is False
+        assert ContentProcessor.has_no_sync_tag("Test #nosync") is False
+        assert ContentProcessor.has_no_sync_tag("Test #no-sync-please") is False

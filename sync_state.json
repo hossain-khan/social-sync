@@ -97,5 +97,6 @@
       "synced_at": "2025-10-19T00:07:45.411354"
     }
   ],
-  "last_bluesky_post_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3m3ijvlenkc2u"
+  "last_bluesky_post_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3m3ijvlenkc2u",
+  "skipped_posts": []
 }

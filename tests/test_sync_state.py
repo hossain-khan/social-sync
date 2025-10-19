@@ -365,3 +365,131 @@ class TestSyncState:
         # Should have default empty state
         assert sync_state.get_synced_posts_count() == 0
         assert sync_state.get_last_sync_time() is None
+
+    def test_is_post_skipped_false(self):
+        """Test checking if a post is skipped (doesn't exist)"""
+        assert self.sync_state.is_post_skipped("at://nonexistent-uri") is False
+
+    def test_is_post_skipped_true(self):
+        """Test checking if a post is skipped (exists)"""
+        # Mark a post as skipped
+        self.sync_state.mark_post_skipped("at://test-skipped-uri", "no-sync-tag")
+
+        assert self.sync_state.is_post_skipped("at://test-skipped-uri") is True
+
+    def test_mark_post_skipped(self):
+        """Test marking a post as skipped"""
+        bluesky_uri = "at://test-skip-uri"
+        reason = "no-sync-tag"
+
+        self.sync_state.mark_post_skipped(bluesky_uri, reason)
+
+        # Verify post is marked as skipped
+        assert self.sync_state.is_post_skipped(bluesky_uri)
+
+        # Verify stored in file with correct structure
+        with open(self.state_file_path, "r") as f:
+            state_data = json.load(f)
+
+        assert "skipped_posts" in state_data
+        assert len(state_data["skipped_posts"]) == 1
+        skip_record = state_data["skipped_posts"][0]
+        assert skip_record["bluesky_uri"] == bluesky_uri
+        assert skip_record["reason"] == reason
+        assert "skipped_at" in skip_record
+
+    def test_mark_post_skipped_duplicate(self):
+        """Test marking the same post as skipped multiple times"""
+        bluesky_uri = "at://test-skip-duplicate"
+
+        # Mark the same post twice
+        self.sync_state.mark_post_skipped(bluesky_uri, "no-sync-tag")
+        self.sync_state.mark_post_skipped(bluesky_uri, "no-sync-tag")
+
+        # Should only have one record
+        assert self.sync_state.get_skipped_posts_count() == 1
+
+    def test_get_skipped_posts_count_empty(self):
+        """Test getting skipped posts count when empty"""
+        assert self.sync_state.get_skipped_posts_count() == 0
+
+    def test_get_skipped_posts_count_with_posts(self):
+        """Test getting skipped posts count with posts"""
+        self.sync_state.mark_post_skipped("at://skip-uri1", "no-sync-tag")
+        self.sync_state.mark_post_skipped("at://skip-uri2", "no-sync-tag")
+        self.sync_state.mark_post_skipped("at://skip-uri3", "no-sync-tag")
+
+        assert self.sync_state.get_skipped_posts_count() == 3
+
+    def test_skipped_posts_limit(self):
+        """Test that skipped posts list is limited to 100 entries"""
+        # Add more than 100 skipped posts
+        for i in range(150):
+            self.sync_state.mark_post_skipped(f"at://skip-uri-{i}", "no-sync-tag")
+
+        # Should only keep the last 100
+        assert self.sync_state.get_skipped_posts_count() == 100
+
+        # Verify the most recent ones are kept
+        assert self.sync_state.is_post_skipped("at://skip-uri-149")
+        assert not self.sync_state.is_post_skipped("at://skip-uri-0")
+
+    def test_backward_compatibility_no_skipped_posts_field(self):
+        """Test that old state files without skipped_posts field work correctly"""
+        # Create old-style state without skipped_posts field
+        old_state = {
+            "last_sync_time": "2024-01-01T10:00:00",
+            "synced_posts": [
+                {
+                    "bluesky_uri": "at://test-uri",
+                    "mastodon_id": "12345",
+                    "synced_at": "2024-01-01T10:00:00",
+                }
+            ],
+            "last_bluesky_post_uri": "at://test-uri",
+        }
+
+        with open(self.state_file_path, "w") as f:
+            json.dump(old_state, f)
+
+        # Load the state
+        sync_state = SyncState(self.state_file_path)
+
+        # Should work without crashing
+        assert sync_state.get_skipped_posts_count() == 0
+        assert not sync_state.is_post_skipped("at://any-uri")
+
+        # Should be able to mark posts as skipped
+        sync_state.mark_post_skipped("at://new-skip-uri", "no-sync-tag")
+        assert sync_state.is_post_skipped("at://new-skip-uri")
+
+    def test_clear_state_includes_skipped_posts(self):
+        """Test that clear_state also clears skipped posts"""
+        # Add some data including skipped posts
+        self.sync_state.mark_post_synced("at://test", "123")
+        self.sync_state.mark_post_skipped("at://skipped", "no-sync-tag")
+
+        # Verify data exists
+        assert self.sync_state.get_synced_posts_count() > 0
+        assert self.sync_state.get_skipped_posts_count() > 0
+
+        # Clear state
+        self.sync_state.clear_state()
+
+        # Verify skipped posts are also cleared
+        assert self.sync_state.get_skipped_posts_count() == 0
+        assert not self.sync_state.is_post_skipped("at://skipped")
+
+    def test_skipped_posts_persistence(self):
+        """Test that skipped posts persist across instances"""
+        bluesky_uri = "at://test-skip-persistence"
+
+        # Mark post as skipped in first instance
+        self.sync_state.mark_post_skipped(bluesky_uri, "no-sync-tag")
+
+        # Create new instance with same file
+        new_sync_state = SyncState(self.state_file_path)
+
+        # Verify persistence
+        assert new_sync_state.is_post_skipped(bluesky_uri)
+        assert new_sync_state.get_skipped_posts_count() == 1

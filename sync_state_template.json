@@ -2,5 +2,6 @@
   "_comment": "This is a template sync state file. The actual sync_state.json will be created automatically when you run the sync for the first time.",
   "last_sync_time": null,
   "synced_posts": [],
+  "skipped_posts": [],
   "last_bluesky_post_uri": null
 }
