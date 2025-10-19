@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 🐛 **Nested Reply Detection Bug**: Fixed issue where nested replies in threads started by others were incorrectly synced
+  - Previously, a reply to a self-reply that was itself part of someone else's thread would be synced
+  - Now correctly checks the root post of the thread, not just the immediate parent
+  - Example: If user replies to someone else's post, then replies to their own reply, both are now correctly filtered
+  - Added comprehensive test coverage for nested reply scenarios
+  - Thread detection now properly handles deep nesting levels
+
 ### Added
 - 🚫 **Selective Sync with #no-sync Tag**: Added ability to skip syncing posts with `#no-sync` hashtag
   - Posts containing `#no-sync` tag (case-insensitive) are automatically skipped during sync
