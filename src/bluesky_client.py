@@ -245,7 +245,9 @@ class BlueskyClient:
                 + (f" since {since_date.isoformat()}" if since_date else "")
             )
             if filtered_replies > 0:
-                logger.info(f"Filtered out {filtered_replies} non-self reply posts")
+                logger.info(
+                    f"Filtered out {filtered_replies} reply posts in threads started by others"
+                )
             if filtered_reposts > 0:
                 logger.info(f"Filtered out {filtered_reposts} reposts")
             if filtered_by_date > 0:

@@ -71,7 +71,7 @@ class SocialSyncOrchestrator:
             )
             if fetch_result.filtered_replies > 0:
                 logger.info(
-                    f"Filtered out {fetch_result.filtered_replies} non-self reply posts"
+                    f"Filtered out {fetch_result.filtered_replies} reply posts in threads started by others"
                 )
             if fetch_result.filtered_reposts > 0:
                 logger.info(f"Filtered out {fetch_result.filtered_reposts} reposts")
