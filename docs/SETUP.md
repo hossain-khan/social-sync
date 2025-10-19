@@ -262,6 +262,7 @@ python sync.py sync --since-date 2025-01-01
 - ❌ **Other user replies** - Unless parent was also synced
 - ❌ **Reposts/boosts** - Only original content
 - ❌ **Already synced** - Prevented by state tracking
+- ❌ **Posts with `#no-sync` tag** - Skipped and tracked to prevent re-processing
 
 ### Content Adaptations
 
@@ -271,6 +272,44 @@ python sync.py sync --since-date 2025-01-01
 - **Image handling**: Notes image count and preserves alt text
 - **Quote posts**: Includes quoted content with attribution
 - **Attribution**: Adds "(via Bluesky)" to posts (skipped for replies)
+
+### Selective Sync with #no-sync Tag
+
+You can control which posts are synced by adding the `#no-sync` tag to any Bluesky post.
+
+**How It Works:**
+- Add `#no-sync` (or `#No-Sync`, `#NO-SYNC`, etc.) to any post you want to skip
+- The tag is case-insensitive and works anywhere in the post text
+- Posts with this tag are **not synced** to Mastodon
+- Skipped posts are tracked in `sync_state.json` to prevent re-processing
+- The tag itself does not need to be removed later - it stays on your Bluesky post
+
+**Example:**
+```
+Just testing something internally. #no-sync
+
+This post won't be synced to Mastodon!
+```
+
+**State Tracking:**
+Skipped posts are recorded in the sync state file:
+```json
+{
+  "skipped_posts": [
+    {
+      "bluesky_uri": "at://did:plc:example/app.bsky.feed.post/abc123",
+      "reason": "no-sync-tag",
+      "skipped_at": "2025-10-19T00:00:00.000000"
+    }
+  ]
+}
+```
+
+**Use Cases:**
+- Private/work-related posts that should stay on Bluesky
+- Testing posts before sharing broadly
+- Platform-specific content not relevant for cross-posting
+- Temporary posts you don't want synced
 
 ## Troubleshooting
 

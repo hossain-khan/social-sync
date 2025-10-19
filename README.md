@@ -11,6 +11,7 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 - 🧵 **Thread Support**: Maintains conversation threading for reply posts  
 - 🚀 **GitHub Actions**: Run automatically via CI/CD workflows
 - 🎯 **Smart Deduplication**: Prevents duplicate posts across sync runs
+- 🚫 **Selective Sync**: Skip posts with `#no-sync` tag to control what gets synced
 - 📝 **Content Processing**: Handles links, images, and quoted posts
 - 🧪 **Dry Run Mode**: Test functionality without actual posting
 
@@ -97,11 +98,13 @@ MASTODON_ACCESS_TOKEN=your-access-token
 1. **Connect** to Bluesky and Mastodon APIs
 2. **Fetch** recent posts from Bluesky feed  
 3. **Process** content (adapt links, images, threading)
-4. **Filter** duplicates using sync state tracking
+4. **Filter** duplicates and `#no-sync` tagged posts using sync state tracking
 5. **Post** to Mastodon with proper threading
 6. **Save** sync state for next run
 
 **🧵 Threading:** Reply posts maintain conversation context across platforms.
+
+**🚫 Selective Sync:** Add `#no-sync` to any Bluesky post to prevent it from syncing. The tag is case-insensitive (`#No-Sync`, `#NO-SYNC`, etc. all work).
 
 ## 🐛 Common Issues
 
