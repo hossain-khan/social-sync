@@ -180,7 +180,9 @@ class TestBlueskyClient:
         # Root belongs to someone else
         mock_reply.root.uri = "at://did:plc:otheruser456/app.bsky.feed.post/their-post"
         mock_reply.parent = Mock()
-        mock_reply.parent.uri = "at://did:plc:otheruser456/app.bsky.feed.post/their-post"
+        mock_reply.parent.uri = (
+            "at://did:plc:otheruser456/app.bsky.feed.post/their-post"
+        )
 
         mock_post_record = Mock()
         mock_post_record.text = "This is a reply"
@@ -274,12 +276,14 @@ class TestBlueskyClient:
         assert result.posts[0].text == "This is a self-reply"
 
     @patch("src.bluesky_client.AtprotoClient")
-    def test_get_recent_posts_with_nested_reply_in_others_thread(self, mock_client_class):
+    def test_get_recent_posts_with_nested_reply_in_others_thread(
+        self, mock_client_class
+    ):
         """Test that nested replies in threads started by others are filtered out
-        
+
         This tests the bug fix: A reply to a self-reply that is itself part of
         someone else's thread should be filtered out.
-        
+
         Thread structure:
         1. Someone else's post (root)
         2. User's reply to that post (would be filtered, not shown here)
@@ -338,7 +342,7 @@ class TestBlueskyClient:
     @patch("src.bluesky_client.AtprotoClient")
     def test_get_recent_posts_with_deep_nested_self_replies(self, mock_client_class):
         """Test that deeply nested self-replies in own threads are included
-        
+
         Thread structure:
         1. User's original post (root)
         2. User's reply to their own post
