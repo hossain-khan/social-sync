@@ -80,14 +80,39 @@ class SocialSyncOrchestrator:
                     f"Filtered out {fetch_result.filtered_by_date} posts older than {since_date.isoformat()}"
                 )
 
-        # Filter out posts that have already been synced
+        # Filter out posts that have already been synced or skipped
         new_posts = []
+        skipped_with_tag_count = 0
+        already_skipped_count = 0
+
         for post in fetch_result.posts:
-            if not self.sync_state.is_post_synced(post.uri):
-                new_posts.append(post)
+            # Check if already synced
+            if self.sync_state.is_post_synced(post.uri):
+                continue
+
+            # Check if already skipped previously
+            if self.sync_state.is_post_skipped(post.uri):
+                already_skipped_count += 1
+                continue
+
+            # Check if post has #no-sync tag
+            if self.content_processor.has_no_sync_tag(post.text):
+                logger.info(f"Skipping post with #no-sync tag: {post.uri}")
+                self.sync_state.mark_post_skipped(post.uri, reason="no-sync-tag")
+                skipped_with_tag_count += 1
+                continue
+
+            new_posts.append(post)
 
         # Sort posts by creation time (ascending) to post older posts first
         new_posts.sort(key=lambda post: post.created_at)
+
+        if skipped_with_tag_count > 0:
+            logger.info(f"Skipped {skipped_with_tag_count} posts with #no-sync tag")
+        if already_skipped_count > 0:
+            logger.info(
+                f"Found {already_skipped_count} posts that were previously skipped"
+            )
 
         logger.info(f"Found {len(new_posts)} new posts to sync")
         return new_posts
@@ -330,9 +355,11 @@ class SocialSyncOrchestrator:
         """Get current sync status"""
         last_sync = self.sync_state.get_last_sync_time()
         synced_count = self.sync_state.get_synced_posts_count()
+        skipped_count = self.sync_state.get_skipped_posts_count()
 
         return {
             "last_sync_time": last_sync.isoformat() if last_sync else None,
             "total_synced_posts": synced_count,
+            "total_skipped_posts": skipped_count,
             "dry_run_mode": self.settings.dry_run,
         }
