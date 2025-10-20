@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-10-20
+
 ### Fixed
 - 🐛 **Nested Reply Detection Bug**: Fixed issue where nested replies in threads started by others were incorrectly synced
   - Previously, a reply to a self-reply that was itself part of someone else's thread would be synced
