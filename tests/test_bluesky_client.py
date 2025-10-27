@@ -851,3 +851,91 @@ class TestBlueskyClient:
         result = client.get_post_thread("at://test-uri")
 
         assert result is None
+
+    def test_extract_embed_data_record_with_media(self):
+        """Test extracting recordWithMedia embed data (quoted post with images)"""
+        # This tests the fix for the bug where images in quoted posts weren't synced
+        # recordWithMedia embeds have images nested in embed.media.images instead of embed.images
+
+        # Create Mock objects for images (same structure as direct images)
+        mock_blob_ref1 = Mock()
+        mock_blob_ref1.link = "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+
+        mock_image_blob1 = Mock()
+        mock_image_blob1.mime_type = "image/jpeg"
+        mock_image_blob1.size = 600344
+        mock_image_blob1.ref = mock_blob_ref1
+
+        mock_image1 = Mock()
+        mock_image1.alt = ""
+        mock_image1.image = mock_image_blob1
+
+        mock_blob_ref2 = Mock()
+        mock_blob_ref2.link = "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+
+        mock_image_blob2 = Mock()
+        mock_image_blob2.mime_type = "image/jpeg"
+        mock_image_blob2.size = 730298
+        mock_image_blob2.ref = mock_blob_ref2
+
+        mock_image2 = Mock()
+        mock_image2.alt = ""
+        mock_image2.image = mock_image_blob2
+
+        # Create media object that contains the images
+        mock_media = Mock()
+        mock_media.py_type = "app.bsky.embed.images"
+        mock_media.images = [mock_image1, mock_image2]
+
+        # Create record object for the quoted post
+        mock_record = Mock()
+        mock_record.py_type = "app.bsky.embed.record"
+
+        # Create the recordWithMedia embed
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.recordWithMedia"
+        mock_embed.media = mock_media
+        mock_embed.record = mock_record
+        # Ensure 'images' attribute doesn't exist at top level
+        if hasattr(mock_embed, "images"):
+            delattr(mock_embed, "images")
+        # Ensure 'external' doesn't exist
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+
+        # Verify the result contains images from media.images
+        assert result is not None
+        assert result["py_type"] == "app.bsky.embed.recordWithMedia"
+        assert "images" in result, "Images should be extracted from media.images"
+        assert len(result["images"]) == 2, "Should extract all images from media"
+
+        # Verify first image
+        image1_data = result["images"][0]
+        assert image1_data["alt"] == ""
+        assert "image" in image1_data
+        blob1_data = image1_data["image"]
+        assert blob1_data["mime_type"] == "image/jpeg"
+        assert blob1_data["size"] == 600344
+        assert "ref" in blob1_data
+        assert (
+            blob1_data["ref"]["$link"]
+            == "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+        )
+
+        # Verify second image
+        image2_data = result["images"][1]
+        assert image2_data["alt"] == ""
+        assert "image" in image2_data
+        blob2_data = image2_data["image"]
+        assert blob2_data["mime_type"] == "image/jpeg"
+        assert blob2_data["size"] == 730298
+        assert "ref" in blob2_data
+        assert (
+            blob2_data["ref"]["$link"]
+            == "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+        )
+
+        # Verify record is also preserved
+        assert "record" in result
