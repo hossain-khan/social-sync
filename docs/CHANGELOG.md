@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-10-27
+
+### Fixed
+- 🐛 **recordWithMedia Image Sync Bug**: Fixed critical issue where Bluesky posts with quoted content and images failed to sync images to Mastodon
+  - Posts using `app.bsky.embed.recordWithMedia` embed type (quoted posts with images) would sync to Mastodon without any attached images
+  - Root cause: Images in recordWithMedia embeds are nested at `embed.media.images` instead of `embed.images`
+  - **BlueskyClient Fix**: Enhanced `_extract_embed_data()` method to check both direct images (`embed.images`) and nested media images (`embed.media.images`)
+  - **ContentProcessor Fix**: Updated `extract_images_from_embed()` to process both "images" and "recordWithMedia" embed types
+  - Added comprehensive unit test coverage for recordWithMedia scenarios in both BlueskyClient and ContentProcessor
+  - Fixed pre-existing test failures caused by new media attribute checks
+  - Verified with real-world post containing 4 images - all images now sync correctly
+  - Affects any Bluesky post that quotes another post while also attaching images
+
 ## [0.5.0] - 2025-10-20
 
 ### Fixed
