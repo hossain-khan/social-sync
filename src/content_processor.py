@@ -314,7 +314,11 @@ class ContentProcessor:
             else embed.get("$type", "").split(".")[-1] if embed.get("$type") else ""
         )
 
-        if embed_type == "images":
+        # Extract images if present - can be in "images" embed type OR in recordWithMedia
+        # recordWithMedia = quoted post + images (images stored in same "images" field)
+        if embed_type == "images" or (
+            embed_type == "recordWithMedia" and embed.get("images")
+        ):
             bluesky_images = embed.get("images", [])
             for img in bluesky_images:
                 # Extract image URL and metadata

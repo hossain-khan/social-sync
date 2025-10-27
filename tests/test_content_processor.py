@@ -208,6 +208,52 @@ class TestContentProcessor:
         assert result[0]["alt"] == "First image"
         assert result[1]["alt"] == "Second image"
 
+    def test_extract_images_from_embed_record_with_media(self):
+        """Test image extraction from recordWithMedia embed (quoted post with images)"""
+        # This tests the fix for quoted posts with images not syncing
+        embed = {
+            "py_type": "app.bsky.embed.recordWithMedia",
+            "images": [
+                {
+                    "alt": "Image from quoted post",
+                    "image": {
+                        "$type": "blob",
+                        "ref": {
+                            "$link": "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+                        },
+                        "mimeType": "image/jpeg",
+                        "size": 600344,
+                    },
+                },
+                {
+                    "alt": "",
+                    "image": {
+                        "$type": "blob",
+                        "ref": {
+                            "$link": "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+                        },
+                        "mimeType": "image/jpeg",
+                        "size": 730298,
+                    },
+                },
+            ],
+            "record": {"py_type": "app.bsky.embed.record"},
+        }
+        result = ContentProcessor.extract_images_from_embed(embed)
+        assert len(result) == 2, "Should extract images from recordWithMedia embed"
+        assert result[0]["alt"] == "Image from quoted post"
+        assert (
+            result[0]["blob_ref"]
+            == "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+        )
+        assert result[0]["mime_type"] == "image/jpeg"
+        assert result[1]["alt"] == ""
+        assert (
+            result[1]["blob_ref"]
+            == "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+        )
+        assert result[1]["mime_type"] == "image/jpeg"
+
     @patch("src.content_processor.requests.get")
     def test_download_image_success(self, mock_get):
         """Test successful image download"""
