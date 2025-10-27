@@ -641,6 +641,9 @@ class TestBlueskyClient:
         # Ensure images attribute doesn't exist to avoid iteration issues
         if hasattr(mock_embed, "images"):
             delattr(mock_embed, "images")
+        # Ensure media attribute doesn't exist (for recordWithMedia check)
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
         # Ensure record attribute doesn't exist to avoid issues
         if hasattr(mock_embed, "record"):
             delattr(mock_embed, "record")
@@ -681,6 +684,8 @@ class TestBlueskyClient:
         # Ensure other attributes don't exist
         if hasattr(mock_embed, "external"):
             delattr(mock_embed, "external")
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
         if hasattr(mock_embed, "record"):
             delattr(mock_embed, "record")
 
@@ -755,6 +760,8 @@ class TestBlueskyClient:
         mock_embed.images = [mock_image1, mock_image2]
         if hasattr(mock_embed, "external"):
             delattr(mock_embed, "external")
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
         if hasattr(mock_embed, "record"):
             delattr(mock_embed, "record")
 
