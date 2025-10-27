@@ -866,7 +866,9 @@ class TestBlueskyClient:
 
         # Create Mock objects for images (same structure as direct images)
         mock_blob_ref1 = Mock()
-        mock_blob_ref1.link = "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+        mock_blob_ref1.link = (
+            "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+        )
 
         mock_image_blob1 = Mock()
         mock_image_blob1.mime_type = "image/jpeg"
@@ -878,7 +880,9 @@ class TestBlueskyClient:
         mock_image1.image = mock_image_blob1
 
         mock_blob_ref2 = Mock()
-        mock_blob_ref2.link = "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+        mock_blob_ref2.link = (
+            "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+        )
 
         mock_image_blob2 = Mock()
         mock_image_blob2.mime_type = "image/jpeg"

@@ -218,7 +218,9 @@ class TestContentProcessor:
                     "alt": "Image from quoted post",
                     "image": {
                         "$type": "blob",
-                        "ref": {"$link": "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"},
+                        "ref": {
+                            "$link": "bafkreiett2bw6haj672k7l6gk32dwqdd27j3ks6hgsokhxkgyixr4we77i"
+                        },
                         "mimeType": "image/jpeg",
                         "size": 600344,
                     },
@@ -227,7 +229,9 @@ class TestContentProcessor:
                     "alt": "",
                     "image": {
                         "$type": "blob",
-                        "ref": {"$link": "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"},
+                        "ref": {
+                            "$link": "bafkreignydqmw2pqgm7jo3g4jnuu6ztr53fy26llwoul2gtkd6n7xkvvce"
+                        },
                         "mimeType": "image/jpeg",
                         "size": 730298,
                     },
