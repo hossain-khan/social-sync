@@ -6,7 +6,7 @@ maintaining conversation threading and providing comprehensive
 operational visibility.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __author__ = "Hossain Khan"
 __email__ = "hello@hossain.dev"
 __license__ = "MIT"
