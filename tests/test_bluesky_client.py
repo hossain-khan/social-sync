@@ -907,7 +907,7 @@ class TestBlueskyClient:
         mock_embed.py_type = "app.bsky.embed.recordWithMedia"
         mock_embed.media = mock_media
         mock_embed.record = mock_record
-        # Ensure 'images' attribute doesn't exist at top level
+        # Ensure 'images' attribute doesn't exist at top level since recordWithMedia stores images in media.images instead
         if hasattr(mock_embed, "images"):
             delattr(mock_embed, "images")
         # Ensure 'external' doesn't exist
