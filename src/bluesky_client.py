@@ -356,9 +356,23 @@ class BlueskyClient:
             # === IMAGE ATTACHMENTS ===
             # Handle posts with one or more attached images
             # Each image can have alt text for accessibility
+            # NOTE: Images can be direct OR nested in recordWithMedia (quote + images)
+            images_to_process = None
+
+            # Check for direct images first
             if hasattr(embed, "images") and embed.images:
+                images_to_process = embed.images
+            # Check for recordWithMedia (quoted post with images)
+            elif hasattr(embed, "media") and embed.media:
+                if hasattr(embed.media, "images") and embed.media.images:
+                    images_to_process = embed.media.images
+                    logger.debug(
+                        "Found images in recordWithMedia embed (quoted post with images)"
+                    )
+
+            if images_to_process:
                 images_data = []
-                for image in embed.images:
+                for image in images_to_process:
                     # Extract image metadata and accessibility info
                     image_data = {
                         "alt": getattr(
