@@ -641,7 +641,7 @@ class TestBlueskyClient:
         # Ensure images attribute doesn't exist to avoid iteration issues
         if hasattr(mock_embed, "images"):
             delattr(mock_embed, "images")
-        # Ensure media attribute doesn't exist (for recordWithMedia check)
+        # Ensure media attribute doesn't exist to isolate testing of external embed without recordWithMedia behavior
         if hasattr(mock_embed, "media"):
             delattr(mock_embed, "media")
         # Ensure record attribute doesn't exist to avoid issues
