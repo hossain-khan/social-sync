@@ -646,7 +646,7 @@ class TestContentProcessor:
     def test_expand_urls_with_mixed_multibyte_characters(self):
         """Test URL expansion with mixed emoji and text"""
         text = "Hello 👋 world 🌍 check example.co..."
-        # Calculate byte positions: "Hello 👋 world 🌍 check " = 5 + 1 + 4 + 1 + 5 + 1 + 4 + 1 + 5 + 1 = 28 bytes
+        # Byte positions: "Hello " (6 bytes) + "👋" (4 bytes) + " world " (7 bytes) + "🌍" (4 bytes) + " check " (7 bytes) = 28 bytes
         facets = [
             {
                 "index": {"byteStart": 28, "byteEnd": 39},
