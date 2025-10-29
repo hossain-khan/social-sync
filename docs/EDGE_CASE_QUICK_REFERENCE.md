@@ -113,7 +113,7 @@ These issues were already addressed in recent releases:
 text = "🎉 Check out https://example.com..."
 text_bytes = text.encode('utf-8')
 print(f"Characters: {len(text)}, Bytes: {len(text_bytes)}")
-# Output: Characters: 34, Bytes: 37 (emoji is 4 bytes!)
+# Output: Characters: 34, Bytes: 37 (the emoji here is 4 bytes, but some emoji/multi-byte characters can be longer!)
 ```
 
 ### Detect Self-Labels
