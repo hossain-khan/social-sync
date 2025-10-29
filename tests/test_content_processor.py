@@ -647,6 +647,8 @@ class TestContentProcessor:
         """Test URL expansion with mixed emoji and text"""
         text = "Hello 👋 world 🌍 check example.co..."
         # Byte positions: "Hello " (6 bytes) + "👋" (4 bytes) + " world " (7 bytes) + "🌍" (4 bytes) + " check " (7 bytes) = 28 bytes
+        # The facet index covers the substring 'example.co...' in the original text.
+        # byteStart=28 is the start of 'example.co...', and byteEnd=39 is the end of 'example.co...' in the original text (13 bytes for 'example.co...').
         facets = [
             {
                 "index": {"byteStart": 28, "byteEnd": 39},
