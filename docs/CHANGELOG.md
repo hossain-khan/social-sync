@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 🐛 **Multi-byte UTF-8 Character Handling**: Fixed URL facet expansion with emoji and CJK characters
+  - AT Protocol facets use byte positions, not character positions
+  - Previous implementation re-encoded text on each facet iteration, invalidating byte offsets when multi-byte characters (emoji, CJK) were present
+  - Now encodes text to bytes once at function entry, performs all URL replacements at byte level, and decodes to string only at exit
+  - Preserves byte position validity across all iterations
+  - Added comprehensive tests for emoji, CJK characters, multiple URLs with multi-byte chars, and UTF-8 decoding error handling
+  - Fixes issue where posts with "🎉 Check out example.co..." would fail to expand URLs correctly
+
 ### Added
 - ✨ **Content Warning Support**: Added automatic content warning sync from Bluesky self-labels to Mastodon
   - Bluesky posts with self-labels (`porn`, `nudity`, `sexual`, `graphic-media`) now sync with appropriate Mastodon content warnings
