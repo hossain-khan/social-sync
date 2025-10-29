@@ -131,7 +131,6 @@ class TestBlueskyClient:
         mock_post_record.reply = None
         mock_post_record.labels = None
         mock_post_record.langs = None
-        mock_post_record.langs = None
 
         mock_feed_item = Mock()
         # Ensure no 'reason' attribute (no repost)
