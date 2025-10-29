@@ -57,6 +57,10 @@ class BlueskyPost:
     # Used to apply content warnings when syncing to platforms like Mastodon
     self_labels: Optional[List[str]] = None
 
+    # Language codes (ISO 639-1 two-letter codes, e.g., "en", "es", "ja")
+    # Used for language-based filtering and i18n metadata preservation
+    langs: Optional[List[str]] = None
+
 
 class BlueskyClient:
     """Wrapper for Bluesky AT Protocol client"""
@@ -224,6 +228,12 @@ class BlueskyClient:
                     self_labels = [label.val for label in post.record.labels.values]
                     logger.debug(f"Found self-labels: {self_labels}")
 
+                # Extract language tags if present
+                langs = None
+                if hasattr(post.record, "langs") and post.record.langs:
+                    langs = list(post.record.langs)
+                    logger.debug(f"Found language tags: {langs}")
+
                 bluesky_post = BlueskyPost(
                     uri=post.uri,
                     cid=post.cid,
@@ -250,6 +260,8 @@ class BlueskyClient:
                     ),
                     # Extract content warning labels for cross-platform moderation
                     self_labels=self_labels,
+                    # Preserve language metadata for i18n support
+                    langs=langs,
                 )
                 posts.append(bluesky_post)
 

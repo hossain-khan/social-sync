@@ -82,6 +82,7 @@ class TestMastodonClient:
             media_ids=["m1"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_post_status_failure(self, mock_mastodon_library):
@@ -231,6 +232,7 @@ class TestMastodonClient:
             media_ids=None,
             sensitive=True,
             spoiler_text="NSFW - Adult Content",
+            language=None,
         )
 
     @patch("src.mastodon_client.Mastodon")
@@ -267,4 +269,5 @@ class TestMastodonClient:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )

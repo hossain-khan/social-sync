@@ -541,6 +541,7 @@ class TestSocialSyncOrchestrator:
             media_ids=["media-id-1"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
         self.mock_sync_state.mark_post_synced.assert_called_once()
 
@@ -591,6 +592,7 @@ class TestSocialSyncOrchestrator:
             media_ids=["media-id-1"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
         self.mock_sync_state.mark_post_synced.assert_called_once()
 
@@ -648,6 +650,7 @@ class TestSocialSyncOrchestrator:
             media_ids=["media-id-1", "media-id-2"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_sync_post_image_download_fails(self):
@@ -691,6 +694,7 @@ class TestSocialSyncOrchestrator:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_sync_post_image_upload_fails(self):
@@ -738,6 +742,7 @@ class TestSocialSyncOrchestrator:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_sync_post_with_image_dry_run(self):
@@ -820,6 +825,7 @@ class TestSocialSyncOrchestrator:
             media_ids=["media-id-1"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
         # Attribution should not be added to replies
         self.mock_content_processor.add_sync_attribution.assert_not_called()
@@ -864,6 +870,7 @@ class TestSocialSyncOrchestrator:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_run_sync_success(self):

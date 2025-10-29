@@ -130,6 +130,8 @@ class TestBlueskyClient:
         mock_post_record.embed = None
         mock_post_record.reply = None
         mock_post_record.labels = None
+        mock_post_record.langs = None
+        mock_post_record.langs = None
 
         mock_feed_item = Mock()
         # Ensure no 'reason' attribute (no repost)
@@ -187,6 +189,7 @@ class TestBlueskyClient:
 
         mock_post_record = Mock()
         mock_post_record.labels = None
+        mock_post_record.langs = None
         mock_post_record.text = "This is a reply"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
@@ -242,6 +245,7 @@ class TestBlueskyClient:
 
         mock_post_record = Mock()
         mock_post_record.labels = None
+        mock_post_record.langs = None
         mock_post_record.text = "This is a self-reply"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
@@ -308,6 +312,7 @@ class TestBlueskyClient:
 
         mock_post_record = Mock()
         mock_post_record.labels = None
+        mock_post_record.langs = None
         mock_post_record.text = "Reply to my reply in someone else's thread"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
@@ -368,6 +373,7 @@ class TestBlueskyClient:
 
         mock_post_record = Mock()
         mock_post_record.labels = None
+        mock_post_record.langs = None
         mock_post_record.text = "Deep nested reply in my own thread"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
@@ -421,6 +427,7 @@ class TestBlueskyClient:
         mock_old_post_record.embed = None
         mock_old_post_record.reply = None
         mock_old_post_record.labels = None
+        mock_old_post_record.langs = None
 
         mock_old_feed_item = Mock()
         # Ensure no 'reason' attribute (no repost)
@@ -443,6 +450,7 @@ class TestBlueskyClient:
         mock_new_post_record.embed = None
         mock_new_post_record.reply = None
         mock_new_post_record.labels = None
+        mock_new_post_record.langs = None
 
         mock_new_feed_item = Mock()
         # Ensure no 'reason' attribute (no repost)
@@ -499,6 +507,7 @@ class TestBlueskyClient:
         mock_post_record.embed = mock_embed
         mock_post_record.reply = None
         mock_post_record.labels = None
+        mock_post_record.langs = None
 
         mock_feed_item = Mock()
         # Ensure no 'reason' attribute (no repost)
@@ -978,6 +987,7 @@ class TestBlueskyClient:
         mock_post_record.embed = None
         mock_post_record.reply = None
         mock_post_record.labels = mock_labels
+        mock_post_record.langs = None
 
         mock_feed_item = Mock()
         if hasattr(mock_feed_item, "reason"):
@@ -1024,6 +1034,7 @@ class TestBlueskyClient:
         mock_post_record.embed = None
         mock_post_record.reply = None
         mock_post_record.labels = mock_labels
+        mock_post_record.langs = None
 
         mock_feed_item = Mock()
         if hasattr(mock_feed_item, "reason"):
@@ -1068,6 +1079,7 @@ class TestBlueskyClient:
         mock_post_record.reply = None
         # Explicitly set labels to None to indicate no labels
         mock_post_record.labels = None
+        mock_post_record.langs = None
 
         mock_feed_item = Mock()
         if hasattr(mock_feed_item, "reason"):
