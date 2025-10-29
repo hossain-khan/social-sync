@@ -72,11 +72,15 @@ class ContentProcessor:
     def _expand_urls_from_facets(text: str, facets: List[Dict[str, Any]]) -> str:
         """Expand truncated URLs using facets data from Bluesky
 
+        Properly handles multi-byte UTF-8 characters in byte position calculations.
         Facets contain the full URL information that corresponds to
         truncated URLs in the post text.
         """
         if not facets:
             return text
+
+        # Convert text to bytes for accurate indexing
+        text_bytes = text.encode("utf-8")
 
         # Process facets in reverse order to avoid index shifting when replacing text
         sorted_facets = sorted(
@@ -107,29 +111,22 @@ class ContentProcessor:
                     ):
                         full_url = feature.get("uri")
                         if full_url:
-                            # Convert byte positions to character positions
-                            # Note: This assumes UTF-8 encoding where most characters are 1 byte
-                            # For more accurate conversion, we'd need to properly handle multi-byte chars
-                            text_bytes = text.encode("utf-8")
-
-                            # Extract the truncated URL from the text
+                            # Replace at byte positions
                             if byte_end <= len(text_bytes):
-                                before = text_bytes[:byte_start].decode(
-                                    "utf-8", errors="ignore"
+                                text_bytes = (
+                                    text_bytes[:byte_start]
+                                    + full_url.encode("utf-8")
+                                    + text_bytes[byte_end:]
                                 )
-                                after = text_bytes[byte_end:].decode(
-                                    "utf-8", errors="ignore"
-                                )
-
-                                # Replace with the full URL
-                                text = before + full_url + after
                                 logger.debug(f"Expanded URL from facets: {full_url}")
+                            break
 
             except Exception as e:
                 logger.warning(f"Error processing facet for URL expansion: {e}")
                 continue
 
-        return text
+        # Decode back to string
+        return text_bytes.decode("utf-8", errors="replace")
 
     @staticmethod
     def _handle_embed(

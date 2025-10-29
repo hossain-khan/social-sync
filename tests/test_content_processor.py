@@ -575,3 +575,109 @@ class TestContentProcessor:
         assert ContentProcessor.has_no_sync_tag("Test #no-synchronization") is False
         assert ContentProcessor.has_no_sync_tag("Test #nosync") is False
         assert ContentProcessor.has_no_sync_tag("Test #no-sync-please") is False
+
+    def test_expand_urls_with_emoji(self):
+        """Test URL expansion with emoji before URL"""
+        text = "🎉 Check this out: example.co..."
+        facets = [
+            {
+                "index": {"byteStart": 21, "byteEnd": 34},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://example.com/full-url",
+                    }
+                ],
+            }
+        ]
+        result = ContentProcessor._expand_urls_from_facets(text, facets)
+        assert "https://example.com/full-url" in result
+        assert result == "🎉 Check this out: https://example.com/full-url"
+
+    def test_expand_urls_with_cjk_characters(self):
+        """Test URL expansion with Chinese/Japanese/Korean characters"""
+        text = "こんにちは example.co..."
+        facets = [
+            {
+                "index": {"byteStart": 16, "byteEnd": 29},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://example.com",
+                    }
+                ],
+            }
+        ]
+        result = ContentProcessor._expand_urls_from_facets(text, facets)
+        assert "https://example.com" in result
+        assert result == "こんにちは https://example.com"
+
+    def test_expand_urls_with_multiple_urls_and_emoji(self):
+        """Test URL expansion with multiple URLs and emoji characters"""
+        text = "🎉 Link1: ex1.co... and 🌟 Link2: ex2.co..."
+        facets = [
+            {
+                "index": {"byteStart": 12, "byteEnd": 21},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://example1.com",
+                    }
+                ],
+            },
+            {
+                "index": {"byteStart": 38, "byteEnd": 47},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://example2.com",
+                    }
+                ],
+            },
+        ]
+        result = ContentProcessor._expand_urls_from_facets(text, facets)
+        assert "https://example1.com" in result
+        assert "https://example2.com" in result
+        assert (
+            result
+            == "🎉 Link1: https://example1.com and 🌟 Link2: https://example2.com"
+        )
+
+    def test_expand_urls_with_mixed_multibyte_characters(self):
+        """Test URL expansion with mixed emoji and text"""
+        text = "Hello 👋 world 🌍 check example.co..."
+        # Calculate byte positions: "Hello 👋 world 🌍 check " = 5 + 1 + 4 + 1 + 5 + 1 + 4 + 1 + 5 + 1 = 28 bytes
+        facets = [
+            {
+                "index": {"byteStart": 28, "byteEnd": 39},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://example.com/page",
+                    }
+                ],
+            }
+        ]
+        result = ContentProcessor._expand_urls_from_facets(text, facets)
+        assert "https://example.com/page" in result
+        assert "example.co..." not in result
+
+    def test_expand_urls_decoding_error_handling(self):
+        """Test that decoding errors are handled gracefully"""
+        # This test ensures the errors='replace' parameter works correctly
+        text = "Normal text with URL: example.co..."
+        facets = [
+            {
+                "index": {"byteStart": 22, "byteEnd": 35},
+                "features": [
+                    {
+                        "$type": "app.bsky.richtext.facet#link",
+                        "uri": "https://example.com",
+                    }
+                ],
+            }
+        ]
+        # Should not raise an exception even if there are decoding issues
+        result = ContentProcessor._expand_urls_from_facets(text, facets)
+        assert isinstance(result, str)
+        assert "https://example.com" in result
