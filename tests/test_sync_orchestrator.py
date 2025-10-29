@@ -1519,3 +1519,194 @@ class TestSocialSyncOrchestrator:
         call_args = self.mock_mastodon_client.post_status.call_args
         assert call_args[1]["sensitive"] is False
         assert call_args[1]["spoiler_text"] is None
+
+    def test_sync_post_with_single_language_tag(self):
+        """Test syncing a post with single language tag"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        bluesky_post = BlueskyPost(
+            uri="at://test-post-uri",
+            cid="test-cid",
+            text="Post in English",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=None,
+            self_labels=None,
+            langs=["en"],
+        )
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+        self.mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text\n\n(via Bluesky)",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language="en",
+        )
+
+    def test_sync_post_with_multiple_language_tags_uses_first(self):
+        """Test syncing a post with multiple language tags uses the first one"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        bluesky_post = BlueskyPost(
+            uri="at://test-post-uri",
+            cid="test-cid",
+            text="Bilingual post",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=None,
+            self_labels=None,
+            langs=["es", "en"],  # Spanish first, English second
+        )
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+        self.mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        # Should use Spanish (first language)
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text\n\n(via Bluesky)",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language="es",
+        )
+
+    def test_sync_post_without_language_tag(self):
+        """Test syncing a post without language tag"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        bluesky_post = BlueskyPost(
+            uri="at://test-post-uri",
+            cid="test-cid",
+            text="Post without language",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=None,
+            self_labels=None,
+            langs=None,
+        )
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+        self.mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        # Should pass language=None
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text\n\n(via Bluesky)",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language=None,
+        )
+
+    def test_sync_post_with_empty_language_list(self):
+        """Test syncing a post with empty language list"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        bluesky_post = BlueskyPost(
+            uri="at://test-post-uri",
+            cid="test-cid",
+            text="Post with empty language list",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed=None,
+            facets=None,
+            self_labels=None,
+            langs=[],  # Empty list
+        )
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+        self.mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        # Should pass language=None for empty list
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text\n\n(via Bluesky)",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language=None,
+        )

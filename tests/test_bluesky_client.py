@@ -1106,3 +1106,135 @@ class TestBlueskyClient:
         assert len(result.posts) == 1
         post = result.posts[0]
         assert post.self_labels is None
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_extract_language_tags_single(self, mock_client_class):
+        """Test extraction of single language tag from post"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        # Mock post record with single language tag
+        mock_post_record = Mock()
+        mock_post_record.text = "Test post in English"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.embed = None
+        mock_post_record.reply = None
+        mock_post_record.labels = None
+        mock_post_record.langs = ["en"]
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
+        mock_feed_item.post.cid = "test-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts(limit=10)
+
+        assert len(result.posts) == 1
+        post = result.posts[0]
+        assert post.langs == ["en"]
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_extract_language_tags_multiple(self, mock_client_class):
+        """Test extraction of multiple language tags from post"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        # Mock post record with multiple language tags
+        mock_post_record = Mock()
+        mock_post_record.text = "Bilingual post / Post bilingüe"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.embed = None
+        mock_post_record.reply = None
+        mock_post_record.labels = None
+        mock_post_record.langs = ["en", "es"]
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
+        mock_feed_item.post.cid = "test-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts(limit=10)
+
+        assert len(result.posts) == 1
+        post = result.posts[0]
+        assert post.langs == ["en", "es"]
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_post_without_language_tags(self, mock_client_class):
+        """Test that posts without language tags have None for langs"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        # Mock post record without language tags
+        mock_post_record = Mock()
+        mock_post_record.text = "Post without language metadata"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.embed = None
+        mock_post_record.reply = None
+        mock_post_record.labels = None
+        mock_post_record.langs = None
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
+        mock_feed_item.post.cid = "test-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts(limit=10)
+
+        assert len(result.posts) == 1
+        post = result.posts[0]
+        assert post.langs is None

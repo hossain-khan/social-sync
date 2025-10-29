@@ -273,6 +273,30 @@ python sync.py sync --since-date 2025-01-01
 - **Quote posts**: Includes quoted content with attribution
 - **Attribution**: Adds "(via Bluesky)" to posts (skipped for replies)
 
+### Language Tag Support
+
+Social Sync preserves language metadata when syncing posts:
+
+- **Bluesky**: Posts can include multiple language codes (ISO 639-1)
+- **Mastodon**: Supports single language tag per post
+- **Behavior**: Uses first language from Bluesky if multiple are present
+- **Format**: ISO 639-1 two-letter codes (e.g., `en`, `es`, `ja`, `fr`, `de`)
+
+**Benefits:**
+- Enables language-based filtering on Mastodon
+- Improves discoverability for multilingual users
+- Supports translation features
+- Preserves internationalization metadata
+
+**Example:**
+```
+Bluesky post with langs: ["es", "en"]
+  → Synced to Mastodon with language: "es"
+  
+Bluesky post without langs
+  → Synced to Mastodon with no language tag
+```
+
 ### Selective Sync with #no-sync Tag
 
 You can control which posts are synced by adding the `#no-sync` tag to any Bluesky post.
