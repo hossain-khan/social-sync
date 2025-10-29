@@ -683,3 +683,79 @@ class TestContentProcessor:
         result = ContentProcessor._expand_urls_from_facets(text, facets)
         assert isinstance(result, str)
         assert "https://example.com" in result
+
+    def test_get_content_warning_from_labels_porn(self):
+        """Test content warning mapping for porn label"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["porn"]
+        )
+        assert is_sensitive is True
+        assert spoiler_text == "NSFW - Adult Content"
+
+    def test_get_content_warning_from_labels_nudity(self):
+        """Test content warning mapping for nudity label"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["nudity"]
+        )
+        assert is_sensitive is True
+        assert spoiler_text == "NSFW - Nudity"
+
+    def test_get_content_warning_from_labels_sexual(self):
+        """Test content warning mapping for sexual label"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["sexual"]
+        )
+        assert is_sensitive is True
+        assert spoiler_text == "NSFW - Sexual Content"
+
+    def test_get_content_warning_from_labels_graphic_media(self):
+        """Test content warning mapping for graphic-media label"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["graphic-media"]
+        )
+        assert is_sensitive is True
+        assert spoiler_text == "Content Warning - Graphic Violence"
+
+    def test_get_content_warning_from_labels_multiple(self):
+        """Test content warning mapping with multiple labels - uses first matching"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["porn", "nudity"]
+        )
+        assert is_sensitive is True
+        # Should return the first matching label
+        assert spoiler_text == "NSFW - Adult Content"
+
+    def test_get_content_warning_from_labels_unknown(self):
+        """Test content warning mapping with unknown labels"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["unknown-label", "another-unknown"]
+        )
+        assert is_sensitive is True
+        # Should still mark as sensitive with custom message
+        assert "Content Warning" in spoiler_text
+        assert "unknown-label" in spoiler_text
+
+    def test_get_content_warning_from_labels_none(self):
+        """Test content warning mapping with no labels"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            None
+        )
+        assert is_sensitive is False
+        assert spoiler_text is None
+
+    def test_get_content_warning_from_labels_empty_list(self):
+        """Test content warning mapping with empty label list"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            []
+        )
+        assert is_sensitive is False
+        assert spoiler_text is None
+
+    def test_get_content_warning_from_labels_mixed(self):
+        """Test content warning with mix of known and unknown labels"""
+        is_sensitive, spoiler_text = ContentProcessor.get_content_warning_from_labels(
+            ["unknown", "sexual", "another-unknown"]
+        )
+        assert is_sensitive is True
+        # Should find the known label in the middle
+        assert spoiler_text == "NSFW - Sexual Content"

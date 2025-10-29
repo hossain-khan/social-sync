@@ -290,6 +290,7 @@ def create_mock_post(uri, created_at, is_reply=False, is_repost=False):
 
     mock_record.embed = None
     mock_record.facets = None
+    mock_record.labels = None  # Add labels attribute
 
     mock_post.record = mock_record
 

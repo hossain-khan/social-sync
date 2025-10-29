@@ -164,6 +164,19 @@ class SocialSyncOrchestrator:
             if bluesky_post.embed and not self.settings.dry_run:
                 media_ids = self._sync_images(bluesky_post)
 
+            # Check for content warnings if enabled in config
+            is_sensitive = False
+            spoiler_text = None
+            if self.settings.sync_content_warnings:
+                is_sensitive, spoiler_text = (
+                    self.content_processor.get_content_warning_from_labels(
+                        bluesky_post.self_labels
+                    )
+                )
+
+                if is_sensitive:
+                    logger.info(f"Applying content warning: {spoiler_text}")
+
             if self.settings.dry_run:
                 # Show what would be synced
                 image_count = len(
@@ -171,17 +184,20 @@ class SocialSyncOrchestrator:
                 )
                 image_info = f" with {image_count} image(s)" if image_count > 0 else ""
                 reply_info = f" as reply to {in_reply_to_id}" if in_reply_to_id else ""
+                cw_info = f" [CW: {spoiler_text}]" if is_sensitive else ""
                 logger.info(
-                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}{reply_info}"
+                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}{reply_info}{cw_info}"
                 )
                 # Don't mark posts as synced during dry runs
                 return True
             else:
-                # Post to Mastodon with media attachments and reply info
+                # Post to Mastodon with media attachments, reply info, and content warnings
                 mastodon_response = self.mastodon_client.post_status(
                     processed_text,
                     in_reply_to_id=in_reply_to_id,
                     media_ids=media_ids if media_ids else None,
+                    sensitive=is_sensitive,
+                    spoiler_text=spoiler_text,
                 )
                 if not mastodon_response:
                     logger.error(f"Failed to post to Mastodon: {bluesky_post.uri}")

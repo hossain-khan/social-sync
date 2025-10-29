@@ -61,14 +61,31 @@ class MastodonClient:
         text: str,
         in_reply_to_id: Optional[str] = None,
         media_ids: Optional[List[str]] = None,
+        sensitive: bool = False,
+        spoiler_text: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
-        """Post a status to Mastodon"""
+        """Post a status to Mastodon
+
+        Args:
+            text: The status text to post
+            in_reply_to_id: ID of the post this is replying to (for threading)
+            media_ids: List of media IDs to attach
+            sensitive: Mark content as sensitive (requires user to click to view)
+            spoiler_text: Content warning text (shown before content)
+
+        Returns:
+            Dictionary containing the posted status data, or None if failed
+        """
         if not self._authenticated or not self.client:
             raise RuntimeError("Client not authenticated. Call authenticate() first.")
 
         try:
             status = self.client.status_post(
-                status=text, in_reply_to_id=in_reply_to_id, media_ids=media_ids
+                status=text,
+                in_reply_to_id=in_reply_to_id,
+                media_ids=media_ids,
+                sensitive=sensitive,
+                spoiler_text=spoiler_text,
             )
 
             logger.info(f"Successfully posted status to Mastodon: {status['id']}")
