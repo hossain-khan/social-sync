@@ -88,6 +88,8 @@ MASTODON_ACCESS_TOKEN=your-access-token
 | [**Fork Setup**](docs/FORK_SETUP.md) | Guide for forking and personal instances |
 | [**API Documentation**](docs/API.md) | Client APIs and integration details |
 | [**Threading**](docs/THREADING_IMPLEMENTATION.md) | How conversation threading works |
+| [**Edge Case Analysis**](docs/EDGE_CASE_ANALYSIS.md) | Comprehensive analysis of 15 API edge cases |
+| [**Edge Case Quick Reference**](docs/EDGE_CASE_QUICK_REFERENCE.md) | At-a-glance summary of known edge cases |
 | [**Contributing**](docs/CONTRIBUTING.md) | Development workflow and standards |
 | [**Testing**](docs/TESTING.md) | Test suite and validation procedures |
 | [**Changelog**](docs/CHANGELOG.md) | Version history and release notes |
