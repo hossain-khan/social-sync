@@ -53,6 +53,10 @@ class BlueskyPost:
     # Used to preserve rich text features when syncing to other platforms
     facets: Optional[List[Dict[str, Any]]] = None
 
+    # Content warning labels (e.g., "porn", "nudity", "graphic-media", "sexual")
+    # Used to apply content warnings when syncing to platforms like Mastodon
+    self_labels: Optional[List[str]] = None
+
 
 class BlueskyClient:
     """Wrapper for Bluesky AT Protocol client"""
@@ -209,6 +213,16 @@ class BlueskyClient:
                     filtered_by_date += 1
                     continue
 
+                # Extract self-labels (content warnings) if present
+                self_labels = None
+                if hasattr(post.record, "labels") and post.record.labels:
+                    if (
+                        hasattr(post.record.labels, "values")
+                        and post.record.labels.values
+                    ):
+                        self_labels = [label.val for label in post.record.labels.values]
+                        logger.debug(f"Found self-labels: {self_labels}")
+
                 bluesky_post = BlueskyPost(
                     uri=post.uri,
                     cid=post.cid,
@@ -233,6 +247,8 @@ class BlueskyClient:
                         if hasattr(post.record, "facets") and post.record.facets
                         else None
                     ),
+                    # Extract content warning labels for cross-platform moderation
+                    self_labels=self_labels,
                 )
                 posts.append(bluesky_post)
 

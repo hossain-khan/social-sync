@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- ✨ **Content Warning Support**: Added automatic content warning sync from Bluesky self-labels to Mastodon
+  - Bluesky posts with self-labels (`porn`, `nudity`, `sexual`, `graphic-media`) now sync with appropriate Mastodon content warnings
+  - Self-labels are extracted from Bluesky posts and mapped to user-friendly content warning text
+  - Posts are marked as sensitive on Mastodon with spoiler text displaying the warning
+  - New `sync_content_warnings` configuration option (default: true) to enable/disable feature
+  - Unknown or custom labels are handled gracefully with generic "Content Warning" message
+  - Comprehensive test coverage for label extraction, mapping, and Mastodon API integration
+
 ## [0.6.0] - 2025-10-27
 
 ### Fixed

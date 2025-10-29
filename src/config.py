@@ -38,6 +38,10 @@ class Settings(BaseSettings):
         default=None,
         description="Start date for syncing posts (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS). If not set, starts from 7 days ago",
     )
+    sync_content_warnings: bool = Field(
+        default=True,
+        description="Enable syncing of content warnings from Bluesky self-labels to Mastodon",
+    )
     dry_run: bool = Field(default=False, description="Run in dry-run mode")
     disable_source_platform: bool = Field(
         default=False,

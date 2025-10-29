@@ -23,6 +23,14 @@ class ContentProcessor:
     # Note: HASHTAG extraction uses custom logic in extract_hashtags() method
     # due to complex edge cases that can't be handled by a single regex
 
+    # Mapping of Bluesky self-labels to Mastodon content warnings
+    CONTENT_WARNING_LABELS = {
+        "porn": "NSFW - Adult Content",
+        "nudity": "NSFW - Nudity",
+        "sexual": "NSFW - Sexual Content",
+        "graphic-media": "Content Warning - Graphic Violence",
+    }
+
     @staticmethod
     def process_bluesky_to_mastodon(
         text: str,
@@ -374,6 +382,35 @@ class ContentProcessor:
 
         # Check if 'no-sync' is in the hashtags (case-insensitive)
         return any(tag.lower() == "no-sync" for tag in hashtags)
+
+    @staticmethod
+    def get_content_warning_from_labels(
+        self_labels: Optional[List[str]],
+    ) -> Tuple[bool, Optional[str]]:
+        """Convert Bluesky self-labels to Mastodon content warning
+
+        Args:
+            self_labels: List of Bluesky self-label values (e.g., ["porn", "nudity"])
+
+        Returns:
+            tuple: (is_sensitive, spoiler_text)
+                - is_sensitive: True if content should be marked as sensitive
+                - spoiler_text: Content warning text to display, or None
+        """
+        if not self_labels:
+            return (False, None)
+
+        # Find first matching label
+        for label in self_labels:
+            if label in ContentProcessor.CONTENT_WARNING_LABELS:
+                warning_text = ContentProcessor.CONTENT_WARNING_LABELS[label]
+                return (True, warning_text)
+
+        # If we have labels but no match, still mark as sensitive
+        if self_labels:
+            return (True, f"Content Warning - {', '.join(self_labels)}")
+
+        return (False, None)
 
     @staticmethod
     def download_image(image_url: str) -> Optional[Tuple[bytes, str]]:

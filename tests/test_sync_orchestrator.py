@@ -46,6 +46,7 @@ class TestSocialSyncOrchestrator:
                 "state_file",
                 "get_sync_start_datetime",
                 "disable_source_platform",
+                "sync_content_warnings",
             ]
         )
         mock_settings.bluesky_handle = "test.bsky.social"
@@ -57,6 +58,7 @@ class TestSocialSyncOrchestrator:
         mock_settings.state_file = "test_state.json"
         mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
         mock_settings.disable_source_platform = False
+        mock_settings.sync_content_warnings = True
         mock_get_settings.return_value = mock_settings
 
         # Mock client instances with proper specifications
@@ -92,6 +94,7 @@ class TestSocialSyncOrchestrator:
                 "extract_images_from_embed",
                 "add_sync_attribution",
                 "has_no_sync_tag",
+                "get_content_warning_from_labels",
             ]
         )
 
@@ -99,6 +102,12 @@ class TestSocialSyncOrchestrator:
         self.mock_mastodon_class.return_value = self.mock_mastodon_client
         self.mock_sync_state_class.return_value = self.mock_sync_state
         self.mock_content_processor_class.return_value = self.mock_content_processor
+
+        # Set default return value for content warning method (no warnings by default)
+        self.mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
 
         self.orchestrator = SocialSyncOrchestrator()
 
@@ -530,6 +539,8 @@ class TestSocialSyncOrchestrator:
             "Processed text with attribution",
             in_reply_to_id=None,
             media_ids=["media-id-1"],
+            sensitive=False,
+            spoiler_text=None,
         )
         self.mock_sync_state.mark_post_synced.assert_called_once()
 
@@ -578,6 +589,8 @@ class TestSocialSyncOrchestrator:
             "Processed text with attribution",
             in_reply_to_id=None,
             media_ids=["media-id-1"],
+            sensitive=False,
+            spoiler_text=None,
         )
         self.mock_sync_state.mark_post_synced.assert_called_once()
 
@@ -633,6 +646,8 @@ class TestSocialSyncOrchestrator:
             "Processed text with attribution",
             in_reply_to_id=None,
             media_ids=["media-id-1", "media-id-2"],
+            sensitive=False,
+            spoiler_text=None,
         )
 
     def test_sync_post_image_download_fails(self):
@@ -674,6 +689,8 @@ class TestSocialSyncOrchestrator:
             "Processed text with attribution",
             in_reply_to_id=None,
             media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
         )
 
     def test_sync_post_image_upload_fails(self):
@@ -719,6 +736,8 @@ class TestSocialSyncOrchestrator:
             "Processed text with attribution",
             in_reply_to_id=None,
             media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
         )
 
     def test_sync_post_with_image_dry_run(self):
@@ -799,6 +818,8 @@ class TestSocialSyncOrchestrator:
             "Processed reply text",
             in_reply_to_id="parent-mastodon-id",
             media_ids=["media-id-1"],
+            sensitive=False,
+            spoiler_text=None,
         )
         # Attribution should not be added to replies
         self.mock_content_processor.add_sync_attribution.assert_not_called()
@@ -841,6 +862,8 @@ class TestSocialSyncOrchestrator:
             "Processed text with attribution",
             in_reply_to_id=None,
             media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
         )
 
     def test_run_sync_success(self):
@@ -1368,3 +1391,124 @@ class TestSocialSyncOrchestrator:
 
         # Verify all three #no-sync variations were marked as skipped
         assert self.mock_sync_state.mark_post_skipped.call_count == 3
+
+    def test_sync_post_with_content_warning(self):
+        """Test syncing a post with content warning"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Create a post with self-labels
+        bluesky_post = BlueskyPost(
+            uri="at://test/post/123",
+            cid="test-cid",
+            text="Test post with content warning",
+            created_at=datetime(2025, 1, 1, 10, 0, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            self_labels=["porn"],
+        )
+
+        # Mock content processing
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+        self.mock_content_processor.get_content_warning_from_labels.return_value = (
+            True,
+            "NSFW - Adult Content",
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        # Verify content warning was applied
+        self.mock_mastodon_client.post_status.assert_called_once()
+        call_args = self.mock_mastodon_client.post_status.call_args
+        assert call_args[1]["sensitive"] is True
+        assert call_args[1]["spoiler_text"] == "NSFW - Adult Content"
+
+    def test_sync_post_without_content_warning(self):
+        """Test syncing a post without content warning"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Create a post without self-labels
+        bluesky_post = BlueskyPost(
+            uri="at://test/post/123",
+            cid="test-cid",
+            text="Test post without content warning",
+            created_at=datetime(2025, 1, 1, 10, 0, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            self_labels=None,
+        )
+
+        # Mock content processing
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        # Verify no content warning was applied
+        self.mock_mastodon_client.post_status.assert_called_once()
+        call_args = self.mock_mastodon_client.post_status.call_args
+        assert call_args[1]["sensitive"] is False
+        assert call_args[1]["spoiler_text"] is None
+
+    def test_sync_post_content_warning_disabled(self):
+        """Test syncing with content warnings disabled in config"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Set sync_content_warnings to False
+        self.orchestrator.settings.sync_content_warnings = False
+
+        # Create a post with self-labels
+        bluesky_post = BlueskyPost(
+            uri="at://test/post/123",
+            cid="test-cid",
+            text="Test post with labels but CW disabled",
+            created_at=datetime(2025, 1, 1, 10, 0, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            self_labels=["porn"],
+        )
+
+        # Mock content processing
+        self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text\n\n(via Bluesky)"
+        )
+
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-123"}
+
+        result = self.orchestrator.sync_post(bluesky_post)
+
+        assert result is True
+        # Verify content warning was NOT applied
+        self.mock_mastodon_client.post_status.assert_called_once()
+        call_args = self.mock_mastodon_client.post_status.call_args
+        assert call_args[1]["sensitive"] is False
+        assert call_args[1]["spoiler_text"] is None
