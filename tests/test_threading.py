@@ -107,6 +107,10 @@ class TestThreadingSyncFlow:
         mock_content_processor.add_sync_attribution.return_value = (
             "This is the parent post\n\n(via Bluesky)"
         )
+        mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
         orchestrator.content_processor = mock_content_processor
 
         # Sync parent post
@@ -118,6 +122,8 @@ class TestThreadingSyncFlow:
             "This is the parent post\n\n(via Bluesky)",
             in_reply_to_id=None,
             media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
         )
 
         # Step 2: Sync reply post
@@ -230,6 +236,10 @@ class TestThreadingSyncFlow:
         mock_content_processor.add_sync_attribution.return_value = (
             "This is an orphaned reply\n\n(via Bluesky)"
         )
+        mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
+        )
         orchestrator.content_processor = mock_content_processor
 
         # Sync orphaned reply
@@ -241,6 +251,8 @@ class TestThreadingSyncFlow:
             "This is an orphaned reply\n\n(via Bluesky)",
             in_reply_to_id=None,
             media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
         )
 
     @patch("src.sync_orchestrator.BlueskyClient")
@@ -306,6 +318,10 @@ class TestThreadingSyncFlow:
         )
         mock_content_processor.add_sync_attribution.return_value = (
             "Dry run reply\n\n(via Bluesky)"
+        )
+        mock_content_processor.get_content_warning_from_labels.return_value = (
+            False,
+            None,
         )
         orchestrator.content_processor = mock_content_processor
 

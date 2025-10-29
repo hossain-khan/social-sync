@@ -100,7 +100,11 @@ class TestMastodonClientEdgeCases:
 
         assert result == mock_status
         mock_client.status_post.assert_called_once_with(
-            status="Test status", in_reply_to_id=None, media_ids=None
+            status="Test status",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
         )
 
     def test_post_status_with_reply_and_media(self):
@@ -121,6 +125,8 @@ class TestMastodonClientEdgeCases:
             status="Test reply",
             in_reply_to_id="987654321",
             media_ids=["media1", "media2"],
+            sensitive=False,
+            spoiler_text=None,
         )
 
     def test_post_status_api_exception(self):
