@@ -65,7 +65,7 @@ Always update `docs/CHANGELOG.md` when making changes:
 - **Removals**: Add to the `[Unreleased]` section under `### Removed`
 - **Security Updates**: Add to the `[Unreleased]` section under `### Security`
 
-Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format for consistency.
+Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format for consistency.
 
 ## Documentation Organization
 
@@ -86,7 +86,7 @@ When creating or updating documentation:
 
 1. **New docs**: Always create in `docs/` directory
 2. **README.md**: Keep minimal - link to detailed docs in `docs/`
-3. **Cross-references**: Use relative links to docs: `[Setup Guide](docs/SETUP.md)`
+3. **Cross-references**: Use relative links to docs: `[Setup Guide](../docs/SETUP.md)`
 4. **Structure**: Follow established format with clear headings and sections
 5. **Examples**: Include code examples and practical usage scenarios
 
