@@ -82,6 +82,7 @@ class TestMastodonClient:
             media_ids=["m1"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_post_status_failure(self, mock_mastodon_library):
@@ -231,6 +232,7 @@ class TestMastodonClient:
             media_ids=None,
             sensitive=True,
             spoiler_text="NSFW - Adult Content",
+            language=None,
         )
 
     @patch("src.mastodon_client.Mastodon")
@@ -267,4 +269,70 @@ class TestMastodonClient:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
+        )
+
+    @patch("src.mastodon_client.Mastodon")
+    def test_post_status_with_language_tag(self, mock_mastodon_library):
+        """Test posting a status with language tag"""
+        mock_api = MagicMock()
+        mock_api.status_post.return_value = {
+            "id": "post123",
+            "content": "Test post",
+            "language": "en",
+        }
+        mock_mastodon_library.return_value = mock_api
+
+        client = MastodonClient(
+            api_base_url="https://mastodon.social", access_token="test_token"
+        )
+        client._authenticated = True
+        client.client = mock_api
+
+        result = client.post_status("Test post", language="en")
+
+        assert result is not None
+        assert result["id"] == "post123"
+        mock_api.status_post.assert_called_once_with(
+            status="Test post",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language="en",
+        )
+
+    @patch("src.mastodon_client.Mastodon")
+    def test_post_status_with_different_languages(self, mock_mastodon_library):
+        """Test posting with various language codes"""
+        mock_api = MagicMock()
+        mock_api.status_post.return_value = {"id": "post123"}
+        mock_mastodon_library.return_value = mock_api
+
+        client = MastodonClient(
+            api_base_url="https://mastodon.social", access_token="test_token"
+        )
+        client._authenticated = True
+        client.client = mock_api
+
+        # Test Spanish
+        client.post_status("Hola mundo", language="es")
+        mock_api.status_post.assert_called_with(
+            status="Hola mundo",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language="es",
+        )
+
+        # Test Japanese
+        client.post_status("こんにちは", language="ja")
+        mock_api.status_post.assert_called_with(
+            status="こんにちは",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language="ja",
         )

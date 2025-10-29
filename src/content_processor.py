@@ -31,6 +31,60 @@ class ContentProcessor:
         "graphic-media": "Content Warning - Graphic Violence",
     }
 
+    # ISO 639-1 language codes (most common subset)
+    SUPPORTED_LANGUAGES = {
+        "en",
+        "es",
+        "fr",
+        "de",
+        "it",
+        "pt",
+        "ja",
+        "ko",
+        "zh",
+        "ar",
+        "ru",
+        "hi",
+        "nl",
+        "sv",
+        "no",
+        "da",
+        "fi",
+        "pl",
+        "tr",
+        "th",
+        "vi",
+        "id",
+        "ms",
+        "tl",
+        "cs",
+        "el",
+        "he",
+        "uk",
+        "ca",
+        "ro",
+        "hu",
+        "fa",
+        "ur",
+        "bn",
+        "ta",
+        "te",
+    }
+
+    @staticmethod
+    def validate_language_code(lang: str) -> bool:
+        """Validate ISO 639-1 language code
+
+        Args:
+            lang: Two-letter language code
+
+        Returns:
+            True if valid, False otherwise
+        """
+        if not lang or len(lang) != 2:
+            return False
+        return lang.lower() in ContentProcessor.SUPPORTED_LANGUAGES
+
     @staticmethod
     def process_bluesky_to_mastodon(
         text: str,

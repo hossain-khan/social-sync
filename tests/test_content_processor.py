@@ -759,3 +759,45 @@ class TestContentProcessor:
         assert is_sensitive is True
         # Should find the known label in the middle
         assert spoiler_text == "NSFW - Sexual Content"
+
+    def test_validate_language_code_valid_en(self):
+        """Test validation of valid English language code"""
+        assert ContentProcessor.validate_language_code("en") is True
+
+    def test_validate_language_code_valid_es(self):
+        """Test validation of valid Spanish language code"""
+        assert ContentProcessor.validate_language_code("es") is True
+
+    def test_validate_language_code_valid_ja(self):
+        """Test validation of valid Japanese language code"""
+        assert ContentProcessor.validate_language_code("ja") is True
+
+    def test_validate_language_code_case_insensitive(self):
+        """Test that language code validation is case insensitive"""
+        assert ContentProcessor.validate_language_code("EN") is True
+        assert ContentProcessor.validate_language_code("Es") is True
+        assert ContentProcessor.validate_language_code("JA") is True
+
+    def test_validate_language_code_invalid_three_letter(self):
+        """Test validation rejects three-letter codes"""
+        assert ContentProcessor.validate_language_code("eng") is False
+
+    def test_validate_language_code_invalid_one_letter(self):
+        """Test validation rejects one-letter codes"""
+        assert ContentProcessor.validate_language_code("e") is False
+
+    def test_validate_language_code_invalid_empty(self):
+        """Test validation rejects empty string"""
+        assert ContentProcessor.validate_language_code("") is False
+
+    def test_validate_language_code_invalid_unsupported(self):
+        """Test validation rejects unsupported language codes"""
+        assert ContentProcessor.validate_language_code("xx") is False
+        assert ContentProcessor.validate_language_code("zz") is False
+
+    def test_validate_language_code_all_supported_languages(self):
+        """Test that all languages in SUPPORTED_LANGUAGES are valid"""
+        for lang in ContentProcessor.SUPPORTED_LANGUAGES:
+            assert ContentProcessor.validate_language_code(lang) is True
+            # Test uppercase too
+            assert ContentProcessor.validate_language_code(lang.upper()) is True

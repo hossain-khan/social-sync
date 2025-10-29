@@ -177,6 +177,13 @@ class SocialSyncOrchestrator:
                 if is_sensitive:
                     logger.info(f"Applying content warning: {spoiler_text}")
 
+            # Determine primary language (take first if multiple)
+            # Bluesky allows multiple languages, Mastodon supports one
+            language = None
+            if bluesky_post.langs and len(bluesky_post.langs) > 0:
+                language = bluesky_post.langs[0]
+                logger.debug(f"Using language tag: {language}")
+
             if self.settings.dry_run:
                 # Show what would be synced
                 image_count = len(
@@ -191,13 +198,14 @@ class SocialSyncOrchestrator:
                 # Don't mark posts as synced during dry runs
                 return True
             else:
-                # Post to Mastodon with media attachments, reply info, and content warnings
+                # Post to Mastodon with media attachments, reply info, content warnings, and language
                 mastodon_response = self.mastodon_client.post_status(
                     processed_text,
                     in_reply_to_id=in_reply_to_id,
                     media_ids=media_ids if media_ids else None,
                     sensitive=is_sensitive,
                     spoiler_text=spoiler_text,
+                    language=language,
                 )
                 if not mastodon_response:
                     logger.error(f"Failed to post to Mastodon: {bluesky_post.uri}")

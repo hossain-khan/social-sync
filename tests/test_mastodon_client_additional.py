@@ -105,6 +105,7 @@ class TestMastodonClientEdgeCases:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_post_status_with_reply_and_media(self):
@@ -127,6 +128,7 @@ class TestMastodonClientEdgeCases:
             media_ids=["media1", "media2"],
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     def test_post_status_api_exception(self):

@@ -63,6 +63,7 @@ class MastodonClient:
         media_ids: Optional[List[str]] = None,
         sensitive: bool = False,
         spoiler_text: Optional[str] = None,
+        language: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """Post a status to Mastodon
 
@@ -72,6 +73,7 @@ class MastodonClient:
             media_ids: List of media IDs to attach
             sensitive: Mark content as sensitive (requires user to click to view)
             spoiler_text: Content warning text (shown before content)
+            language: ISO 639-1 language code (e.g., 'en', 'es', 'ja')
 
         Returns:
             Dictionary containing the posted status data, or None if failed
@@ -86,7 +88,11 @@ class MastodonClient:
                 media_ids=media_ids,
                 sensitive=sensitive,
                 spoiler_text=spoiler_text,
+                language=language,
             )
+
+            if language:
+                logger.info(f"Posted with language tag: {language}")
 
             logger.info(f"Successfully posted status to Mastodon: {status['id']}")
             return status if isinstance(status, dict) else None

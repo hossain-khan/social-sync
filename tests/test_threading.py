@@ -124,6 +124,7 @@ class TestThreadingSyncFlow:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
         # Step 2: Sync reply post
@@ -253,6 +254,7 @@ class TestThreadingSyncFlow:
             media_ids=None,
             sensitive=False,
             spoiler_text=None,
+            language=None,
         )
 
     @patch("src.sync_orchestrator.BlueskyClient")
