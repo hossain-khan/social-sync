@@ -407,10 +407,7 @@ class ContentProcessor:
                 return (True, warning_text)
 
         # If we have labels but no match, still mark as sensitive
-        if self_labels:
-            return (True, f"Content Warning - {', '.join(self_labels)}")
-
-        return (False, None)
+        return (True, f"Content Warning - {', '.join(self_labels)}")
 
     @staticmethod
     def download_image(image_url: str) -> Optional[Tuple[bytes, str]]:

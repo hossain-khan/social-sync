@@ -215,13 +215,14 @@ class BlueskyClient:
 
                 # Extract self-labels (content warnings) if present
                 self_labels = None
-                if hasattr(post.record, "labels") and post.record.labels:
-                    if (
-                        hasattr(post.record.labels, "values")
-                        and post.record.labels.values
-                    ):
-                        self_labels = [label.val for label in post.record.labels.values]
-                        logger.debug(f"Found self-labels: {self_labels}")
+                if (
+                    hasattr(post.record, "labels")
+                    and post.record.labels
+                    and hasattr(post.record.labels, "values")
+                    and post.record.labels.values
+                ):
+                    self_labels = [label.val for label in post.record.labels.values]
+                    logger.debug(f"Found self-labels: {self_labels}")
 
                 bluesky_post = BlueskyPost(
                     uri=post.uri,

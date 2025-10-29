@@ -977,7 +977,6 @@ class TestBlueskyClient:
         mock_post_record.facets = []
         mock_post_record.embed = None
         mock_post_record.reply = None
-        mock_post_record.labels = None
         mock_post_record.labels = mock_labels
 
         mock_feed_item = Mock()
@@ -1024,7 +1023,6 @@ class TestBlueskyClient:
         mock_post_record.facets = []
         mock_post_record.embed = None
         mock_post_record.reply = None
-        mock_post_record.labels = None
         mock_post_record.labels = mock_labels
 
         mock_feed_item = Mock()
@@ -1068,7 +1066,6 @@ class TestBlueskyClient:
         mock_post_record.facets = []
         mock_post_record.embed = None
         mock_post_record.reply = None
-        mock_post_record.labels = None
         # Explicitly set labels to None to indicate no labels
         mock_post_record.labels = None
 
