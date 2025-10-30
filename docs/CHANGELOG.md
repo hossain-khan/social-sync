@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes issue where posts with "🎉 Check out example.co..." would fail to expand URLs correctly
 
 ### Added
+- ✨ **Language Tag Support**: Added i18n metadata preservation when syncing posts from Bluesky to Mastodon
+  - Bluesky posts with ISO 639-1 language codes (`langs` field) now preserve language metadata on Mastodon
+  - Added `langs: Optional[List[str]]` field to `BlueskyPost` dataclass for language tag extraction
+  - Added `language: Optional[str]` parameter to `MastodonClient.post_status()` for language tag support
+  - When multiple languages present, uses first language tag (Mastodon accepts single tag)
+  - Added `ContentProcessor.validate_language_code()` with 38 common ISO 639-1 codes for validation
+  - Enables language-based filtering, translation features, and improved discoverability on Mastodon
+  - Comprehensive test coverage with 18 new tests for extraction, validation, and integration scenarios
+  - All 318 tests passing after implementation
 - ✨ **Content Warning Support**: Added automatic content warning sync from Bluesky self-labels to Mastodon
   - Bluesky posts with self-labels (`porn`, `nudity`, `sexual`, `graphic-media`) now sync with appropriate Mastodon content warnings
   - Self-labels are extracted from Bluesky posts and mapped to user-friendly content warning text
