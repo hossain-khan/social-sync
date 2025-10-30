@@ -25,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `ContentProcessor.validate_language_code()` with 38 common ISO 639-1 codes for validation
   - Enables language-based filtering, translation features, and improved discoverability on Mastodon
   - Comprehensive test coverage with 18 new tests for extraction, validation, and integration scenarios
-  - All 318 tests passing after implementation
 - ✨ **Content Warning Support**: Added automatic content warning sync from Bluesky self-labels to Mastodon
   - Bluesky posts with self-labels (`porn`, `nudity`, `sexual`, `graphic-media`) now sync with appropriate Mastodon content warnings
   - Self-labels are extracted from Bluesky posts and mapped to user-friendly content warning text
