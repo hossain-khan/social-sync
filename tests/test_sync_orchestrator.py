@@ -1142,7 +1142,8 @@ class TestSocialSyncOrchestrator:
         assert result["synced_count"] == 1
         assert result["failed_count"] == 0
         assert result["skipped_count"] == 1
-        assert result["total_processed"] == 1  # Only the normal post was processed
+        # total_processed includes only posts that went through sync pipeline (excludes #no-sync filtered posts)
+        assert result["total_processed"] == 1  # Only the normal post
         assert result["dry_run"] is False
         assert isinstance(result["duration"], float)
 
@@ -1387,7 +1388,8 @@ class TestSocialSyncOrchestrator:
 
         # Should only return 1 post (the normal one)
         assert len(posts) == 1
-        assert skipped_count == 0  # No new posts skipped, only one already skipped
+        # skipped_count only tracks newly skipped posts during this sync, not previously skipped
+        assert skipped_count == 0  # No new posts skipped (one was already skipped before)
         assert posts[0].uri == "at://post-normal"
 
         # Verify that mark_post_skipped was NOT called (already skipped)
