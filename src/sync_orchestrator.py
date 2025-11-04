@@ -5,7 +5,7 @@ Main sync orchestrator for Social Sync
 import logging
 import time
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 from .bluesky_client import BlueskyClient, BlueskyFetchResult, BlueskyPost
 from .config import get_settings
@@ -52,8 +52,12 @@ class SocialSyncOrchestrator:
         logger.info("All clients authenticated successfully")
         return True
 
-    def get_posts_to_sync(self) -> List[BlueskyPost]:
-        """Get new posts from Bluesky that haven't been synced yet"""
+    def get_posts_to_sync(self) -> Tuple[List[BlueskyPost], int]:
+        """Get new posts from Bluesky that haven't been synced yet
+
+        Returns:
+            Tuple of (list of posts to sync, count of posts skipped with #no-sync tag)
+        """
         logger.info("Fetching recent posts from Bluesky...")
 
         # Get the sync start date from configuration
@@ -115,7 +119,7 @@ class SocialSyncOrchestrator:
             )
 
         logger.info(f"Found {len(new_posts)} new posts to sync")
-        return new_posts
+        return new_posts, skipped_with_tag_count
 
     def sync_post(self, bluesky_post: BlueskyPost) -> bool:
         """Sync a single post from Bluesky to Mastodon"""
@@ -323,18 +327,20 @@ class SocialSyncOrchestrator:
                 "success": False,
                 "error": "Failed to setup clients",
                 "synced_count": 0,
+                "skipped_count": 0,
                 "duration": (datetime.now() - start_time).total_seconds(),
             }
 
         # Get posts to sync
         try:
-            posts_to_sync = self.get_posts_to_sync()
+            posts_to_sync, skipped_count = self.get_posts_to_sync()
         except Exception as e:
             logger.error(f"Failed to get posts to sync: {e}")
             return {
                 "success": False,
                 "error": f"Failed to get posts: {e}",
                 "synced_count": 0,
+                "skipped_count": 0,
                 "duration": (datetime.now() - start_time).total_seconds(),
             }
 
@@ -365,6 +371,7 @@ class SocialSyncOrchestrator:
             "success": True,
             "synced_count": synced_count,
             "failed_count": failed_count,
+            "skipped_count": skipped_count,
             "total_processed": len(posts_to_sync),
             "duration": duration,
             "dry_run": self.settings.dry_run,

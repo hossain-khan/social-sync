@@ -89,6 +89,10 @@ def sync(dry_run, since_date, disable_source_platform):
             click.echo(f"   • Synced: {result['synced_count']} posts")
             if result["failed_count"] > 0:
                 click.echo(f"   • Failed: {result['failed_count']} posts")
+            if result.get("skipped_count", 0) > 0:
+                click.echo(
+                    f"   • Skipped: {result['skipped_count']} posts (with #no-sync tag)"
+                )
             click.echo(f"   • Duration: {result['duration']:.2f}s")
             if result["dry_run"]:
                 click.echo("   • Mode: DRY RUN (no posts actually created)")
