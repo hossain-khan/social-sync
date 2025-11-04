@@ -168,9 +168,10 @@ class TestSocialSyncOrchestrator:
             filtered_by_date=0,
         )
 
-        result = self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
 
-        assert result == []
+        assert posts == []
+        assert skipped_count == 0
         self.mock_bluesky_client.get_recent_posts.assert_called_once()
 
     def test_get_posts_to_sync_with_new_posts(self):
@@ -218,11 +219,12 @@ class TestSocialSyncOrchestrator:
         self.mock_sync_state.is_post_skipped.return_value = False
         self.mock_content_processor.has_no_sync_tag.return_value = False
 
-        result = self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
 
-        assert len(result) == 2
-        assert result[0].uri == "at://test-uri-1"  # Should be sorted by creation time
-        assert result[1].uri == "at://test-uri-2"
+        assert len(posts) == 2
+        assert skipped_count == 0
+        assert posts[0].uri == "at://test-uri-1"  # Should be sorted by creation time
+        assert posts[1].uri == "at://test-uri-2"
 
     def test_get_posts_to_sync_filter_already_synced(self):
         """Test getting posts filters out already synced posts"""
@@ -271,10 +273,11 @@ class TestSocialSyncOrchestrator:
         self.mock_sync_state.is_post_skipped.return_value = False
         self.mock_content_processor.has_no_sync_tag.return_value = False
 
-        result = self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
 
-        assert len(result) == 1
-        assert result[0].uri == "at://new-uri"
+        assert len(posts) == 1
+        assert skipped_count == 0
+        assert posts[0].uri == "at://new-uri"
 
     def test_get_posts_to_sync_with_logging_stats(self):
         """Test getting posts with logging stats triggered"""
@@ -296,7 +299,8 @@ class TestSocialSyncOrchestrator:
 
         # We don't need to check the result, just that the method runs without error
         # and the logging lines are covered.
-        self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+        assert skipped_count == 0
 
         self.mock_bluesky_client.get_recent_posts.assert_called_once()
 
@@ -925,6 +929,7 @@ class TestSocialSyncOrchestrator:
         assert result["success"] is True
         assert result["synced_count"] == 2
         assert result["failed_count"] == 0
+        assert result["skipped_count"] == 0
         assert result["total_processed"] == 2
         assert result["dry_run"] is False
         assert isinstance(result["duration"], float)
@@ -943,6 +948,7 @@ class TestSocialSyncOrchestrator:
         assert result["success"] is False
         assert result["error"] == "Failed to setup clients"
         assert result["synced_count"] == 0
+        assert result["skipped_count"] == 0
         assert isinstance(result["duration"], float)
 
     def test_run_sync_no_posts(self):
@@ -965,6 +971,7 @@ class TestSocialSyncOrchestrator:
         assert result["success"] is True
         assert result["synced_count"] == 0
         assert result["failed_count"] == 0
+        assert result["skipped_count"] == 0
         assert result["total_processed"] == 0
 
         # Should still update sync time even with no posts
@@ -1015,6 +1022,7 @@ class TestSocialSyncOrchestrator:
         assert result["success"] is False
         assert "Failed to get posts" in result["error"]
         assert result["synced_count"] == 0
+        assert result["skipped_count"] == 0
 
     def test_run_sync_partial_failure(self):
         """Test sync run with some posts failing"""
@@ -1071,7 +1079,81 @@ class TestSocialSyncOrchestrator:
         assert result["success"] is True
         assert result["synced_count"] == 1
         assert result["failed_count"] == 1
+        assert result["skipped_count"] == 0
         assert result["total_processed"] == 2
+
+    def test_run_sync_with_skipped_posts(self):
+        """Test sync run with posts being skipped due to #no-sync tag"""
+        # Mock client setup
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+
+        # Mock posts - mix of normal and #no-sync tagged posts
+        mock_posts = [
+            BlueskyPost(
+                uri="at://normal-post",
+                cid="cid-1",
+                text="Normal post",
+                created_at=datetime(2025, 1, 1, 10, 0),
+                author_handle="test.bsky.social",
+                author_display_name="Test User",
+                reply_to=None,
+                embed=None,
+                facets=[],
+            ),
+            BlueskyPost(
+                uri="at://skipped-post",
+                cid="cid-2",
+                text="Skipped post #no-sync",
+                created_at=datetime(2025, 1, 1, 11, 0),
+                author_handle="test.bsky.social",
+                author_display_name="Test User",
+                reply_to=None,
+                embed=None,
+                facets=[],
+            ),
+        ]
+
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=2,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_sync_state.is_post_skipped.return_value = False
+
+        # Mock has_no_sync_tag to return True for the skipped post
+        def has_no_sync_tag_side_effect(text):
+            return "#no-sync" in text.lower()
+
+        self.mock_content_processor.has_no_sync_tag.side_effect = (
+            has_no_sync_tag_side_effect
+        )
+
+        # Mock successful sync for the normal post
+        with patch.object(
+            self.orchestrator, "sync_post", return_value=True
+        ) as mock_sync_post:
+            result = self.orchestrator.run_sync()
+
+        assert result["success"] is True
+        assert result["synced_count"] == 1
+        assert result["failed_count"] == 0
+        assert result["skipped_count"] == 1
+        # Note: skipped_count and total_processed represent different pipeline stages.
+        # skipped_count counts posts filtered out before sync (e.g., #no-sync tag),
+        # while total_processed includes only posts that went through the sync pipeline (excludes #no-sync filtered posts).
+        assert result["total_processed"] == 1  # Only the normal post
+        assert result["dry_run"] is False
+        assert isinstance(result["duration"], float)
+
+        # Verify sync_post called only for the normal post
+        assert mock_sync_post.call_count == 1
+        self.mock_sync_state.mark_post_skipped.assert_called_once_with(
+            "at://skipped-post", reason="no-sync-tag"
+        )
 
     def test_get_sync_status(self):
         """Test getting sync status"""
@@ -1246,10 +1328,12 @@ class TestSocialSyncOrchestrator:
         self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
 
         # Get posts to sync
-        posts = self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
 
         # Should only return 2 posts (skipping the one with #no-sync tag)
         assert len(posts) == 2
+        # skipped_count tracks posts newly marked as skipped with #no-sync tag during this sync run
+        assert skipped_count == 1
         assert posts[0].uri == "at://post-normal"
         assert posts[1].uri == "at://post-another-normal"
 
@@ -1303,10 +1387,14 @@ class TestSocialSyncOrchestrator:
         self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
 
         # Get posts to sync
-        posts = self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
 
         # Should only return 1 post (the normal one)
         assert len(posts) == 1
+        # skipped_count only tracks newly skipped posts during this sync, not previously skipped
+        assert (
+            skipped_count == 0
+        )  # No new posts skipped (one was already skipped before)
         assert posts[0].uri == "at://post-normal"
 
         # Verify that mark_post_skipped was NOT called (already skipped)
@@ -1390,10 +1478,11 @@ class TestSocialSyncOrchestrator:
         self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
 
         # Get posts to sync
-        posts = self.orchestrator.get_posts_to_sync()
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
 
         # Should only return the normal post
         assert len(posts) == 1
+        assert skipped_count == 3
         assert posts[0].uri == "at://post-normal"
 
         # Verify all three #no-sync variations were marked as skipped
