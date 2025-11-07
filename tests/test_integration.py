@@ -78,9 +78,9 @@ class TestSyncIntegration:
         assert result["synced_count"] == 0  # No posts to sync
         assert result["total_processed"] == 0
 
-        # Verify state was updated
+        # Verify state was NOT updated (no posts synced or skipped)
         status = orchestrator.get_sync_status()
-        assert status["last_sync_time"] is not None
+        assert status["last_sync_time"] is None
 
     def test_sync_state_persistence_across_instances(self):
         """Test that sync state persists across different instances"""
