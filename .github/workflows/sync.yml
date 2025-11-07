@@ -134,7 +134,8 @@ jobs:
           
           git add sync_state.json
           if git diff --staged --quiet; then
-            echo "📋 No changes to sync state - nothing to commit"
+            echo "📋 No changes to sync state - skipping commit"
+            echo "   No posts were synced or skipped in this run"
           else
             echo "💾 Committing sync state updates..."
             
