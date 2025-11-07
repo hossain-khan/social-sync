@@ -54,6 +54,14 @@ class Settings(BaseSettings):
     # State file to track last synced post
     state_file: str = Field(default="sync_state.json", description="State file path")
 
+    # Quote Post Settings
+    max_quote_depth: int = Field(
+        default=2, description="Maximum nesting level for quoted posts"
+    )
+    max_quote_text_length: int = Field(
+        default=200, description="Maximum length of quoted text at each level"
+    )
+
     model_config = {"env_file": ".env", "case_sensitive": False, "extra": "ignore"}
 
     @field_validator("bluesky_handle")

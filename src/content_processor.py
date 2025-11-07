@@ -17,6 +17,9 @@ class ContentProcessor:
     # Mastodon character limit
     MASTODON_CHAR_LIMIT = 500
 
+    # Maximum quote depth to prevent infinite loops and character overflow
+    MAX_QUOTE_DEPTH = 2
+
     # AT Protocol/Bluesky facets patterns
     MENTION_PATTERN = re.compile(r"@([a-zA-Z0-9][a-zA-Z0-9.-]*\.?[a-zA-Z]{2,})")
     URL_PATTERN = re.compile(r"https?://[^\s]+")
@@ -192,9 +195,27 @@ class ContentProcessor:
 
     @staticmethod
     def _handle_embed(
-        text: str, embed: Dict[str, Any], include_image_placeholders: bool = True
+        text: str,
+        embed: Dict[str, Any],
+        include_image_placeholders: bool = True,
+        quote_depth: int = 0,
+        seen_uris: Optional[set] = None,
     ) -> str:
-        """Handle embedded content from Bluesky posts"""
+        """Handle embedded content from Bluesky posts
+
+        Args:
+            text: Current post text
+            embed: Embed data from Bluesky
+            include_image_placeholders: Whether to add image placeholders
+            quote_depth: Current quote nesting depth (for circular detection)
+            seen_uris: Set of URIs already processed (for circular detection)
+
+        Returns:
+            Processed text with embedded content
+        """
+        if seen_uris is None:
+            seen_uris = set()
+
         embed_type = (
             embed.get("py_type", "").split(".")[-1]
             if embed.get("py_type")
@@ -239,19 +260,69 @@ class ContentProcessor:
 
                 return text + image_text
 
-        elif embed_type == "record":
-            # Handle quoted posts/records
+        elif embed_type == "record" or embed_type == "recordWithMedia":
+            # Handle quoted posts/records with depth limiting and circular detection
             record = embed.get("record", {})
+
+            # Check depth limit
+            if quote_depth >= ContentProcessor.MAX_QUOTE_DEPTH:
+                logger.warning(
+                    f"Max quote depth ({ContentProcessor.MAX_QUOTE_DEPTH}) reached"
+                )
+                text += "\n\n[Additional quoted content omitted due to depth...]"
+                return text
+
+            # Get quoted post URI for circular detection
+            quoted_uri = record.get("uri", "")
+
+            # Check for circular references
+            if quoted_uri and quoted_uri in seen_uris:
+                logger.warning(f"Circular quote reference detected: {quoted_uri}")
+                text += "\n\n[Circular quote reference detected]"
+                return text
+
+            # Add to seen URIs
+            if quoted_uri:
+                seen_uris.add(quoted_uri)
+                logger.debug(
+                    f"Processing quote at depth {quote_depth}, "
+                    f"URI: {quoted_uri}, "
+                    f"seen URIs: {len(seen_uris)}"
+                )
+
+            # Process quoted content
             if record.get("py_type", "").endswith("ViewRecord"):
                 author = record.get("author", {})
                 quote_text = record.get("value", {}).get("text", "")
                 if author.get("handle") and quote_text:
-                    quote_preview = (
-                        quote_text[:100] + "..."
-                        if len(quote_text) > 100
-                        else quote_text
-                    )
-                    return text + f"\n\nQuoting @{author['handle']}:\n> {quote_preview}"
+                    # Truncate quoted text based on depth
+                    # Less space allowed at deeper nesting levels
+                    max_quote_length = 200 // (quote_depth + 1)
+                    if len(quote_text) > max_quote_length:
+                        quote_text = quote_text[:max_quote_length] + "..."
+
+                    text += f"\n\nQuoting @{author['handle']}:\n> {quote_text}"
+
+                    # Handle nested embeds in quoted post (recursively)
+                    quoted_embed = record.get("value", {}).get("embed")
+                    if quoted_embed:
+                        text = ContentProcessor._handle_embed(
+                            text,
+                            quoted_embed,
+                            include_image_placeholders,
+                            quote_depth=quote_depth + 1,
+                            seen_uris=seen_uris,
+                        )
+
+            # Handle recordWithMedia - process media at this level
+            if embed_type == "recordWithMedia" and embed.get("media"):
+                text = ContentProcessor._handle_embed(
+                    text,
+                    embed.get("media"),
+                    include_image_placeholders,
+                    quote_depth=quote_depth + 1,
+                    seen_uris=seen_uris,
+                )
 
         return text
 
