@@ -358,8 +358,10 @@ class SocialSyncOrchestrator:
             else:
                 failed_count += 1
 
-        # Update sync state
-        self.sync_state.update_sync_time()
+        # Update sync state only if posts were synced or skipped
+        # This prevents unnecessary commits when nothing changed
+        if synced_count > 0 or skipped_count > 0:
+            self.sync_state.update_sync_time()
 
         # Clean up old records periodically
         if synced_count > 0:
