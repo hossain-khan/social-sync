@@ -974,8 +974,8 @@ class TestSocialSyncOrchestrator:
         assert result["skipped_count"] == 0
         assert result["total_processed"] == 0
 
-        # Should still update sync time even with no posts
-        self.mock_sync_state.update_sync_time.assert_called_once()
+        # Should NOT update sync time when no posts are synced or skipped
+        self.mock_sync_state.update_sync_time.assert_not_called()
 
     def test_sync_post_mastodon_falsy_response(self):
         """Test syncing a post when Mastodon returns a falsy response (e.g. None)"""
@@ -1154,6 +1154,73 @@ class TestSocialSyncOrchestrator:
         self.mock_sync_state.mark_post_skipped.assert_called_once_with(
             "at://skipped-post", reason="no-sync-tag"
         )
+
+        # Should update sync time when posts are skipped (even if none synced)
+        self.mock_sync_state.update_sync_time.assert_called_once()
+
+    def test_run_sync_only_skipped_posts_no_synced(self):
+        """Test sync run with only skipped posts (no synced posts)"""
+        # Mock client setup
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+
+        # Mock posts - all have #no-sync tag
+        mock_posts = [
+            BlueskyPost(
+                uri="at://skipped-post-1",
+                cid="cid-1",
+                text="Skipped post 1 #no-sync",
+                created_at=datetime(2025, 1, 1, 10, 0),
+                author_handle="test.bsky.social",
+                author_display_name="Test User",
+                reply_to=None,
+                embed=None,
+                facets=[],
+            ),
+            BlueskyPost(
+                uri="at://skipped-post-2",
+                cid="cid-2",
+                text="Skipped post 2 #no-sync",
+                created_at=datetime(2025, 1, 1, 11, 0),
+                author_handle="test.bsky.social",
+                author_display_name="Test User",
+                reply_to=None,
+                embed=None,
+                facets=[],
+            ),
+        ]
+
+        self.mock_bluesky_client.get_recent_posts.return_value = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=2,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_sync_state.is_post_skipped.return_value = False
+
+        # Mock has_no_sync_tag to return True for all posts
+        def has_no_sync_tag_side_effect(text):
+            return "#no-sync" in text.lower()
+
+        self.mock_content_processor.has_no_sync_tag.side_effect = (
+            has_no_sync_tag_side_effect
+        )
+
+        result = self.orchestrator.run_sync()
+
+        assert result["success"] is True
+        assert result["synced_count"] == 0
+        assert result["failed_count"] == 0
+        assert result["skipped_count"] == 2
+        assert result["total_processed"] == 0  # No posts went through sync pipeline
+
+        # Should update sync time when posts are skipped (even with 0 synced)
+        self.mock_sync_state.update_sync_time.assert_called_once()
+
+        # Verify both posts were marked as skipped
+        assert self.mock_sync_state.mark_post_skipped.call_count == 2
 
     def test_get_sync_status(self):
         """Test getting sync status"""
