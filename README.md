@@ -56,7 +56,6 @@ python sync.py test
 - **Automated**: Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) via [cron schedule](.github/workflows/sync.yml)
 - **Manual**: Actions → Social Sync → Run workflow
   - Optional: Enable "Run in dry-run mode" to test without posting
-  - Optional: Enable "Disable source platform attribution" to hide "(via Bluesky 🦋)"
 - **Logs**: Check Actions tab for execution details
 
 ## ⚙️ Configuration
