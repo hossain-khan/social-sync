@@ -1,5 +1,5 @@
 """
-"""Social Sync - Cross-platform social media synchronization tool
+Social Sync - Cross-platform social media synchronization tool
 
 A Python tool for synchronizing posts between Bluesky and Mastodon,
 maintaining conversation threading and providing comprehensive
