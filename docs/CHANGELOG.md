@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- 🐛 **Quote Post Filtering**: Fixed issue where quote posts of other people's content were incorrectly synced to Mastodon
+  - Previously, posts quoting others' content (using `app.bsky.embed.record` embed type) would sync when they should be filtered
+  - Now correctly detects quote posts by checking embed type and comparing quoted author DID with post author DID
+  - Self-quotes (quoting own content) continue to sync as intended, similar to self-reply behavior
+  - Added `filtered_quotes` counter to `BlueskyFetchResult` for tracking statistics
+  - Enhanced logging to show filtered quote post counts in sync reports
+  - Added comprehensive test coverage with 3 new tests (37 total tests in BlueskyClient)
+  - Maintains consistency with existing reply and repost filtering logic
 - 🐛 **Multi-byte UTF-8 Character Handling**: Fixed URL facet expansion with emoji and CJK characters
   - AT Protocol facets use byte positions, not character positions
   - Previous implementation re-encoded text on each facet iteration, invalidating byte offsets when multi-byte characters (emoji, CJK) were present
@@ -17,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes issue where posts with "🎉 Check out example.co..." would fail to expand URLs correctly
 
 ### Added
+- 🔍 **Post Investigation Utility**: Added generic debug script for investigating Bluesky post sync behavior
+  - New `scripts/investigate_post.py` utility for analyzing why specific posts were/weren't synced
+  - CLI interface accepts post record key (rkey) and optional DID parameter
+  - Auto-loads user DID from `sync_state.json` for convenience
+  - Fetches full post data from AT Protocol API with detailed analysis
+  - Detects and analyzes quote posts, replies, root posts, and #no-sync tags
+  - Shows embed types (external links, images, quotes), facets (mentions, hashtags, links)
+  - Cross-references with sync state including skipped posts history
+  - Provides clear sync eligibility assessment with visual indicators
+  - Usage: `python scripts/investigate_post.py <post_rkey> [did]`
+  - Added documentation to copilot instructions for development workflow
 - ✨ **Language Tag Support**: Added i18n metadata preservation when syncing posts from Bluesky to Mastodon
   - Bluesky posts with ISO 639-1 language codes (`langs` field) now preserve language metadata on Mastodon
   - Added `langs: Optional[List[str]]` field to `BlueskyPost` dataclass for language tag extraction

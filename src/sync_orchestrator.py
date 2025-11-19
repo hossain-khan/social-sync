@@ -79,6 +79,10 @@ class SocialSyncOrchestrator:
                 )
             if fetch_result.filtered_reposts > 0:
                 logger.info(f"Filtered out {fetch_result.filtered_reposts} reposts")
+            if fetch_result.filtered_quotes > 0:
+                logger.info(
+                    f"Filtered out {fetch_result.filtered_quotes} quote posts of other's content"
+                )
             if fetch_result.filtered_by_date > 0:
                 logger.info(
                     f"Filtered out {fetch_result.filtered_by_date} posts older than {since_date.isoformat()}"

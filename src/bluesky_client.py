@@ -26,6 +26,7 @@ class BlueskyFetchResult:
     filtered_replies: int  # Number of reply posts filtered out
     filtered_reposts: int  # Number of reposts filtered out
     filtered_by_date: int  # Number of posts filtered by date
+    filtered_quotes: int = 0  # Number of quote posts of others filtered out
 
 
 @dataclass
@@ -170,6 +171,7 @@ class BlueskyClient:
             filtered_replies = 0
             filtered_reposts = 0
             filtered_by_date = 0
+            filtered_quotes = 0
             total_retrieved = len(response.feed)
 
             for feed_item in response.feed:
@@ -179,6 +181,32 @@ class BlueskyClient:
                 if hasattr(feed_item, "reason") and feed_item.reason is not None:
                     filtered_reposts += 1
                     continue
+
+                # Track and skip quote posts of other people's content
+                # Allow self-quotes (quoting own posts) but filter quotes of others
+                if hasattr(post.record, "embed") and post.record.embed:
+                    embed_type = getattr(post.record.embed, "py_type", None)
+
+                    # Check if this is a quote post (app.bsky.embed.record)
+                    if embed_type == "app.bsky.embed.record":
+                        # Extract the quoted post URI
+                        if hasattr(post.record.embed, "record") and hasattr(
+                            post.record.embed.record, "uri"
+                        ):
+                            quoted_uri = post.record.embed.record.uri
+                            quoted_did = self._extract_did_from_uri(quoted_uri)
+
+                            # Skip if quoting someone else's post (allow self-quotes)
+                            if quoted_did and quoted_did != user_did:
+                                filtered_quotes += 1
+                                logger.debug(
+                                    f"Filtered quote post of other's content: {post.uri} (quoting: {quoted_uri})"
+                                )
+                                continue
+                            elif quoted_did == user_did:
+                                logger.debug(
+                                    f"Including self-quote post: {post.uri} (quoting own: {quoted_uri})"
+                                )
 
                 # Handle replies: allow self-replies to own threads, filter others
                 # Check the root of the thread to determine if this is part of
@@ -288,6 +316,7 @@ class BlueskyClient:
                 filtered_replies=filtered_replies,
                 filtered_reposts=filtered_reposts,
                 filtered_by_date=filtered_by_date,
+                filtered_quotes=filtered_quotes,
             )
 
         except Exception as e:
