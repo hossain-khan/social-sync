@@ -353,7 +353,7 @@ def test_test_command_success():
                 text=True,
             )
 
-        # Should exit with non-zero code on test failure
+        # Verify test command exits with non-zero code on failure
         assert result.returncode != 0
 
     def test_invalid_command(self):
@@ -391,7 +391,7 @@ def test_sync_missing_credentials():
 
             result = runner.invoke(cli, ["sync", "--dry-run"], env=env)
 
-            # Should fail due to missing credentials
+            # Verify command fails due to missing credentials
             assert result.exit_code != 0
 
     @patch("sync.setup_logging")

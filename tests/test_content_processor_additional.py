@@ -39,7 +39,8 @@ class TestContentProcessorEdgeCases:
         processed = self.processor.process_bluesky_to_mastodon(text_over_limit)
 
         assert len(processed) <= ContentProcessor.MASTODON_CHAR_LIMIT
-        assert processed.endswith("...")  # Should be truncated with ellipsis
+        # Verify text is truncated with ellipsis when over limit
+        assert processed.endswith("...")
 
     def test_text_with_sync_attribution_at_limit(self):
         """Test text that becomes over limit after sync attribution is added"""
@@ -393,7 +394,8 @@ class TestContentProcessorEdgeCases:
         )
 
         assert isinstance(processed, str)
-        assert "📷" in processed  # Should include image placeholder
+        # Verify image placeholder is included in processed content
+        assert "📷" in processed
 
     def test_record_embed_handling(self):
         """Test handling of record embeds (quoted posts)"""
@@ -410,4 +412,5 @@ class TestContentProcessorEdgeCases:
         )
 
         assert isinstance(processed, str)
-        # Should handle record embeds gracefully
+        # Verify record embeds are handled gracefully without errors
+        assert len(processed) > 0

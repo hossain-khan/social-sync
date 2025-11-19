@@ -855,7 +855,7 @@ class TestBlueskyClient:
         client = BlueskyClient("test.bsky.social", "test-password")
         client._authenticated = True  # Simulate authenticated state
 
-        # Should return empty result instead of crashing
+        # Verify it returns empty result instead of crashing
         result = client.get_recent_posts()
 
         assert isinstance(result, type(client.get_recent_posts()))

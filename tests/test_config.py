@@ -273,7 +273,7 @@ class TestSettings:
         # get_sync_start_datetime() should return 7 days ago when None
         result = settings.get_sync_start_datetime()
         assert isinstance(result, datetime)
-        # Should be approximately 7 days ago (within a few minutes tolerance)
+        # Verify it's approximately 7 days ago (within a few minutes tolerance)
         expected_timestamp = time.time() - (7 * 24 * 60 * 60)  # 7 days ago
         actual_timestamp = result.timestamp()
         assert (
