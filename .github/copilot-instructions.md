@@ -172,7 +172,7 @@ The project includes JSON configuration and state files that must be properly fo
   - Must have valid JSON syntax
   - Required fields: `last_sync_time`, `synced_posts`, `last_bluesky_post_uri`
   - Each post in `synced_posts` must have: `bluesky_uri`, `mastodon_id`, `synced_at`
-- **Format JSON files**: Use `python format_json.py` to format all JSON files, or `python format_json.py file.json` for specific files
+- **Format JSON files**: Use `python scripts/format_json.py` to format all JSON files, or `python scripts/format_json.py file.json` for specific files
 - **Validate JSON syntax**: Use `python -m json.tool file.json > /dev/null` to check for errors
 - **Manual formatting**: Use `python -m json.tool file.json > formatted.json && mv formatted.json file.json`
 
