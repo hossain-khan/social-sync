@@ -36,7 +36,7 @@ class TestContentProcessor:
 
         assert len(result) <= 500
         assert result.endswith("...")
-        # Should truncate to 497 chars plus "..." = 500 total
+        # Verify truncation maintains exactly 500 chars: 497 content + "..." = 500 total
         assert len(result) == 500
 
     def test_truncate_if_needed_exactly_500_chars(self):
@@ -116,7 +116,7 @@ class TestContentProcessor:
         """Test converting AT Protocol mentions"""
         text = "Hello @user.bsky.social and @another.handle"
         result = ContentProcessor._convert_mentions(text)
-        # Should preserve the mentions as-is
+        # Verify AT Protocol mentions are preserved as-is
         assert "@user.bsky.social" in result
         assert "@another.handle" in result
 
@@ -373,7 +373,7 @@ class TestContentProcessor:
         result = ContentProcessor._handle_embed(
             "Original text", embed, include_image_placeholders=False
         )
-        # Should return original text when not including placeholders
+        # Verify original text is returned when not including placeholders
         assert result == "Original text"
 
     def test_handle_embed_quote_post(self):
@@ -426,11 +426,11 @@ class TestContentProcessor:
             text=text, embed=embed, facets=facets, include_image_placeholders=True
         )
 
-        # Should have the full URL expanded, no duplicates
+        # Verify the full URL is expanded without duplicates
         assert "https://keepachangelog.com/en/1.0.0/" in result
-        # Should not have the truncated URL anymore
+        # Verify the truncated URL is replaced
         assert "https://keepachangelog.com..." not in result
-        # Should only appear once
+        # Verify the URL appears only once
         assert result.count("https://keepachangelog.com") == 1
 
     def test_duplicate_link_bug_scenario(self):
@@ -457,10 +457,10 @@ class TestContentProcessor:
             text=text, embed=embed, facets=facets, include_image_placeholders=True
         )
 
-        # Should have the full URL expanded, no truncated URL
+        # Verify the full URL is expanded and the truncated URL is replaced
         assert "https://keepachangelog.com/en/1.0.0/" in result
         assert "https://keepachangelog.com..." not in result
-        # Should only appear once total
+        # Verify the URL appears only once total
         link_count = result.count("https://keepachangelog.com")
         assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
 
@@ -495,12 +495,12 @@ class TestContentProcessor:
             text=text, embed=embed, facets=facets, include_image_placeholders=True
         )
 
-        # Should only have the link appear once, not duplicated
-        # The facets should expand the truncated URL, but we shouldn't add it again via external embed
+        # Verify the link appears only once, not duplicated
+        # The facets expand the truncated URL, but we don't add it again via external embed
         link_count = result.count("https://keepachangelog.com")
         assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
 
-        # Should have the full URL, not the truncated version
+        # Verify we have the full URL, not the truncated version
         assert "https://keepachangelog.com/en/1.0.0/" in result
         assert "https://keepachangelog.com..." not in result
 
@@ -525,10 +525,10 @@ class TestContentProcessor:
             text=text, embed=embed, facets=facets, include_image_placeholders=True
         )
 
-        # Should have the original text plus the external link
+        # Verify the original text and external link are present
         assert "Check out this cool library!" in result
         assert "🔗 Awesome Library: https://github.com/example/awesome-lib" in result
-        # Should only appear once
+        # Verify the link appears only once
         link_count = result.count("https://github.com/example/awesome-lib")
         assert link_count == 1, f"Expected 1 link, found {link_count} in: {result}"
 
@@ -679,7 +679,7 @@ class TestContentProcessor:
                 ],
             }
         ]
-        # Should not raise an exception even if there are decoding issues
+        # Verify no exception is raised even if there are decoding issues
         result = ContentProcessor._expand_urls_from_facets(text, facets)
         assert isinstance(result, str)
         assert "https://example.com" in result
@@ -722,7 +722,7 @@ class TestContentProcessor:
             ["porn", "nudity"]
         )
         assert is_sensitive is True
-        # Should return the first matching label
+        # Verify the first matching label is returned
         assert spoiler_text == "NSFW - Adult Content"
 
     def test_get_content_warning_from_labels_unknown(self):
@@ -731,7 +731,7 @@ class TestContentProcessor:
             ["unknown-label", "another-unknown"]
         )
         assert is_sensitive is True
-        # Should still mark as sensitive with custom message
+        # Verify it's still marked as sensitive with custom message for unknown labels
         assert "Content Warning" in spoiler_text
         assert "unknown-label" in spoiler_text
 
@@ -757,7 +757,7 @@ class TestContentProcessor:
             ["unknown", "sexual", "another-unknown"]
         )
         assert is_sensitive is True
-        # Should find the known label in the middle
+        # Verify the known label in the middle is found
         assert spoiler_text == "NSFW - Sexual Content"
 
     def test_validate_language_code_valid_en(self):

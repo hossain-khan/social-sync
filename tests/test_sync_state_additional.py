@@ -125,7 +125,8 @@ class TestSyncStateEdgeCases:
         lookup_time = time.time() - start_time
 
         assert is_synced is True
-        assert lookup_time < 1.0  # Should be fast even with many records
+        # Verify lookup performance is acceptable even with many records
+        assert lookup_time < 1.0
 
         # Test lookup of old post that was evicted (should not be found)
         old_uri = (
@@ -282,9 +283,10 @@ class TestSyncStateEdgeCases:
                 sync_state.mark_post_synced(invalid_uri, "test_id")
                 is_synced = sync_state.is_post_synced(invalid_uri)
                 mastodon_id = sync_state.get_mastodon_id_for_bluesky_post(invalid_uri)
-                # Should not crash, exact behavior depends on implementation
+                # Verify methods handle invalid URIs gracefully without crashing
+                # Exact behavior depends on implementation
             except (TypeError, ValueError):
-                # These exceptions might be acceptable for invalid input
+                # These exceptions are acceptable for invalid input
                 pass
 
     def test_special_characters_in_ids(self):
