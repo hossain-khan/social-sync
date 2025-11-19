@@ -254,13 +254,14 @@ python sync.py sync --since-date 2025-01-01
 - ✅ **Text posts** - Plain text content
 - ✅ **Posts with links** - External URLs with preview
 - ✅ **Posts with images** - Images with alt text
-- ✅ **Quoted posts** - Includes quoted content
+- ✅ **Self-quoted posts** - Your quotes of your own content
 - ✅ **Threaded posts** - Reply posts with conversation context
 
 ### What Doesn't Get Synced
 
 - ❌ **Other user replies** - Unless parent was also synced
 - ❌ **Reposts/boosts** - Only original content
+- ❌ **Quotes of others** - Quote posts of other people's content
 - ❌ **Already synced** - Prevented by state tracking
 - ❌ **Posts with `#no-sync` tag** - Skipped and tracked to prevent re-processing
 
@@ -270,7 +271,7 @@ python sync.py sync --since-date 2025-01-01
 - **Character limits**: Long posts truncated to 500 characters
 - **Link embedding**: Bluesky link cards converted to text with URLs  
 - **Image handling**: Notes image count and preserves alt text
-- **Quote posts**: Includes quoted content with attribution
+- **Self-quote posts**: Includes your quoted content with attribution (quotes of others filtered)
 - **Attribution**: Adds "(via Bluesky)" to posts (skipped for replies)
 
 ### Language Tag Support
