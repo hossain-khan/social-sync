@@ -183,6 +183,9 @@ The project includes JSON configuration and state files that must be properly fo
 - `sync.py` - CLI entry point for the sync tool
 - `pyproject.toml` - Modern Python packaging configuration with project metadata and version
 - `sync_state.json` - Sync history and state persistence (tracked in git)
+- `scripts/` - Utility scripts for development and troubleshooting
+  - `scripts/investigate_post.py` - Debug utility to investigate why specific Bluesky posts were/weren't synced
+  - `scripts/pre-commit-checks.sh` - Automated quality checks before committing
 - `docs/` - Documentation directory containing all markdown files except README.md
   - `docs/CHANGELOG.md` - Project changelog following Keep a Changelog format
   - `docs/SETUP.md` - Complete setup and configuration guide
@@ -232,6 +235,26 @@ We use Python virtual environments (.venv) and follow these conventions:
 - Handle API errors gracefully with proper logging
 - State management prevents duplicate posts across sync runs
 - Follow PEP 8 style guidelines enforced by Black and flake8
+
+### Debugging and Investigation
+
+When investigating why a specific Bluesky post was or wasn't synced:
+
+1. **Use the investigation script**: `python scripts/investigate_post.py <post_rkey>`
+   - Extracts post record key (rkey) from Bluesky URL: `https://bsky.app/profile/user/post/RKEY`
+   - Auto-loads user DID from `sync_state.json` or accepts as argument
+   - Fetches full post data from AT Protocol API
+   - Analyzes sync eligibility (reply, quote, root post, tags)
+   - Checks sync state and skipped posts history
+   - Example: `python scripts/investigate_post.py 3m5x5kzlnoc2u`
+
+2. **Script capabilities**:
+   - Detects quote posts and identifies quoted author
+   - Analyzes reply threads and parent relationships
+   - Checks for `#no-sync` tag presence
+   - Shows embed types (external links, images, quotes)
+   - Displays facets (mentions, hashtags, links)
+   - Cross-references with sync state for confirmation
 
 ## Testing and CI
 
