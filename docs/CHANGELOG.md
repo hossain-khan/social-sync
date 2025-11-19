@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-11-19
+
 ### Fixed
 - 🐛 **Quote Post Filtering**: Fixed issue where quote posts of other people's content were incorrectly synced to Mastodon
   - Previously, posts quoting others' content (using `app.bsky.embed.record` embed type) would sync when they should be filtered
