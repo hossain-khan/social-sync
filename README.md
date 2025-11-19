@@ -12,7 +12,8 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 - 🚀 **GitHub Actions**: Run automatically via CI/CD workflows
 - 🎯 **Smart Deduplication**: Prevents duplicate posts across sync runs
 - 🚫 **Selective Sync**: Skip posts with `#no-sync` tag to control what gets synced
-- 📝 **Content Processing**: Handles links, images, and quoted posts
+- 🔍 **Smart Filtering**: Filters out replies to others, reposts, and quotes of other people's content
+- 📝 **Content Processing**: Handles links, images, and self-quoted posts
 - 🧪 **Dry Run Mode**: Test functionality without actual posting
 
 ## 🚀 Quick Start
