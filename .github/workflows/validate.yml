@@ -246,10 +246,9 @@ jobs:
           BLUESKY_PASSWORD: test-password
           MASTODON_ACCESS_TOKEN: test-token-12345
           MASTODON_API_BASE_URL: https://mastodon.social
-          LOG_LEVEL: DEBUG
         run: |
           echo "🔄 Testing sync command with dry-run mode..."
-          python sync.py sync --dry-run --log-level=DEBUG
+          python sync.py --log-level=DEBUG sync --dry-run
           echo "✅ Sync dry-run completed successfully"
 
   security-scan:
