@@ -242,10 +242,10 @@ jobs:
       
       - name: Validate sync dry-run
         env:
-          BLUESKY_HANDLE: test.bsky.social
-          BLUESKY_PASSWORD: test-password
-          MASTODON_ACCESS_TOKEN: test-token-12345
-          MASTODON_API_BASE_URL: https://mastodon.social
+          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
+          BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          MASTODON_API_BASE_URL: ${{ secrets.MASTODON_API_BASE_URL }}
         run: |
           echo "🔄 Testing sync command with dry-run mode..."
           python sync.py --log-level=DEBUG sync --dry-run
