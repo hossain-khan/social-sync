@@ -1237,3 +1237,210 @@ class TestBlueskyClient:
         assert len(result.posts) == 1
         post = result.posts[0]
         assert post.langs is None
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_filter_quote_posts_of_others(self, mock_client_class):
+        """Test that quote posts of other people's content are filtered out"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:userA"
+        mock_client.me = mock_me
+
+        # Create a quote post of someone else's content
+        mock_post_record = Mock()
+        mock_post_record.text = "Check this out!"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.reply = None
+        mock_post_record.facets = []
+        mock_post_record.labels = None
+        mock_post_record.langs = None
+
+        # Add quote post embed (quoting someone else's post)
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.record"
+        mock_embed_record = Mock()
+        mock_embed_record.uri = "at://did:plc:userB/app.bsky.feed.post/quoted123"
+        mock_embed.record = mock_embed_record
+        mock_post_record.embed = mock_embed
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:userA/app.bsky.feed.post/12345"
+        mock_feed_item.post.cid = "test-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "userA.bsky.social"
+        mock_feed_item.post.author.display_name = "User A"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("userA.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts(limit=10)
+
+        # Quote post should be filtered out
+        assert len(result.posts) == 0
+        assert result.filtered_quotes == 1
+        assert result.total_retrieved == 1
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_allow_self_quote_posts(self, mock_client_class):
+        """Test that quote posts of own content are allowed (self-quotes)"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:userA"
+        mock_client.me = mock_me
+
+        # Create a self-quote post (quoting own content)
+        mock_post_record = Mock()
+        mock_post_record.text = "Adding more context to my previous post"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.reply = None
+        mock_post_record.facets = []
+        mock_post_record.labels = None
+        mock_post_record.langs = None
+
+        # Add quote post embed (quoting own post)
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.record"
+        mock_embed_record = Mock()
+        mock_embed_record.uri = "at://did:plc:userA/app.bsky.feed.post/original123"
+        mock_embed.record = mock_embed_record
+        mock_post_record.embed = mock_embed
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:userA/app.bsky.feed.post/12345"
+        mock_feed_item.post.cid = "test-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "userA.bsky.social"
+        mock_feed_item.post.author.display_name = "User A"
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("userA.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts(limit=10)
+
+        # Self-quote should be included
+        assert len(result.posts) == 1
+        assert result.filtered_quotes == 0
+        assert result.total_retrieved == 1
+        assert result.posts[0].text == "Adding more context to my previous post"
+
+    @patch("src.bluesky_client.AtprotoClient")
+    def test_quote_post_filtering_statistics(self, mock_client_class):
+        """Test that filtered_quotes count is accurate with multiple posts"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:userA"
+        mock_client.me = mock_me
+
+        # Create 3 posts: 1 regular, 1 quote of other, 1 self-quote
+        feed_items = []
+
+        # Post 1: Regular post (should be included)
+        mock_post1 = Mock()
+        mock_post1.record = Mock()
+        mock_post1.record.text = "Regular post"
+        mock_post1.record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post1.record.reply = None
+        mock_post1.record.facets = []
+        mock_post1.record.labels = None
+        mock_post1.record.langs = None
+        mock_post1.record.embed = None
+        mock_post1.uri = "at://did:plc:userA/app.bsky.feed.post/post1"
+        mock_post1.cid = "cid1"
+        mock_post1.author = Mock()
+        mock_post1.author.handle = "userA.bsky.social"
+        mock_post1.author.display_name = "User A"
+
+        mock_item1 = Mock()
+        if hasattr(mock_item1, "reason"):
+            delattr(mock_item1, "reason")
+        mock_item1.post = mock_post1
+        feed_items.append(mock_item1)
+
+        # Post 2: Quote of someone else (should be filtered)
+        mock_post2 = Mock()
+        mock_post2.record = Mock()
+        mock_post2.record.text = "Quoting someone else"
+        mock_post2.record.created_at = "2025-01-01T11:00:00.000Z"
+        mock_post2.record.reply = None
+        mock_post2.record.facets = []
+        mock_post2.record.labels = None
+        mock_post2.record.langs = None
+        mock_embed2 = Mock()
+        mock_embed2.py_type = "app.bsky.embed.record"
+        mock_embed2.record = Mock()
+        mock_embed2.record.uri = "at://did:plc:userB/app.bsky.feed.post/quoted"
+        mock_post2.record.embed = mock_embed2
+        mock_post2.uri = "at://did:plc:userA/app.bsky.feed.post/post2"
+        mock_post2.cid = "cid2"
+        mock_post2.author = Mock()
+        mock_post2.author.handle = "userA.bsky.social"
+        mock_post2.author.display_name = "User A"
+
+        mock_item2 = Mock()
+        if hasattr(mock_item2, "reason"):
+            delattr(mock_item2, "reason")
+        mock_item2.post = mock_post2
+        feed_items.append(mock_item2)
+
+        # Post 3: Self-quote (should be included)
+        mock_post3 = Mock()
+        mock_post3.record = Mock()
+        mock_post3.record.text = "Quoting myself"
+        mock_post3.record.created_at = "2025-01-01T12:00:00.000Z"
+        mock_post3.record.reply = None
+        mock_post3.record.facets = []
+        mock_post3.record.labels = None
+        mock_post3.record.langs = None
+        mock_embed3 = Mock()
+        mock_embed3.py_type = "app.bsky.embed.record"
+        mock_embed3.record = Mock()
+        mock_embed3.record.uri = "at://did:plc:userA/app.bsky.feed.post/original"
+        mock_post3.record.embed = mock_embed3
+        mock_post3.uri = "at://did:plc:userA/app.bsky.feed.post/post3"
+        mock_post3.cid = "cid3"
+        mock_post3.author = Mock()
+        mock_post3.author.handle = "userA.bsky.social"
+        mock_post3.author.display_name = "User A"
+
+        mock_item3 = Mock()
+        if hasattr(mock_item3, "reason"):
+            delattr(mock_item3, "reason")
+        mock_item3.post = mock_post3
+        feed_items.append(mock_item3)
+
+        mock_response = Mock()
+        mock_response.feed = feed_items
+        mock_client.get_author_feed.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        client = BlueskyClient("userA.bsky.social", "test-password")
+        client._authenticated = True
+
+        result = client.get_recent_posts(limit=10)
+
+        # Should include regular post and self-quote, filter other's quote
+        assert len(result.posts) == 2
+        assert result.filtered_quotes == 1
+        assert result.total_retrieved == 3
+        assert result.posts[0].text == "Regular post"
+        assert result.posts[1].text == "Quoting myself"
