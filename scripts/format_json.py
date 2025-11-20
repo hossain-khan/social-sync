@@ -3,8 +3,8 @@
 JSON Formatter for Social Sync Project
 
 This script formats JSON files with consistent indentation and validates their syntax.
-Usage: python format_json.py [file1.json] [file2.json] ...
-       python format_json.py  # formats all JSON files in project
+Usage: python scripts/format_json.py [file1.json] [file2.json] ...
+       python scripts/format_json.py  # formats all JSON files in project
 """
 
 import json

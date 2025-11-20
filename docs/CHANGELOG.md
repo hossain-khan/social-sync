@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- 📁 **Project Organization**: Moved `format_json.py` utility script to `scripts/` directory for better organization
+  - Script is now located at `scripts/format_json.py`
+  - Updated usage documentation to reflect new location: `python scripts/format_json.py`
+  - Script functionality remains unchanged
+
 ## [0.7.0] - 2025-11-19
 
 ### Fixed
