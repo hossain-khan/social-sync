@@ -158,8 +158,9 @@ class SocialSyncOrchestrator:
 
             # Process content for Mastodon compatibility
             # Don't include image/video placeholders if we're going to attach actual media
+            # Show placeholders when: no images AND (no videos OR videos disabled)
             include_placeholders = (
-                not has_images and not has_videos
+                not has_images and (not has_videos or not self.settings.sync_videos)
             ) or self.settings.dry_run
             processed_text = self.content_processor.process_bluesky_to_mastodon(
                 text=bluesky_post.text,
@@ -260,6 +261,22 @@ class SocialSyncOrchestrator:
             logger.error(f"Error syncing post {bluesky_post.uri}: {e}")
             return False
 
+    def _extract_author_did(self, bluesky_post: BlueskyPost) -> str:
+        """Extract author DID from post URI
+
+        Args:
+            bluesky_post: The Bluesky post to extract DID from
+
+        Returns:
+            Author DID extracted from URI, or author_handle as fallback
+
+        Note:
+            AT Protocol URI format: at://did:plc:abc123/app.bsky.feed.post/xyz789
+        """
+        if bluesky_post.uri.startswith("at://"):
+            return bluesky_post.uri.split("/")[2]
+        return bluesky_post.author_handle
+
     def _sync_images(self, bluesky_post: BlueskyPost) -> List[str]:
         """Download images from Bluesky and upload to Mastodon
 
@@ -276,10 +293,7 @@ class SocialSyncOrchestrator:
         logger.info(f"Found {len(images)} image(s) to sync for post {bluesky_post.uri}")
 
         # Extract author DID from URI for blob downloads
-        # Format: at://did:plc:abc123/app.bsky.feed.post/xyz789
-        author_did = bluesky_post.author_handle  # We'll need the actual DID
-        if bluesky_post.uri.startswith("at://"):
-            author_did = bluesky_post.uri.split("/")[2]
+        author_did = self._extract_author_did(bluesky_post)
 
         for i, image_info in enumerate(images):
             try:
@@ -373,10 +387,7 @@ class SocialSyncOrchestrator:
             return None
 
         # Extract author DID from URI for blob downloads
-        # Format: at://did:plc:abc123/app.bsky.feed.post/xyz789
-        author_did = bluesky_post.author_handle  # We'll need the actual DID
-        if bluesky_post.uri.startswith("at://"):
-            author_did = bluesky_post.uri.split("/")[2]
+        author_did = self._extract_author_did(bluesky_post)
 
         # Download from Bluesky
         video_data = self.bluesky_client.download_video(blob_ref, author_did)

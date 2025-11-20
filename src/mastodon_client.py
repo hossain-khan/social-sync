@@ -145,25 +145,12 @@ class MastodonClient:
             Mastodon has size limits (typically 40MB) and processing time.
             The upload may take longer than images.
         """
-        if not self._authenticated or not self.client:
-            raise RuntimeError("Client not authenticated. Call authenticate() first.")
-
-        try:
-            # Mastodon's media_post handles videos similar to images
-            media = self.client.media_post(
-                media_file=video_file,
-                mime_type=mime_type or "video/mp4",
-                description=description,
-            )
-
-            logger.info(f"Successfully uploaded video to Mastodon: {media['id']}")
-            return (
-                str(media["id"]) if isinstance(media, dict) and "id" in media else None
-            )
-
-        except Exception as e:
-            logger.error(f"Failed to upload video to Mastodon: {e}")
-            return None
+        # Delegate to upload_media, setting default MIME type for video
+        return self.upload_media(
+            media_file=video_file,
+            mime_type=mime_type or "video/mp4",
+            description=description,
+        )
 
     def get_recent_posts(self, limit: int = 10) -> List[MastodonPost]:
         """Get recent posts from authenticated user"""

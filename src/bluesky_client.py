@@ -568,13 +568,14 @@ class BlueskyClient:
 
         Note:
             Video files can be large (up to 50MB in AT Protocol).
-            Consider streaming for large files.
+            This method uses a 60-second timeout (vs 30s for images).
         """
         if not self._authenticated:
             logger.error("Client not authenticated")
             return None
 
         try:
+            # Use the same blob download mechanism as images, but with longer timeout
             url = "https://bsky.social/xrpc/com.atproto.sync.getBlob"
             params = {"did": did, "cid": blob_ref}
 
@@ -587,7 +588,8 @@ class BlueskyClient:
             response = requests.get(url, params=params, headers=headers, timeout=60)
             response.raise_for_status()
 
-            mime_type = response.headers.get("Content-Type", "video/mp4")
+            # Get mime type from response headers (use lowercase for consistency)
+            mime_type = response.headers.get("content-type", "video/mp4")
             video_bytes = response.content
 
             logger.info(f"Downloaded video blob: {len(video_bytes)} bytes")
