@@ -382,6 +382,7 @@ class BlueskyClient:
         Embed Types Handled:
         - External: Link cards with title, description, and URL
         - Images: Photo attachments with alt text and metadata
+        - Video: Video attachments with metadata and blob references
         - Record: Quoted posts or other embedded records
         """
         try:
@@ -465,6 +466,32 @@ class BlueskyClient:
                 embed_dict["images"] = images_data
                 # ContentProcessor will format as: "📷 [N images]\nAlt text: ..."
 
+            # === VIDEO ATTACHMENTS ===
+            # Handle posts with video attachments
+            if hasattr(embed, "video") and embed.video:
+                video = embed.video
+                embed_dict["video"] = {
+                    "alt": getattr(embed, "alt", None),
+                    "aspect_ratio": getattr(embed, "aspect_ratio", None),
+                }
+                # Extract video blob metadata
+                if hasattr(video, "ref") and video.ref:
+                    # Handle blob reference formats
+                    ref = video.ref
+                    if hasattr(ref, "link"):
+                        embed_dict["video"]["blob_ref"] = ref.link
+                    elif isinstance(ref, dict) and "$link" in ref:
+                        embed_dict["video"]["blob_ref"] = ref["$link"]
+                    else:
+                        embed_dict["video"]["blob_ref"] = str(ref)
+
+                    embed_dict["video"]["mime_type"] = getattr(
+                        video, "mime_type", "video/mp4"
+                    )
+                    embed_dict["video"]["size"] = getattr(video, "size", 0)
+
+                logger.debug("Found video embed with blob reference")
+
             # === QUOTED POSTS (Record Embeds) ===
             # Handle when users quote-tweet/quote-post another post
             # Currently basic implementation - could be expanded for full quote handling
@@ -527,4 +554,47 @@ class BlueskyClient:
 
         except Exception as e:
             logger.error(f"Failed to download blob {blob_ref}: {e}")
+            return None
+
+    def download_video(self, blob_ref: str, did: str) -> Optional[Tuple[bytes, str]]:
+        """Download video blob from AT Protocol
+
+        Args:
+            blob_ref: The blob reference hash
+            did: User's DID for blob access
+
+        Returns:
+            Tuple of (video_bytes, mime_type) or None if download fails
+
+        Note:
+            Video files can be large (up to 50MB in AT Protocol).
+            This method uses a 60-second timeout (vs 30s for images).
+        """
+        if not self._authenticated:
+            logger.error("Client not authenticated")
+            return None
+
+        try:
+            # Use the same blob download mechanism as images, but with longer timeout
+            url = "https://bsky.social/xrpc/com.atproto.sync.getBlob"
+            params = {"did": did, "cid": blob_ref}
+
+            headers = {"User-Agent": "Social-Sync/1.0 (AT Protocol video downloader)"}
+
+            # Add authentication if available
+            if hasattr(self.client, "access_token") and self.client.access_token:
+                headers["Authorization"] = f"Bearer {self.client.access_token}"
+
+            response = requests.get(url, params=params, headers=headers, timeout=60)
+            response.raise_for_status()
+
+            # Get mime type from response headers (use lowercase for consistency)
+            mime_type = response.headers.get("content-type", "video/mp4")
+            video_bytes = response.content
+
+            logger.info(f"Downloaded video blob: {len(video_bytes)} bytes")
+            return (video_bytes, mime_type)
+
+        except Exception as e:
+            logger.error(f"Failed to download video blob {blob_ref}: {e}")
             return None

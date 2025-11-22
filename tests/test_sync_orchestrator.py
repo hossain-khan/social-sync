@@ -47,6 +47,8 @@ class TestSocialSyncOrchestrator:
                 "get_sync_start_datetime",
                 "disable_source_platform",
                 "sync_content_warnings",
+                "sync_videos",
+                "max_video_size_mb",
             ]
         )
         mock_settings.bluesky_handle = "test.bsky.social"
@@ -59,6 +61,8 @@ class TestSocialSyncOrchestrator:
         mock_settings.get_sync_start_datetime.return_value = datetime(2025, 1, 1)
         mock_settings.disable_source_platform = False
         mock_settings.sync_content_warnings = True
+        mock_settings.sync_videos = False  # Disabled by default
+        mock_settings.max_video_size_mb = 40
         mock_get_settings.return_value = mock_settings
 
         # Mock client instances with proper specifications
@@ -92,6 +96,7 @@ class TestSocialSyncOrchestrator:
                 "process_bluesky_to_mastodon",
                 "download_image",
                 "extract_images_from_embed",
+                "extract_video_from_embed",
                 "add_sync_attribution",
                 "has_no_sync_tag",
                 "get_content_warning_from_labels",
@@ -325,6 +330,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -371,6 +377,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "This is a reply"
         )
@@ -411,6 +418,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Orphaned reply"
         )
@@ -451,6 +459,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Dry run post"
         )
@@ -482,6 +491,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Error post"
         )
@@ -771,6 +781,7 @@ class TestSocialSyncOrchestrator:
         self.mock_content_processor.extract_images_from_embed.return_value = [
             {"blob_ref": "blob1", "alt": "alt text"}
         ]
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -996,6 +1007,7 @@ class TestSocialSyncOrchestrator:
         )
 
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Error post"
         )
@@ -1270,6 +1282,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Post without attribution"
         )
@@ -1313,6 +1326,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Post with attribution"
         )
@@ -1575,6 +1589,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -1617,6 +1632,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -1658,6 +1674,7 @@ class TestSocialSyncOrchestrator:
 
         # Mock content processing
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -1698,6 +1715,7 @@ class TestSocialSyncOrchestrator:
 
         self.mock_sync_state.is_post_synced.return_value = False
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -1745,6 +1763,7 @@ class TestSocialSyncOrchestrator:
 
         self.mock_sync_state.is_post_synced.return_value = False
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -1793,6 +1812,7 @@ class TestSocialSyncOrchestrator:
 
         self.mock_sync_state.is_post_synced.return_value = False
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
@@ -1841,6 +1861,7 @@ class TestSocialSyncOrchestrator:
 
         self.mock_sync_state.is_post_synced.return_value = False
         self.mock_content_processor.extract_images_from_embed.return_value = []
+        self.mock_content_processor.extract_video_from_embed.return_value = None
         self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Processed text"
         )
