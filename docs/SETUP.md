@@ -191,6 +191,8 @@ After setup:
 | `MAX_POSTS_PER_SYNC` | 10 | Posts processed per sync |
 | `SYNC_START_DATE` | 7d | Initial sync date |
 | `DRY_RUN` | false | Test mode without posting |
+| `IMAGE_UPLOAD_FAILURE_STRATEGY` | partial | Image failure handling (see below) |
+| `IMAGE_UPLOAD_MAX_RETRIES` | 3 | Max retry attempts for image uploads |
 | `LOG_LEVEL` | INFO | Logging verbosity |
 
 ### Sync Start Date Examples
@@ -214,6 +216,59 @@ SYNC_START_DATE=2025-01-15T10:30:00-05:00
 # CLI override
 python sync.py sync --since-date 2025-01-01
 ```
+
+### Image Upload Failure Handling
+
+Social Sync includes retry logic and configurable strategies for handling image upload failures:
+
+#### Failure Strategies
+
+| Strategy | Behavior | Use Case |
+|----------|----------|----------|
+| `partial` | Post with successfully uploaded images | Default - best effort posting |
+| `skip_post` | Don't post if any image fails | Strict mode - all or nothing |
+| `text_placeholder` | Add note about missing images | User transparency |
+
+#### Configuration Examples
+
+```bash
+# Default: Post with whatever images succeeded
+IMAGE_UPLOAD_FAILURE_STRATEGY=partial
+IMAGE_UPLOAD_MAX_RETRIES=3
+
+# Strict mode: Skip post if any image fails
+IMAGE_UPLOAD_FAILURE_STRATEGY=skip_post
+IMAGE_UPLOAD_MAX_RETRIES=3
+
+# Add warning text about missing images
+IMAGE_UPLOAD_FAILURE_STRATEGY=text_placeholder
+IMAGE_UPLOAD_MAX_RETRIES=5
+```
+
+#### How It Works
+
+1. **Retry Logic**: Each image upload attempt retries up to `IMAGE_UPLOAD_MAX_RETRIES` times
+2. **Exponential Backoff**: Delays between retries increase progressively (1s, 2s, 4s...)
+3. **Strategy Application**: After all retries exhausted, configured strategy determines behavior
+4. **Logging**: Detailed logs show retry attempts and final outcome
+
+#### Example Scenarios
+
+**Partial Strategy (Default):**
+- Post has 3 images
+- Image 1: ✅ Succeeds
+- Image 2: ❌ Fails after 3 retries  
+- Image 3: ✅ Succeeds
+- Result: Post published with images 1 and 3
+
+**Skip Post Strategy:**
+- Same scenario as above
+- Result: Post NOT published, logged as failed
+
+**Text Placeholder Strategy:**
+- Same scenario as above
+- Result: Post published with images 1 and 3, plus text: `[⚠️ 1 image(s) could not be synced]`
+
 
 ## State Persistence in CI
 
