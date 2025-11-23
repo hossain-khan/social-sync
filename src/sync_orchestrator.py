@@ -5,7 +5,7 @@ Main sync orchestrator for Social Sync
 import logging
 import time
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from .bluesky_client import BlueskyClient, BlueskyFetchResult, BlueskyPost
 from .config import get_settings
@@ -177,16 +177,44 @@ class SocialSyncOrchestrator:
                 )
 
             # Handle image and video attachments
-            media_ids = []
+            media_ids: List[str] = []
+            all_images_successful = True
             if bluesky_post.embed and not self.settings.dry_run:
-                # Sync images
-                media_ids = self._sync_images(bluesky_post)
+                # Sync images with failure tracking
+                media_ids, all_images_successful = self._sync_images(bluesky_post)
 
                 # Sync videos if enabled
                 if self.settings.sync_videos:
                     video_id = self._sync_video(bluesky_post)
                     if video_id:
                         media_ids.append(video_id)
+
+            # Handle image upload failures based on strategy
+            if not all_images_successful and not self.settings.dry_run:
+                strategy = self.settings.image_upload_failure_strategy
+
+                if strategy == "skip_post":
+                    logger.warning(
+                        f"Skipping post {bluesky_post.uri} due to image upload failures "
+                        f"(strategy: {strategy})"
+                    )
+                    return False
+
+                elif strategy == "text_placeholder":
+                    # Add note about missing images to post text
+                    image_count = len(
+                        self.content_processor.extract_images_from_embed(
+                            bluesky_post.embed
+                        )
+                    )
+                    failed_count = image_count - len(media_ids)
+                    placeholder = f"\n\n[⚠️ {failed_count} image(s) could not be synced]"
+                    processed_text += placeholder
+                    logger.info(
+                        f"Added text placeholder for {failed_count} failed image(s)"
+                    )
+
+                # "partial" strategy: continue with whatever images we have (default behavior)
 
             # Check for content warnings if enabled in config
             is_sensitive = False
@@ -277,28 +305,79 @@ class SocialSyncOrchestrator:
             return bluesky_post.uri.split("/")[2]
         return bluesky_post.author_handle
 
-    def _sync_images(self, bluesky_post: BlueskyPost) -> List[str]:
+    def _sync_images(self, bluesky_post: BlueskyPost) -> Tuple[List[str], bool]:
         """Download images from Bluesky and upload to Mastodon
 
-        Returns list of media IDs for Mastodon
+        Returns:
+            tuple: (media_ids, all_successful)
         """
         media_ids: List[str] = []
+        all_successful = True
 
         # Extract image information from embed
         images = self.content_processor.extract_images_from_embed(bluesky_post.embed)
 
         if not images:
-            return media_ids
+            return ([], True)
 
         logger.info(f"Found {len(images)} image(s) to sync for post {bluesky_post.uri}")
 
+        for i, image_info in enumerate(images, 1):
+            try:
+                # Attempt upload with retry
+                media_id = self._upload_image_with_retry(
+                    bluesky_post,
+                    image_info,
+                    i,
+                    max_retries=self.settings.image_upload_max_retries,
+                )
+
+                if media_id:
+                    media_ids.append(media_id)
+                    # Add delay between image uploads to avoid rate limiting
+                    if i < len(images):  # Don't delay after the last image
+                        time.sleep(0.5)
+                else:
+                    all_successful = False
+                    logger.warning(
+                        f"Failed to upload image {i}/{len(images)} "
+                        f"for post {bluesky_post.uri} after retries"
+                    )
+
+            except Exception as e:
+                all_successful = False
+                logger.error(f"Error uploading image {i}/{len(images)}: {e}")
+
+        logger.info(
+            f"Successfully processed {len(media_ids)}/{len(images)} images for post {bluesky_post.uri}"
+        )
+        return (media_ids, all_successful)
+
+    def _upload_image_with_retry(
+        self,
+        bluesky_post: BlueskyPost,
+        image_info: Dict[str, Any],
+        image_number: int,
+        max_retries: int = 3,
+    ) -> Optional[str]:
+        """Upload image to Mastodon with retry logic
+
+        Args:
+            bluesky_post: The post containing the image
+            image_info: Image metadata including blob reference or URL
+            image_number: Index of image (for logging)
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            Media ID if successful, None otherwise
+        """
         # Extract author DID from URI for blob downloads
         author_did = self._extract_author_did(bluesky_post)
 
-        for i, image_info in enumerate(images):
+        for attempt in range(max_retries):
             try:
                 logger.info(
-                    f"Processing image {i+1}/{len(images)} for post {bluesky_post.uri}"
+                    f"Processing image {image_number}, attempt {attempt + 1}/{max_retries}"
                 )
 
                 # Download image from Bluesky
@@ -318,43 +397,49 @@ class SocialSyncOrchestrator:
 
                 if not image_data:
                     logger.warning(
-                        f"Failed to download image {i+1} for post {bluesky_post.uri}"
+                        f"Failed to download image {image_number}, "
+                        f"attempt {attempt + 1}/{max_retries}"
                     )
-                    continue
+                    if attempt < max_retries - 1:
+                        time.sleep(1 * (attempt + 1))  # Exponential backoff
+                        continue
+                    else:
+                        return None
 
                 image_bytes, actual_mime_type = image_data
                 mime_type = actual_mime_type or mime_type
 
                 # Upload to Mastodon
-                media_id = self.mastodon_client.upload_media(
+                time.sleep(0.5)  # Rate limiting
+                media_id: Optional[str] = self.mastodon_client.upload_media(
                     media_file=image_bytes,
                     mime_type=mime_type,
                     description=image_info.get("alt", ""),
                 )
 
                 if media_id:
-                    media_ids.append(media_id)
                     logger.info(
-                        f"Successfully uploaded image {i+1}/{len(images)} to Mastodon: {media_id}"
+                        f"Successfully uploaded image {image_number} "
+                        f"(attempt {attempt + 1}): {media_id}"
                     )
-                    # Add delay between image uploads to avoid rate limiting
-                    if i < len(images) - 1:  # Don't delay after the last image
-                        time.sleep(0.5)  # Shorter delay for images within the same post
+                    return str(media_id)
                 else:
                     logger.warning(
-                        f"Failed to upload image {i+1} to Mastodon for post {bluesky_post.uri}"
+                        f"Failed to upload image {image_number} to Mastodon, "
+                        f"attempt {attempt + 1}/{max_retries}"
                     )
+                    if attempt < max_retries - 1:
+                        time.sleep(2 * (attempt + 1))  # Exponential backoff
 
             except Exception as e:
                 logger.error(
-                    f"Error processing image {i+1} for post {bluesky_post.uri}: {e}"
+                    f"Error uploading image {image_number}, "
+                    f"attempt {attempt + 1}/{max_retries}: {e}"
                 )
-                continue
+                if attempt < max_retries - 1:
+                    time.sleep(2 * (attempt + 1))
 
-        logger.info(
-            f"Successfully processed {len(media_ids)}/{len(images)} images for post {bluesky_post.uri}"
-        )
-        return media_ids
+        return None
 
     def _sync_video(self, bluesky_post: BlueskyPost) -> Optional[str]:
         """Download video from Bluesky and upload to Mastodon

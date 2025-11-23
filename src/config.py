@@ -57,6 +57,15 @@ class Settings(BaseSettings):
         default=40, description="Maximum video size in MB (Mastodon's typical limit)"
     )
 
+    # Media Upload Failure Handling
+    image_upload_failure_strategy: str = Field(
+        default="partial",
+        description="Strategy for handling image upload failures: 'skip_post' (don't post if images fail), 'partial' (post with available images), 'text_placeholder' (add note about missing images)",
+    )
+    image_upload_max_retries: int = Field(
+        default=3, description="Maximum number of retry attempts for image uploads"
+    )
+
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
 
