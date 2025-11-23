@@ -179,9 +179,12 @@ class SocialSyncOrchestrator:
             # Handle image and video attachments
             media_ids: List[str] = []
             all_images_successful = True
+            successful_image_count = 0
             if bluesky_post.embed and not self.settings.dry_run:
                 # Sync images with failure tracking
-                media_ids, all_images_successful = self._sync_images(bluesky_post)
+                image_media_ids, all_images_successful = self._sync_images(bluesky_post)
+                media_ids.extend(image_media_ids)
+                successful_image_count = len(image_media_ids)
 
                 # Sync videos if enabled
                 if self.settings.sync_videos:
@@ -207,7 +210,7 @@ class SocialSyncOrchestrator:
                             bluesky_post.embed
                         )
                     )
-                    failed_count = image_count - len(media_ids)
+                    failed_count = image_count - successful_image_count
                     placeholder = f"\n\n[⚠️ {failed_count} image(s) could not be synced]"
                     processed_text += placeholder
                     logger.info(

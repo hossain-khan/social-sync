@@ -74,6 +74,16 @@ class Settings(BaseSettings):
 
     model_config = {"env_file": ".env", "case_sensitive": False, "extra": "ignore"}
 
+    @field_validator("image_upload_failure_strategy")
+    @classmethod
+    def validate_image_upload_failure_strategy(cls, v):
+        valid_strategies = ["skip_post", "partial", "text_placeholder"]
+        if v not in valid_strategies:
+            raise ValueError(
+                f"image_upload_failure_strategy must be one of {valid_strategies}, got '{v}'"
+            )
+        return v
+
     @field_validator("bluesky_handle")
     @classmethod
     def validate_bluesky_handle(cls, v):
