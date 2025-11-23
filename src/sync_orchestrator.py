@@ -398,7 +398,7 @@ class SocialSyncOrchestrator:
         video_bytes, mime_type = video_data
 
         # Upload to Mastodon
-        media_id = self.mastodon_client.upload_video(
+        media_id: Optional[str] = self.mastodon_client.upload_video(
             video_bytes, mime_type=mime_type, description=alt_text
         )
 
