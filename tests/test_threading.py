@@ -101,6 +101,7 @@ class TestThreadingSyncFlow:
         # Mock content processor
         mock_content_processor = Mock()
         mock_content_processor.extract_images_from_embed.return_value = []
+        mock_content_processor.extract_video_from_embed.return_value = None
         mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "This is the parent post"
         )
@@ -231,6 +232,7 @@ class TestThreadingSyncFlow:
         # Mock content processor
         mock_content_processor = Mock()
         mock_content_processor.extract_images_from_embed.return_value = []
+        mock_content_processor.extract_video_from_embed.return_value = None
         mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "This is an orphaned reply"
         )
@@ -315,6 +317,7 @@ class TestThreadingSyncFlow:
         # Mock content processor
         mock_content_processor = Mock()
         mock_content_processor.extract_images_from_embed.return_value = []
+        mock_content_processor.extract_video_from_embed.return_value = None
         mock_content_processor.process_bluesky_to_mastodon.return_value = (
             "Dry run reply"
         )

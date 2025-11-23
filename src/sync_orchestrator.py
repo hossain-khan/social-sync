@@ -5,7 +5,7 @@ Main sync orchestrator for Social Sync
 import logging
 import time
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from .bluesky_client import BlueskyClient, BlueskyFetchResult, BlueskyPost
 from .config import get_settings
@@ -151,13 +151,22 @@ class SocialSyncOrchestrator:
                 self.content_processor.extract_images_from_embed(bluesky_post.embed)
             )
 
+            # Check if we have videos to sync
+            has_videos = bool(
+                self.content_processor.extract_video_from_embed(bluesky_post.embed)
+            )
+
             # Process content for Mastodon compatibility
-            # Don't include image placeholders if we're going to attach actual images
+            # Don't include image/video placeholders if we're going to attach actual media
+            # Show placeholders when: no images AND (no videos OR videos disabled)
+            include_placeholders = (
+                not has_images and (not has_videos or not self.settings.sync_videos)
+            ) or self.settings.dry_run
             processed_text = self.content_processor.process_bluesky_to_mastodon(
                 text=bluesky_post.text,
                 embed=bluesky_post.embed,
                 facets=bluesky_post.facets,
-                include_image_placeholders=not has_images or self.settings.dry_run,
+                include_image_placeholders=include_placeholders,
             )
 
             # Add sync attribution (but not for replies to keep them concise)
@@ -167,10 +176,17 @@ class SocialSyncOrchestrator:
                     processed_text
                 )
 
-            # Handle image attachments
+            # Handle image and video attachments
             media_ids = []
             if bluesky_post.embed and not self.settings.dry_run:
+                # Sync images
                 media_ids = self._sync_images(bluesky_post)
+
+                # Sync videos if enabled
+                if self.settings.sync_videos:
+                    video_id = self._sync_video(bluesky_post)
+                    if video_id:
+                        media_ids.append(video_id)
 
             # Check for content warnings if enabled in config
             is_sensitive = False
@@ -197,11 +213,19 @@ class SocialSyncOrchestrator:
                 image_count = len(
                     self.content_processor.extract_images_from_embed(bluesky_post.embed)
                 )
+                video_info_data = self.content_processor.extract_video_from_embed(
+                    bluesky_post.embed
+                )
+
                 image_info = f" with {image_count} image(s)" if image_count > 0 else ""
+                video_info_str = ""
+                if video_info_data:
+                    size_mb = video_info_data.get("size", 0) / (1024 * 1024)
+                    video_info_str = f" with video ({size_mb:.1f}MB)"
                 reply_info = f" as reply to {in_reply_to_id}" if in_reply_to_id else ""
                 cw_info = f" [CW: {spoiler_text}]" if is_sensitive else ""
                 logger.info(
-                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}{reply_info}{cw_info}"
+                    f"DRY RUN - Would post to Mastodon: {processed_text[:100]}...{image_info}{video_info_str}{reply_info}{cw_info}"
                 )
                 # Don't mark posts as synced during dry runs
                 return True
@@ -237,6 +261,22 @@ class SocialSyncOrchestrator:
             logger.error(f"Error syncing post {bluesky_post.uri}: {e}")
             return False
 
+    def _extract_author_did(self, bluesky_post: BlueskyPost) -> str:
+        """Extract author DID from post URI
+
+        Args:
+            bluesky_post: The Bluesky post to extract DID from
+
+        Returns:
+            Author DID extracted from URI, or author_handle as fallback
+
+        Note:
+            AT Protocol URI format: at://did:plc:abc123/app.bsky.feed.post/xyz789
+        """
+        if bluesky_post.uri.startswith("at://"):
+            return bluesky_post.uri.split("/")[2]
+        return bluesky_post.author_handle
+
     def _sync_images(self, bluesky_post: BlueskyPost) -> List[str]:
         """Download images from Bluesky and upload to Mastodon
 
@@ -253,10 +293,7 @@ class SocialSyncOrchestrator:
         logger.info(f"Found {len(images)} image(s) to sync for post {bluesky_post.uri}")
 
         # Extract author DID from URI for blob downloads
-        # Format: at://did:plc:abc123/app.bsky.feed.post/xyz789
-        author_did = bluesky_post.author_handle  # We'll need the actual DID
-        if bluesky_post.uri.startswith("at://"):
-            author_did = bluesky_post.uri.split("/")[2]
+        author_did = self._extract_author_did(bluesky_post)
 
         for i, image_info in enumerate(images):
             try:
@@ -318,6 +355,57 @@ class SocialSyncOrchestrator:
             f"Successfully processed {len(media_ids)}/{len(images)} images for post {bluesky_post.uri}"
         )
         return media_ids
+
+    def _sync_video(self, bluesky_post: BlueskyPost) -> Optional[str]:
+        """Download video from Bluesky and upload to Mastodon
+
+        Returns:
+            Media ID if successful, None otherwise
+        """
+        if not self.settings.sync_videos:
+            logger.debug("Video sync disabled")
+            return None
+
+        video_info = self.content_processor.extract_video_from_embed(bluesky_post.embed)
+        if not video_info:
+            return None
+
+        blob_ref = video_info.get("blob_ref")
+        alt_text = video_info.get("alt", "")
+
+        if not blob_ref:
+            logger.warning("No blob reference for video")
+            return None
+
+        # Check size limit
+        size_mb = video_info.get("size", 0) / (1024 * 1024)
+        if size_mb > self.settings.max_video_size_mb:
+            logger.warning(
+                f"Video too large ({size_mb:.1f}MB), "
+                f"exceeds limit of {self.settings.max_video_size_mb}MB"
+            )
+            return None
+
+        # Extract author DID from URI for blob downloads
+        author_did = self._extract_author_did(bluesky_post)
+
+        # Download from Bluesky
+        video_data = self.bluesky_client.download_video(blob_ref, author_did)
+        if not video_data:
+            logger.warning(f"Failed to download video for post {bluesky_post.uri}")
+            return None
+
+        video_bytes, mime_type = video_data
+
+        # Upload to Mastodon
+        media_id: Optional[str] = self.mastodon_client.upload_video(
+            video_bytes, mime_type=mime_type, description=alt_text
+        )
+
+        if media_id:
+            logger.info(f"Successfully synced video: {media_id}")
+
+        return media_id
 
     def run_sync(self) -> dict:
         """Run the main sync process"""

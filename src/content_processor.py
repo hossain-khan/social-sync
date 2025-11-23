@@ -239,7 +239,22 @@ class ContentProcessor:
 
                 return text + image_text
 
-        elif embed_type == "record":
+        # Handle video embeds - check for video field rather than embed_type
+        # since video can be in various embed types (app.bsky.embed.video, etc.)
+        if embed.get("video") and include_image_placeholders:
+            video_info = embed.get("video", {})
+            alt_text = video_info.get("alt", "")
+            size_mb = video_info.get("size", 0) / (1024 * 1024)
+
+            if alt_text:
+                text += f"\n\n🎥 [Video: {alt_text}]"
+            else:
+                text += f"\n\n🎥 [Video attachment - {size_mb:.1f}MB]"
+
+            # Note: Actual video will be uploaded if SYNC_VIDEOS is enabled
+            return text
+
+        if embed_type == "record":
             # Handle quoted posts/records
             record = embed.get("record", {})
             if record.get("py_type", "").endswith("ViewRecord"):
@@ -417,6 +432,30 @@ class ContentProcessor:
                     images.append(image_info)
 
         return images
+
+    @staticmethod
+    def extract_video_from_embed(embed: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Extract video information from Bluesky embed data
+
+        Returns a dictionary with video metadata including 'blob_ref', 'alt', 'mime_type',
+        'size', and 'aspect_ratio', or None if no video found
+        """
+        if not embed:
+            return None
+
+        # Check for video field in embed (video embeds have py_type like app.bsky.embed.video)
+        if embed.get("video"):
+            video_data = embed.get("video", {})
+            if video_data:
+                return {
+                    "blob_ref": video_data.get("blob_ref"),
+                    "alt": video_data.get("alt", ""),
+                    "mime_type": video_data.get("mime_type", "video/mp4"),
+                    "size": video_data.get("size", 0),
+                    "aspect_ratio": video_data.get("aspect_ratio"),
+                }
+
+        return None
 
     @staticmethod
     def has_no_sync_tag(text: str) -> bool:

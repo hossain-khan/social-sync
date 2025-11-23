@@ -48,6 +48,15 @@ class Settings(BaseSettings):
         description="Disable adding source platform attribution to synced posts",
     )
 
+    # Video Sync Settings
+    sync_videos: bool = Field(
+        default=False,
+        description="Enable syncing of video attachments (videos are large and may slow sync)",
+    )
+    max_video_size_mb: int = Field(
+        default=40, description="Maximum video size in MB (Mastodon's typical limit)"
+    )
+
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
 

@@ -125,6 +125,33 @@ class MastodonClient:
             logger.error(f"Failed to upload media to Mastodon: {e}")
             return None
 
+    def upload_video(
+        self,
+        video_file: bytes,
+        mime_type: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> Optional[str]:
+        """Upload video to Mastodon
+
+        Args:
+            video_file: Video file bytes
+            mime_type: Video MIME type
+            description: Video description/alt text
+
+        Returns:
+            Media ID if successful, None otherwise
+
+        Note:
+            Mastodon has size limits (typically 40MB) and processing time.
+            The upload may take longer than images.
+        """
+        # Delegate to upload_media, setting default MIME type for video
+        return self.upload_media(
+            media_file=video_file,
+            mime_type=mime_type or "video/mp4",
+            description=description,
+        )
+
     def get_recent_posts(self, limit: int = 10) -> List[MastodonPost]:
         """Get recent posts from authenticated user"""
         if not self._authenticated or not self.client:
