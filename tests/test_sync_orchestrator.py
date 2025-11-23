@@ -49,6 +49,8 @@ class TestSocialSyncOrchestrator:
                 "sync_content_warnings",
                 "sync_videos",
                 "max_video_size_mb",
+                "image_upload_failure_strategy",
+                "image_upload_max_retries",
             ]
         )
         mock_settings.bluesky_handle = "test.bsky.social"
@@ -63,6 +65,8 @@ class TestSocialSyncOrchestrator:
         mock_settings.sync_content_warnings = True
         mock_settings.sync_videos = False  # Disabled by default
         mock_settings.max_video_size_mb = 40
+        mock_settings.image_upload_failure_strategy = "partial"
+        mock_settings.image_upload_max_retries = 3
         mock_get_settings.return_value = mock_settings
 
         # Mock client instances with proper specifications
@@ -748,7 +752,8 @@ class TestSocialSyncOrchestrator:
         result = self.orchestrator.sync_post(mock_post)
 
         assert result is True
-        self.mock_mastodon_client.upload_media.assert_called_once()
+        # Should retry 3 times (default max_retries)
+        assert self.mock_mastodon_client.upload_media.call_count == 3
         # Should post without media since upload failed
         self.mock_mastodon_client.post_status.assert_called_once_with(
             "Processed text with attribution",
@@ -1887,3 +1892,324 @@ class TestSocialSyncOrchestrator:
             spoiler_text=None,
             language=None,
         )
+
+    def test_image_upload_failure_skip_post_strategy(self):
+        """Test skip_post strategy when image upload fails"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Set strategy to skip_post
+        self.orchestrator.settings.image_upload_failure_strategy = "skip_post"
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with failing image",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = None  # Upload fails
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        # Should return False and not post anything
+        assert result is False
+        self.mock_mastodon_client.post_status.assert_not_called()
+
+    def test_image_upload_failure_partial_strategy(self):
+        """Test partial strategy with some successful uploads"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Set strategy to partial
+        self.orchestrator.settings.image_upload_failure_strategy = "partial"
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with multiple images",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={
+                "images": [
+                    {"blob_ref": "blob1", "alt": "alt1"},
+                    {"blob_ref": "blob2", "alt": "alt2"},
+                ]
+            },
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt1"},
+            {"blob_ref": "blob2", "alt": "alt2"},
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.side_effect = [
+            (b"imagedata1", "image/jpeg"),
+            (b"imagedata2", "image/png"),
+        ]
+        # Image 1: succeeds on first attempt
+        # Image 2: fails all 3 retry attempts (None, None, None)
+        self.mock_mastodon_client.upload_media.side_effect = [
+            "media-id-1",  # Image 1: success
+            None,  # Image 2: attempt 1 fails
+            None,  # Image 2: attempt 2 fails
+            None,  # Image 2: attempt 3 fails
+        ]
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        # Should post with the one successful image
+        assert result is True
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=["media-id-1"],
+            sensitive=False,
+            spoiler_text=None,
+            language=None,
+        )
+
+    def test_image_upload_failure_text_placeholder_strategy(self):
+        """Test text_placeholder strategy adds warning to post"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Set strategy to text_placeholder
+        self.orchestrator.settings.image_upload_failure_strategy = "text_placeholder"
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with failing images",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={
+                "images": [
+                    {"blob_ref": "blob1", "alt": "alt1"},
+                    {"blob_ref": "blob2", "alt": "alt2"},
+                ]
+            },
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt1"},
+            {"blob_ref": "blob2", "alt": "alt2"},
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = None  # All uploads fail
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        # Should post with text placeholder
+        assert result is True
+        call_args = self.mock_mastodon_client.post_status.call_args
+        posted_text = call_args[0][0]
+        assert "[⚠️ 2 image(s) could not be synced]" in posted_text
+        assert posted_text.startswith("Processed text with attribution")
+
+    def test_image_upload_retry_logic(self):
+        """Test retry logic with transient failures"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with image",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        # Fail twice, then succeed on third attempt
+        self.mock_mastodon_client.upload_media.side_effect = [
+            None,
+            None,
+            "media-id-success",
+        ]
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        # Should succeed after retries
+        assert result is True
+        assert self.mock_mastodon_client.upload_media.call_count == 3
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=["media-id-success"],
+            sensitive=False,
+            spoiler_text=None,
+            language=None,
+        )
+
+    def test_all_images_fail_with_partial_strategy(self):
+        """Test behavior when all image uploads fail with partial strategy"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Set strategy to partial (default)
+        self.orchestrator.settings.image_upload_failure_strategy = "partial"
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with failing images",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={"images": [{"blob_ref": "blob1", "alt": "alt text"}]},
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt text"}
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        self.mock_mastodon_client.upload_media.return_value = None  # All fail
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        # Should still post without media (partial strategy)
+        assert result is True
+        self.mock_mastodon_client.post_status.assert_called_once_with(
+            "Processed text with attribution",
+            in_reply_to_id=None,
+            media_ids=None,
+            sensitive=False,
+            spoiler_text=None,
+            language=None,
+        )
+
+    def test_mixed_success_failure_images(self):
+        """Test handling of mixed success/failure scenarios"""
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Set strategy to text_placeholder
+        self.orchestrator.settings.image_upload_failure_strategy = "text_placeholder"
+
+        mock_post = BlueskyPost(
+            uri="at://did:plc:123/app.bsky.feed.post/abc",
+            cid="test-cid",
+            text="Post with 3 images",
+            created_at=datetime(2025, 1, 1, 10, 0),
+            author_handle="test.bsky.social",
+            author_display_name="Test User",
+            reply_to=None,
+            embed={
+                "images": [
+                    {"blob_ref": "blob1", "alt": "alt1"},
+                    {"blob_ref": "blob2", "alt": "alt2"},
+                    {"blob_ref": "blob3", "alt": "alt3"},
+                ]
+            },
+            facets=[],
+        )
+
+        self.mock_content_processor.extract_images_from_embed.return_value = [
+            {"blob_ref": "blob1", "alt": "alt1"},
+            {"blob_ref": "blob2", "alt": "alt2"},
+            {"blob_ref": "blob3", "alt": "alt3"},
+        ]
+        self.mock_content_processor.process_bluesky_to_mastodon.return_value = (
+            "Processed text"
+        )
+        self.mock_content_processor.add_sync_attribution.return_value = (
+            "Processed text with attribution"
+        )
+        self.mock_bluesky_client.download_blob.return_value = (
+            b"imagedata",
+            "image/jpeg",
+        )
+        # First succeeds, second fails, third succeeds
+        self.mock_mastodon_client.upload_media.side_effect = [
+            "media-id-1",  # First image succeeds
+            None,
+            None,
+            None,  # Second image fails all retries
+            "media-id-3",  # Third image succeeds
+        ]
+        self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
+
+        result = self.orchestrator.sync_post(mock_post)
+
+        # Should post with 2 images and placeholder for 1 failed
+        assert result is True
+        call_args = self.mock_mastodon_client.post_status.call_args
+        posted_text = call_args[0][0]
+        assert "[⚠️ 1 image(s) could not be synced]" in posted_text
+        assert call_args[1]["media_ids"] == ["media-id-1", "media-id-3"]

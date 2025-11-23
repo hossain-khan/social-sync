@@ -302,3 +302,41 @@ class TestSettings:
             if result.tzinfo is not None:
                 result = result.astimezone(timezone.utc).replace(tzinfo=None)
             assert result == expected, f"Edge case failed for {date_str}"
+
+    def test_image_upload_failure_strategy_validation(self):
+        """Test validation of image_upload_failure_strategy"""
+        os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
+        os.environ["BLUESKY_PASSWORD"] = "test-password"
+        os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+
+        # Valid strategies should work
+        valid_strategies = ["skip_post", "partial", "text_placeholder"]
+        for strategy in valid_strategies:
+            os.environ["IMAGE_UPLOAD_FAILURE_STRATEGY"] = strategy
+            settings = Settings(_env_file=None)
+            assert settings.image_upload_failure_strategy == strategy
+
+        # Invalid strategy should raise error
+        os.environ["IMAGE_UPLOAD_FAILURE_STRATEGY"] = "invalid_strategy"
+        with pytest.raises(ValidationError) as exc_info:
+            Settings(_env_file=None)
+        assert "image_upload_failure_strategy" in str(exc_info.value)
+
+    def test_image_upload_max_retries_default(self):
+        """Test default value for image_upload_max_retries"""
+        os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
+        os.environ["BLUESKY_PASSWORD"] = "test-password"
+        os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+
+        settings = Settings(_env_file=None)
+        assert settings.image_upload_max_retries == 3
+
+    def test_image_upload_max_retries_custom(self):
+        """Test custom value for image_upload_max_retries"""
+        os.environ["BLUESKY_HANDLE"] = "test.bsky.social"
+        os.environ["BLUESKY_PASSWORD"] = "test-password"
+        os.environ["MASTODON_ACCESS_TOKEN"] = "test-token"
+        os.environ["IMAGE_UPLOAD_MAX_RETRIES"] = "5"
+
+        settings = Settings(_env_file=None)
+        assert settings.image_upload_max_retries == 5
