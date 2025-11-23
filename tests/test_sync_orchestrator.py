@@ -1975,12 +1975,13 @@ class TestSocialSyncOrchestrator:
             (b"imagedata1", "image/jpeg"),
             (b"imagedata2", "image/png"),
         ]
-        # First upload succeeds, second fails
+        # Image 1: succeeds on first attempt
+        # Image 2: fails all 3 retry attempts (None, None, None)
         self.mock_mastodon_client.upload_media.side_effect = [
-            "media-id-1",
-            None,
-            None,
-            None,  # Retries for second image
+            "media-id-1",  # Image 1: success
+            None,  # Image 2: attempt 1 fails
+            None,  # Image 2: attempt 2 fails
+            None,  # Image 2: attempt 3 fails
         ]
         self.mock_mastodon_client.post_status.return_value = {"id": "mastodon-post-id"}
 

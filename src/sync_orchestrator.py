@@ -404,7 +404,7 @@ class SocialSyncOrchestrator:
                         f"attempt {attempt + 1}/{max_retries}"
                     )
                     if attempt < max_retries - 1:
-                        time.sleep(1 * (attempt + 1))  # Exponential backoff
+                        time.sleep(2**attempt)  # Exponential backoff: 1s, 2s, 4s
                         continue
                     else:
                         return None
@@ -413,7 +413,6 @@ class SocialSyncOrchestrator:
                 mime_type = actual_mime_type or mime_type
 
                 # Upload to Mastodon
-                time.sleep(0.5)  # Rate limiting
                 media_id: Optional[str] = self.mastodon_client.upload_media(
                     media_file=image_bytes,
                     mime_type=mime_type,
@@ -432,7 +431,8 @@ class SocialSyncOrchestrator:
                         f"attempt {attempt + 1}/{max_retries}"
                     )
                     if attempt < max_retries - 1:
-                        time.sleep(2 * (attempt + 1))  # Exponential backoff
+                        time.sleep(2**attempt)  # Exponential backoff: 1s, 2s, 4s
+                    # Rate limiting between retries
 
             except Exception as e:
                 logger.error(
@@ -440,7 +440,7 @@ class SocialSyncOrchestrator:
                     f"attempt {attempt + 1}/{max_retries}: {e}"
                 )
                 if attempt < max_retries - 1:
-                    time.sleep(2 * (attempt + 1))
+                    time.sleep(2**attempt)  # Exponential backoff: 1s, 2s, 4s
 
         return None
 
