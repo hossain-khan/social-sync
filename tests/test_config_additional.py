@@ -5,7 +5,7 @@ Additional tests for Configuration module to improve coverage
 import os
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import pytest

@@ -51,7 +51,7 @@ class TestSyncStateEdgeCases:
     def test_empty_file_handling(self):
         """Test handling of completely empty state file"""
         # Create empty file
-        with open(self.state_file_path, "w") as f:
+        with open(self.state_file_path, "w"):
             pass  # Write nothing
 
         # Should create new state without crashing
@@ -135,8 +135,8 @@ class TestSyncStateEdgeCases:
         is_synced = sync_state.is_post_synced(old_uri)
         assert is_synced is False
 
-    def test_cleanup_old_records(self):
-        """Test cleanup of old records functionality"""
+    def test_cleanup_old_records_comprehensive(self):
+        """Test comprehensive cleanup of old records with multiple posts"""
         sync_state = SyncState(self.state_file_path)
 
         # Add some recent posts
@@ -281,10 +281,9 @@ class TestSyncStateEdgeCases:
             try:
                 # These operations should handle invalid URIs gracefully
                 sync_state.mark_post_synced(invalid_uri, "test_id")
-                is_synced = sync_state.is_post_synced(invalid_uri)
-                mastodon_id = sync_state.get_mastodon_id_for_bluesky_post(invalid_uri)
                 # Verify methods handle invalid URIs gracefully without crashing
-                # Exact behavior depends on implementation
+                assert sync_state.is_post_synced(invalid_uri) is not None
+                sync_state.get_mastodon_id_for_bluesky_post(invalid_uri)
             except (TypeError, ValueError):
                 # These exceptions are acceptable for invalid input
                 pass
@@ -311,7 +310,7 @@ class TestSyncStateEdgeCases:
             try:
                 sync_state.mark_post_synced(uri, mastodon_id)
                 assert sync_state.is_post_synced(uri) is True
-                assert sync_state.get_mastodon_id(uri) == mastodon_id
+                assert sync_state.get_mastodon_id_for_bluesky_post(uri) == mastodon_id
             except Exception:
                 # Some special characters might not be supported
                 # The important thing is that it doesn't crash the whole system
