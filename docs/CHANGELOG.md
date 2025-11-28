@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 🧪 **Test Suite Fixes**: Fixed incorrectly nested test functions in `test_cli.py` that were never being executed
+  - Extracted 5 tests (`test_status_command`, `test_config_command`, `test_test_command_failure`, `test_invalid_command`, `test_logging_setup_called`, `test_cli_log_level_option`) from being nested inside other test functions
+  - These tests are now properly discovered and executed by pytest
+  - Converted subprocess-based tests to use Click's CliRunner for better mock integration
+  - Test count increased from 345 to 351 tests with 100% pass rate
+
 ### Changed
 - 📁 **Project Organization**: Moved `format_json.py` utility script to `scripts/` directory for better organization
   - Script is now located at `scripts/format_json.py`
