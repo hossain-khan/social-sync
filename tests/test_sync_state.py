@@ -338,7 +338,7 @@ class TestSyncState:
                 sync_state.mark_post_synced("at://test-readonly", "12345")
 
                 # The state should still function in memory
-                assert sync_state.is_post_synced("at://test-readonly") == True
+                assert sync_state.is_post_synced("at://test-readonly") is True
 
             finally:
                 # Restore write permissions for cleanup

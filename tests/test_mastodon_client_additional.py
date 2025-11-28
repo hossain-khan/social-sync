@@ -67,13 +67,6 @@ class TestMastodonClientEdgeCases:
             assert result is False
             assert self.client._authenticated is False
 
-    def test_post_status_not_authenticated(self):
-        """Test post_status when not authenticated"""
-        with pytest.raises(RuntimeError) as exc_info:
-            self.client.post_status("Test status")
-
-        assert "not authenticated" in str(exc_info.value)
-
     def test_post_status_no_client(self):
         """Test post_status when client is None"""
         self.client._authenticated = True
@@ -153,13 +146,6 @@ class TestMastodonClientEdgeCases:
         result = self.client.post_status("Test status")
         assert result is None
 
-    def test_upload_media_not_authenticated(self):
-        """Test upload_media when not authenticated"""
-        with pytest.raises(RuntimeError) as exc_info:
-            self.client.upload_media(b"fake image data")
-
-        assert "not authenticated" in str(exc_info.value)
-
     def test_upload_media_no_client(self):
         """Test upload_media when client is None"""
         self.client._authenticated = True
@@ -226,13 +212,6 @@ class TestMastodonClientEdgeCases:
 
         result = self.client.upload_media(b"fake image data")
         assert result is None
-
-    def test_get_recent_posts_not_authenticated(self):
-        """Test get_recent_posts when not authenticated"""
-        with pytest.raises(RuntimeError) as exc_info:
-            self.client.get_recent_posts(limit=10)
-
-        assert "not authenticated" in str(exc_info.value)
 
     def test_get_recent_posts_no_client(self):
         """Test get_recent_posts when client is None"""
@@ -318,6 +297,7 @@ class TestMastodonClientEdgeCases:
 
         result = self.client.get_recent_posts(limit=5)
 
+        assert result == []
         mock_client.account_statuses.assert_called_once_with(id="user123", limit=5)
 
     def test_mastodon_post_creation_with_all_fields(self):

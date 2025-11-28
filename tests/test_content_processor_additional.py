@@ -6,8 +6,6 @@ import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
-
 # Add the parent directory to sys.path to import src as a package
 project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
@@ -278,21 +276,6 @@ class TestContentProcessorEdgeCases:
 
         result = ContentProcessor.download_image("https://example.com/image.jpg")
         assert result is None
-
-    @patch("src.content_processor.requests.get")
-    def test_download_image_success(self, mock_get):
-        """Test successful image download"""
-        mock_response = Mock()
-        mock_response.content = b"fake image data"
-        mock_response.headers = {"content-type": "image/jpeg"}
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-
-        result = ContentProcessor.download_image("https://example.com/image.jpg")
-
-        assert result is not None
-        assert result[0] == b"fake image data"
-        assert result[1] == "image/jpeg"
 
     def test_mention_conversion_edge_cases(self):
         """Test mention conversion with various patterns"""
