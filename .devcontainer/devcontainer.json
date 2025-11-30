@@ -37,6 +37,6 @@
             }
         }
     },
-    "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && pip install -r requirements-dev.txt",
+    "postCreateCommand": "pip install --upgrade pip && [ -f requirements.txt ] && pip install -r requirements.txt; [ -f requirements-dev.txt ] && pip install -r requirements-dev.txt",
     "remoteUser": "vscode"
 }
