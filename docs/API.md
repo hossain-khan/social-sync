@@ -140,7 +140,7 @@ class BlueskyPost:
 **Key Methods**:
 - `is_post_synced(uri)`: Check if post already processed
 - `mark_post_synced(uri, mastodon_id)`: Record successful sync
-- `cleanup_old_records(days)`: Remove old sync records
+- `cleanup_old_records(days)`: **DEPRECATED** - No longer removes old records. All sync state records are now preserved indefinitely. Method kept for backward compatibility only.
 
 ### 6. Sync Orchestrator (`sync_orchestrator.py`)
 
