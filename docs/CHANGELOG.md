@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-12-07
+
+### Added
+- 🎬 **Video Embed Support**: Added comprehensive video sync support for Bluesky posts with embedded videos
+  - Video embeds (`app.bsky.embed.video` type) are now extracted and synced to Mastodon
+  - New `BlueskyClient.download_video()` method for AT Protocol blob downloads
+  - New `MastodonClient.upload_video()` method for Mastodon video uploads
+  - Added `SYNC_VIDEOS` configuration option (default: true) to enable/disable video sync
+  - Added `MAX_VIDEO_SIZE_MB` configuration option (default: 40MB) for size limit enforcement
+  - Videos exceeding size limit are logged but post syncs with placeholder text
+  - ContentProcessor handles video placeholders similar to image handling
+  - Added 17 comprehensive tests for video sync functionality
+  - All 340 tests passing including new video features
+- 🔄 **Media Upload Retry with Exponential Backoff**: Robust failure handling for image and video uploads
+  - Retry logic with exponential backoff (1s, 2s, 4s, etc.) for transient failures
+  - New `IMAGE_UPLOAD_FAILURE_STRATEGY` configuration option with three strategies:
+    - `partial` (default): Post with successfully uploaded media
+    - `skip_post`: Skip post entirely if any media fails
+    - `text_placeholder`: Add warning text about missing media
+  - New `IMAGE_UPLOAD_MAX_RETRIES` configuration option (default: 3)
+  - Detailed logging of retry attempts and final outcomes
+  - Added 6 comprehensive tests for all strategies and retry scenarios
+  - Applies to both image and video uploads
+
 ### Changed
 - 🗂️ **Sync State Preservation**: Removed all automatic deletion mechanisms to preserve complete sync history indefinitely
   - Removed 100-post hard limit from `synced_posts` tracking - all synced posts now preserved
@@ -16,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ⚠️ **Important**: `sync_state.json` file will now grow indefinitely with complete sync history
   - Users running long-term syncs should monitor file size - performance may degrade beyond ~10k posts
   - All tests updated to verify no-deletion behavior with large datasets (150-1000 posts)
+- 📁 **Project Organization**: Moved `format_json.py` utility script to `scripts/` directory for better organization
+  - Script is now located at `scripts/format_json.py`
+  - Updated usage documentation to reflect new location: `python scripts/format_json.py`
+  - Script functionality remains unchanged
 
 ### Fixed
 - 🧪 **Test Suite Fixes**: Fixed incorrectly nested test functions in `test_cli.py` that were never being executed
@@ -23,12 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - These tests are now properly discovered and executed by pytest
   - Converted subprocess-based tests to use Click's CliRunner for better mock integration
   - Test count increased from 345 to 351 tests with 100% pass rate
-
-### Changed
-- 📁 **Project Organization**: Moved `format_json.py` utility script to `scripts/` directory for better organization
-  - Script is now located at `scripts/format_json.py`
-  - Updated usage documentation to reflect new location: `python scripts/format_json.py`
-  - Script functionality remains unchanged
 
 ## [0.7.0] - 2025-11-19
 
