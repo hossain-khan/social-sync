@@ -953,7 +953,6 @@ class TestSocialSyncOrchestrator:
         # Verify sync_post called for both posts
         assert mock_sync_post.call_count == 2
         self.mock_sync_state.update_sync_time.assert_called_once()
-        self.mock_sync_state.cleanup_old_records.assert_called_once()
 
     def test_run_sync_client_setup_failure(self):
         """Test sync run with client setup failure"""

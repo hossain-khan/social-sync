@@ -98,10 +98,6 @@ class SyncState:
 
         self.state["synced_posts"].append(sync_record)
 
-        # Keep only the last 100 synced posts to prevent file from growing too large
-        if len(self.state["synced_posts"]) > 100:
-            self.state["synced_posts"] = self.state["synced_posts"][-100:]
-
         self.state["last_bluesky_post_uri"] = bluesky_post_uri
         self._save_state()
 
@@ -134,27 +130,20 @@ class SyncState:
         return None
 
     def cleanup_old_records(self, days: int = 30):
-        """Remove sync records older than specified days"""
-        if "synced_posts" not in self.state:
-            return
+        """Remove sync records older than specified days
 
-        cutoff_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
+        DEPRECATED: This method is deprecated and no longer performs any cleanup.
+        Sync state records are now preserved indefinitely to maintain complete history.
+        This method is kept for backward compatibility only.
 
-        filtered_posts = []
-        for record in self.state["synced_posts"]:
-            try:
-                sync_time = datetime.fromisoformat(record["synced_at"])
-                if sync_time.timestamp() > cutoff_date:
-                    filtered_posts.append(record)
-            except (KeyError, ValueError):
-                # Keep records with invalid timestamps
-                filtered_posts.append(record)
-
-        removed_count = len(self.state["synced_posts"]) - len(filtered_posts)
-        if removed_count > 0:
-            self.state["synced_posts"] = filtered_posts
-            self._save_state()
-            logger.info(f"Cleaned up {removed_count} old sync records")
+        Args:
+            days: Previously used to specify retention period (now ignored)
+        """
+        logger.warning(
+            "cleanup_old_records() is deprecated and no longer performs cleanup. "
+            "All sync state records are now preserved indefinitely."
+        )
+        return
 
     def get_user_did(self) -> Optional[str]:
         """Get the stored user DID"""
@@ -210,10 +199,6 @@ class SyncState:
         ]
 
         self.state["skipped_posts"].append(skip_record)
-
-        # Keep only the last 100 skipped posts to prevent file from growing too large
-        if len(self.state["skipped_posts"]) > 100:
-            self.state["skipped_posts"] = self.state["skipped_posts"][-100:]
 
         self._save_state()
 

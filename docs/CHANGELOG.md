@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- 🗂️ **Sync State Preservation**: Removed all automatic deletion mechanisms to preserve complete sync history indefinitely
+  - Removed 100-post hard limit from `synced_posts` tracking - all synced posts now preserved
+  - Removed 100-post hard limit from `skipped_posts` tracking - all skipped posts now preserved
+  - Deprecated `cleanup_old_records()` method (kept for backward compatibility with warning message)
+  - Removed automatic cleanup call from sync orchestrator
+  - ⚠️ **Important**: `sync_state.json` file will now grow indefinitely with complete sync history
+  - Users running long-term syncs should monitor file size - performance may degrade beyond ~10k posts
+  - All tests updated to verify no-deletion behavior with large datasets (150-1000 posts)
+
 ### Fixed
 - 🧪 **Test Suite Fixes**: Fixed incorrectly nested test functions in `test_cli.py` that were never being executed
   - Extracted 6 tests (`test_status_command`, `test_config_command`, `test_test_command_failure`, `test_invalid_command`, `test_logging_setup_called`, `test_cli_log_level_option`) from being nested inside other test functions
