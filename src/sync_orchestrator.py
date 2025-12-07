@@ -543,10 +543,6 @@ class SocialSyncOrchestrator:
         if synced_count > 0 or skipped_count > 0:
             self.sync_state.update_sync_time()
 
-        # Clean up old records periodically
-        if synced_count > 0:
-            self.sync_state.cleanup_old_records()
-
         duration = (datetime.now() - start_time).total_seconds()
 
         result = {

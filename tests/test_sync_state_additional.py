@@ -102,41 +102,38 @@ class TestSyncStateEdgeCases:
             except (OSError, PermissionError):
                 pass
 
-    def test_large_dataset_performance(self):
-        """Test performance with large number of synced posts"""
+    def test_large_dataset_no_limit(self):
+        """Test that large number of synced posts are all kept"""
         sync_state = SyncState(self.state_file_path)
 
-        # Add many posts (the system keeps only last 100 to prevent file growth)
+        # Add many posts (all should be kept)
         num_posts = 1000
         for i in range(num_posts):
             uri = f"at://did:plc:test/app.bsky.feed.post/{i:06d}"
             mastodon_id = f"mastodon_{i:06d}"
             sync_state.mark_post_synced(uri, mastodon_id)
 
-        # Verify count (system keeps only last 100 posts)
-        assert sync_state.get_synced_posts_count() == 100
+        # Verify count (all posts should be kept)
+        assert sync_state.get_synced_posts_count() == num_posts
 
-        # Test lookup performance for a recent post (should be found)
-        test_uri = (
-            "at://did:plc:test/app.bsky.feed.post/000999"  # One of the last posts
-        )
+        # Test lookup performance for both old and new posts
+        # First post should still be found
+        first_uri = "at://did:plc:test/app.bsky.feed.post/000000"
         start_time = time.time()
-        is_synced = sync_state.is_post_synced(test_uri)
+        is_synced = sync_state.is_post_synced(first_uri)
         lookup_time = time.time() - start_time
 
         assert is_synced is True
         # Verify lookup performance is acceptable even with many records
         assert lookup_time < 1.0
 
-        # Test lookup of old post that was evicted (should not be found)
-        old_uri = (
-            "at://did:plc:test/app.bsky.feed.post/000001"  # One of the first posts
-        )
-        is_synced = sync_state.is_post_synced(old_uri)
-        assert is_synced is False
+        # Last post should also be found
+        last_uri = "at://did:plc:test/app.bsky.feed.post/000999"
+        is_synced = sync_state.is_post_synced(last_uri)
+        assert is_synced is True
 
     def test_cleanup_old_records_comprehensive(self):
-        """Test comprehensive cleanup of old records with multiple posts"""
+        """Test that cleanup_old_records is deprecated and no longer removes records"""
         sync_state = SyncState(self.state_file_path)
 
         # Add some recent posts
@@ -156,13 +153,16 @@ class TestSyncStateEdgeCases:
             state_data = json.load(f)
 
         # Add old records
+        old_posts = []
         for i in range(3):
+            old_uri = f"at://did:plc:test/app.bsky.feed.post/old_{i}"
             old_post = {
-                "bluesky_uri": f"at://did:plc:test/app.bsky.feed.post/old_{i}",
+                "bluesky_uri": old_uri,
                 "mastodon_id": f"mastodon_old_{i}",
                 "synced_at": old_timestamp,
             }
             state_data["synced_posts"].append(old_post)
+            old_posts.append(old_uri)
 
         with open(self.state_file_path, "w") as f:
             json.dump(state_data, f)
@@ -172,15 +172,18 @@ class TestSyncStateEdgeCases:
         initial_count = sync_state.get_synced_posts_count()
         assert initial_count == 8  # 5 recent + 3 old
 
-        # Run cleanup
+        # Run cleanup (should no longer remove old records)
         sync_state.cleanup_old_records(days=30)
 
-        # Should remove old posts but keep recent ones
+        # Should keep all posts (no deletion)
         final_count = sync_state.get_synced_posts_count()
-        assert final_count == 5  # Only recent posts should remain
+        assert final_count == initial_count  # All posts should remain
 
-        # Verify recent posts are still there
+        # Verify both recent and old posts are still there
         for uri in recent_posts:
+            assert sync_state.is_post_synced(uri) is True
+
+        for uri in old_posts:
             assert sync_state.is_post_synced(uri) is True
 
     def test_get_mastodon_id_functionality(self):

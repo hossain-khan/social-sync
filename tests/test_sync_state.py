@@ -187,7 +187,7 @@ class TestSyncState:
         assert self.sync_state.get_synced_posts_count() == 3
 
     def test_cleanup_old_records(self):
-        """Test cleanup of old records"""
+        """Test that cleanup_old_records is deprecated and no longer removes records"""
         # Add some old records
         old_time = "2020-01-01T10:00:00"
         recent_time = datetime.now().isoformat()
@@ -217,11 +217,12 @@ class TestSyncState:
         self.sync_state = SyncState(self.state_file_path)
         initial_count = self.sync_state.get_synced_posts_count()
 
-        # Cleanup with very short retention (should remove old records)
+        # Cleanup should no longer remove old records (deprecated)
         self.sync_state.cleanup_old_records(days=1)
 
         final_count = self.sync_state.get_synced_posts_count()
-        assert final_count < initial_count
+        # Count should remain the same (no records removed)
+        assert final_count == initial_count
 
     def test_get_user_did_none(self):
         """Test getting user DID when not set"""
@@ -421,18 +422,18 @@ class TestSyncState:
 
         assert self.sync_state.get_skipped_posts_count() == 3
 
-    def test_skipped_posts_limit(self):
-        """Test that skipped posts list is limited to 100 entries"""
+    def test_skipped_posts_no_limit(self):
+        """Test that skipped posts list is not limited and all entries are kept"""
         # Add more than 100 skipped posts
         for i in range(150):
             self.sync_state.mark_post_skipped(f"at://skip-uri-{i}", "no-sync-tag")
 
-        # Should only keep the last 100
-        assert self.sync_state.get_skipped_posts_count() == 100
+        # Should keep all posts (no deletion)
+        assert self.sync_state.get_skipped_posts_count() == 150
 
-        # Verify the most recent ones are kept
+        # Verify both the earliest and most recent posts are kept
+        assert self.sync_state.is_post_skipped("at://skip-uri-0")
         assert self.sync_state.is_post_skipped("at://skip-uri-149")
-        assert not self.sync_state.is_post_skipped("at://skip-uri-0")
 
     def test_backward_compatibility_no_skipped_posts_field(self):
         """Test that old state files without skipped_posts field work correctly"""
