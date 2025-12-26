@@ -2354,9 +2354,7 @@ class TestSocialSyncOrchestrator:
         from src.sync_state import SyncState
 
         # Create a temporary sync state file
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
             temp_state_file = tmp.name
             # Initialize with a skipped post
             initial_state = {
@@ -2388,21 +2386,25 @@ class TestSocialSyncOrchestrator:
             )
 
             # Manually call the skip logic that our fix implements
-            sync_state.mark_post_skipped(
-                reply_post.uri, reason="reply-to-skipped-post"
-            )
+            sync_state.mark_post_skipped(reply_post.uri, reason="reply-to-skipped-post")
 
             # Verify the JSON file was updated
             with open(temp_state_file, "r") as f:
                 persisted_state = json.load(f)
 
             # Check that the reply is in skipped_posts
-            skipped_uris = [post["bluesky_uri"] for post in persisted_state["skipped_posts"]]
+            skipped_uris = [
+                post["bluesky_uri"] for post in persisted_state["skipped_posts"]
+            ]
             assert "at://reply-to-parent-no-sync" in skipped_uris
 
             # Find the skipped reply entry
             reply_entry = next(
-                (p for p in persisted_state["skipped_posts"] if p["bluesky_uri"] == "at://reply-to-parent-no-sync"),
+                (
+                    p
+                    for p in persisted_state["skipped_posts"]
+                    if p["bluesky_uri"] == "at://reply-to-parent-no-sync"
+                ),
                 None,
             )
             assert reply_entry is not None
