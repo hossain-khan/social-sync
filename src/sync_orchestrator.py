@@ -92,6 +92,7 @@ class SocialSyncOrchestrator:
         new_posts = []
         skipped_with_tag_count = 0
         already_skipped_count = 0
+        skipped_replies_count = 0
 
         for post in fetch_result.posts:
             # Check if already synced
@@ -110,6 +111,17 @@ class SocialSyncOrchestrator:
                 skipped_with_tag_count += 1
                 continue
 
+            # Check if this is a reply to a skipped post
+            if post.reply_to and self.sync_state.is_post_skipped(post.reply_to):
+                logger.info(
+                    f"Skipping reply to skipped post: {post.uri} (parent: {post.reply_to})"
+                )
+                self.sync_state.mark_post_skipped(
+                    post.uri, reason="reply-to-skipped-post"
+                )
+                skipped_replies_count += 1
+                continue
+
             new_posts.append(post)
 
         # Sort posts by creation time (ascending) to post older posts first
@@ -121,6 +133,8 @@ class SocialSyncOrchestrator:
             logger.info(
                 f"Found {already_skipped_count} posts that were previously skipped"
             )
+        if skipped_replies_count > 0:
+            logger.info(f"Skipped {skipped_replies_count} replies to skipped posts")
 
         logger.info(f"Found {len(new_posts)} new posts to sync")
         return new_posts, skipped_with_tag_count

@@ -2212,3 +2212,135 @@ class TestSocialSyncOrchestrator:
         posted_text = call_args[0][0]
         assert "[⚠️ 1 image(s) could not be synced]" in posted_text
         assert call_args[1]["media_ids"] == ["media-id-1", "media-id-3"]
+
+    def test_get_posts_to_sync_skips_replies_to_skipped_posts(self):
+        """Test that replies to skipped posts are also skipped"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Helper function to check if a post is skipped
+        def is_post_skipped_side_effect(uri):
+            return uri == "at://parent-post-with-no-sync-tag"
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_sync_state.is_post_skipped.side_effect = is_post_skipped_side_effect
+        self.mock_content_processor.has_no_sync_tag.return_value = False
+
+        # Create test posts - reply to a skipped post
+        mock_posts = [
+            BlueskyPost(
+                uri="at://reply-to-skipped",
+                cid="cid-reply",
+                text="This is a reply to a skipped post",
+                created_at=datetime(2025, 1, 1, 12, 5, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-with-no-sync-tag",
+            ),
+        ]
+
+        fetch_result = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=1,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
+
+        # Get posts to sync
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+
+        # Should return no posts (reply to skipped post should be filtered)
+        assert len(posts) == 0
+        # The reply should be marked as skipped
+        self.mock_sync_state.mark_post_skipped.assert_called_once_with(
+            "at://reply-to-skipped", reason="reply-to-skipped-post"
+        )
+
+    def test_get_posts_to_sync_includes_replies_to_synced_posts(self):
+        """Test that replies to synced posts are included in sync"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Helper function to check if a post is synced
+        def is_post_synced_side_effect(uri):
+            return uri == "at://parent-post-synced"
+
+        self.mock_sync_state.is_post_synced.side_effect = is_post_synced_side_effect
+        self.mock_sync_state.is_post_skipped.return_value = False
+        self.mock_content_processor.has_no_sync_tag.return_value = False
+
+        # Create test posts - reply to a synced post (should be included)
+        mock_posts = [
+            BlueskyPost(
+                uri="at://reply-to-synced",
+                cid="cid-reply",
+                text="This is a reply to a synced post",
+                created_at=datetime(2025, 1, 1, 12, 5, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-synced",
+            ),
+        ]
+
+        fetch_result = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=1,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
+
+        # Get posts to sync
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+
+        # Should return the reply (parent is synced, not skipped)
+        assert len(posts) == 1
+        assert posts[0].uri == "at://reply-to-synced"
+
+    def test_get_posts_to_sync_handles_replies_to_unsynced_posts(self):
+        """Test that replies to unsynced but not-skipped posts are included"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_sync_state.is_post_skipped.return_value = False
+        self.mock_content_processor.has_no_sync_tag.return_value = False
+
+        # Create test posts - reply to an unsynced, non-skipped post
+        # This will be posted as a standalone post if parent isn't in sync state
+        mock_posts = [
+            BlueskyPost(
+                uri="at://reply-to-unsynced",
+                cid="cid-reply",
+                text="This is a reply to an unsynced post",
+                created_at=datetime(2025, 1, 1, 12, 5, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-not-synced",
+            ),
+        ]
+
+        fetch_result = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=1,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
+
+        # Get posts to sync
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+
+        # Should return the reply (parent not synced, but not explicitly skipped either)
+        assert len(posts) == 1
+        assert posts[0].uri == "at://reply-to-unsynced"
