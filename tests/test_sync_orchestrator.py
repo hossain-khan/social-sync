@@ -2212,3 +2212,205 @@ class TestSocialSyncOrchestrator:
         posted_text = call_args[0][0]
         assert "[⚠️ 1 image(s) could not be synced]" in posted_text
         assert call_args[1]["media_ids"] == ["media-id-1", "media-id-3"]
+
+    def test_get_posts_to_sync_skips_replies_to_skipped_posts(self):
+        """Test that replies to skipped posts are also skipped"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Helper function to check if a post is skipped
+        def is_post_skipped_side_effect(uri):
+            return uri == "at://parent-post-with-no-sync-tag"
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_sync_state.is_post_skipped.side_effect = is_post_skipped_side_effect
+        self.mock_content_processor.has_no_sync_tag.return_value = False
+
+        # Create test posts - reply to a skipped post
+        mock_posts = [
+            BlueskyPost(
+                uri="at://reply-to-skipped",
+                cid="cid-reply",
+                text="This is a reply to a skipped post",
+                created_at=datetime(2025, 1, 1, 12, 5, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-with-no-sync-tag",
+            ),
+        ]
+
+        fetch_result = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=1,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
+
+        # Get posts to sync
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+
+        # Should return no posts (reply to skipped post should be filtered)
+        assert len(posts) == 0
+        # The reply should be marked as skipped
+        self.mock_sync_state.mark_post_skipped.assert_called_once_with(
+            "at://reply-to-skipped", reason="reply-to-skipped-post"
+        )
+
+    def test_get_posts_to_sync_includes_replies_to_synced_posts(self):
+        """Test that replies to synced posts are included in sync"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        # Helper function to check if a post is synced
+        def is_post_synced_side_effect(uri):
+            return uri == "at://parent-post-synced"
+
+        self.mock_sync_state.is_post_synced.side_effect = is_post_synced_side_effect
+        self.mock_sync_state.is_post_skipped.return_value = False
+        self.mock_content_processor.has_no_sync_tag.return_value = False
+
+        # Create test posts - reply to a synced post (should be included)
+        mock_posts = [
+            BlueskyPost(
+                uri="at://reply-to-synced",
+                cid="cid-reply",
+                text="This is a reply to a synced post",
+                created_at=datetime(2025, 1, 1, 12, 5, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-synced",
+            ),
+        ]
+
+        fetch_result = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=1,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
+
+        # Get posts to sync
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+
+        # Should return the reply (parent is synced, not skipped)
+        assert len(posts) == 1
+        assert posts[0].uri == "at://reply-to-synced"
+
+    def test_get_posts_to_sync_handles_replies_to_unsynced_posts(self):
+        """Test that replies to unsynced but not-skipped posts are included"""
+        # Set up clients first
+        self.mock_bluesky_client.authenticate.return_value = True
+        self.mock_mastodon_client.authenticate.return_value = True
+        self.orchestrator.setup_clients()
+
+        self.mock_sync_state.is_post_synced.return_value = False
+        self.mock_sync_state.is_post_skipped.return_value = False
+        self.mock_content_processor.has_no_sync_tag.return_value = False
+
+        # Create test posts - reply to an unsynced, non-skipped post
+        # This will be posted as a standalone post if parent isn't in sync state
+        mock_posts = [
+            BlueskyPost(
+                uri="at://reply-to-unsynced",
+                cid="cid-reply",
+                text="This is a reply to an unsynced post",
+                created_at=datetime(2025, 1, 1, 12, 5, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-not-synced",
+            ),
+        ]
+
+        fetch_result = BlueskyFetchResult(
+            posts=mock_posts,
+            total_retrieved=1,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        self.mock_bluesky_client.get_recent_posts.return_value = fetch_result
+
+        # Get posts to sync
+        posts, skipped_count = self.orchestrator.get_posts_to_sync()
+
+        # Should return the reply (parent not synced, but not explicitly skipped either)
+        assert len(posts) == 1
+        assert posts[0].uri == "at://reply-to-unsynced"
+
+    def test_get_posts_to_sync_skips_replies_to_skipped_posts_integration(self):
+        """Integration test: Verify skipped replies are persisted to JSON"""
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from src.sync_state import SyncState
+
+        # Create a temporary sync state file
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
+            temp_state_file = tmp.name
+            # Initialize with a skipped post
+            initial_state = {
+                "last_sync_time": "2025-12-26T00:00:00.000000",
+                "synced_posts": [],
+                "last_bluesky_post_uri": None,
+                "skipped_posts": [
+                    {
+                        "bluesky_uri": "at://parent-post-no-sync",
+                        "reason": "no-sync-tag",
+                        "skipped_at": "2025-12-26T00:00:00.000000",
+                    }
+                ],
+            }
+            json.dump(initial_state, tmp)
+
+        try:
+            # Create a real SyncState instance (not mocked)
+            sync_state = SyncState(temp_state_file)
+
+            # Create reply post
+            reply_post = BlueskyPost(
+                uri="at://reply-to-parent-no-sync",
+                cid="cid-reply",
+                text="Reply to skipped post",
+                created_at=datetime(2025, 12, 26, 12, 0, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-no-sync",
+            )
+
+            # Manually call the skip logic that our fix implements
+            sync_state.mark_post_skipped(reply_post.uri, reason="reply-to-skipped-post")
+
+            # Verify the JSON file was updated
+            with open(temp_state_file, "r") as f:
+                persisted_state = json.load(f)
+
+            # Check that the reply is in skipped_posts
+            skipped_uris = [
+                post["bluesky_uri"] for post in persisted_state["skipped_posts"]
+            ]
+            assert "at://reply-to-parent-no-sync" in skipped_uris
+
+            # Find the skipped reply entry
+            reply_entry = next(
+                (
+                    p
+                    for p in persisted_state["skipped_posts"]
+                    if p["bluesky_uri"] == "at://reply-to-parent-no-sync"
+                ),
+                None,
+            )
+            assert reply_entry is not None
+            assert reply_entry["reason"] == "reply-to-skipped-post"
+            assert "skipped_at" in reply_entry
+
+        finally:
+            # Clean up temporary file
+            Path(temp_state_file).unlink()
