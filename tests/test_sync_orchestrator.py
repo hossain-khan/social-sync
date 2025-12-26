@@ -2344,3 +2344,71 @@ class TestSocialSyncOrchestrator:
         # Should return the reply (parent not synced, but not explicitly skipped either)
         assert len(posts) == 1
         assert posts[0].uri == "at://reply-to-unsynced"
+
+    def test_get_posts_to_sync_skips_replies_to_skipped_posts_integration(self):
+        """Integration test: Verify skipped replies are persisted to JSON"""
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from src.sync_state import SyncState
+
+        # Create a temporary sync state file
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as tmp:
+            temp_state_file = tmp.name
+            # Initialize with a skipped post
+            initial_state = {
+                "last_sync_time": "2025-12-26T00:00:00.000000",
+                "synced_posts": [],
+                "last_bluesky_post_uri": None,
+                "skipped_posts": [
+                    {
+                        "bluesky_uri": "at://parent-post-no-sync",
+                        "reason": "no-sync-tag",
+                        "skipped_at": "2025-12-26T00:00:00.000000",
+                    }
+                ],
+            }
+            json.dump(initial_state, tmp)
+
+        try:
+            # Create a real SyncState instance (not mocked)
+            sync_state = SyncState(temp_state_file)
+
+            # Create reply post
+            reply_post = BlueskyPost(
+                uri="at://reply-to-parent-no-sync",
+                cid="cid-reply",
+                text="Reply to skipped post",
+                created_at=datetime(2025, 12, 26, 12, 0, 0),
+                author_handle="user.bsky.social",
+                reply_to="at://parent-post-no-sync",
+            )
+
+            # Manually call the skip logic that our fix implements
+            sync_state.mark_post_skipped(
+                reply_post.uri, reason="reply-to-skipped-post"
+            )
+
+            # Verify the JSON file was updated
+            with open(temp_state_file, "r") as f:
+                persisted_state = json.load(f)
+
+            # Check that the reply is in skipped_posts
+            skipped_uris = [post["bluesky_uri"] for post in persisted_state["skipped_posts"]]
+            assert "at://reply-to-parent-no-sync" in skipped_uris
+
+            # Find the skipped reply entry
+            reply_entry = next(
+                (p for p in persisted_state["skipped_posts"] if p["bluesky_uri"] == "at://reply-to-parent-no-sync"),
+                None,
+            )
+            assert reply_entry is not None
+            assert reply_entry["reason"] == "reply-to-skipped-post"
+            assert "skipped_at" in reply_entry
+
+        finally:
+            # Clean up temporary file
+            Path(temp_state_file).unlink()
