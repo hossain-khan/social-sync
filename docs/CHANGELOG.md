@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2025-12-26
+
+### Fixed
+- 🔗 **Reply Sync Fix**: Replies to posts marked with `#no-sync` tag are now correctly skipped
+  - Added check in sync orchestrator to verify parent post skip status before syncing replies
+  - Replies to skipped posts are now marked with reason `reply-to-skipped-post`
+  - Prevents incomplete conversation threads on Mastodon when parent post is marked with `#no-sync`
+  - Added 4 comprehensive tests (3 unit + 1 integration) covering skip and non-skip scenarios
+
 ## [0.8.0] - 2025-12-07
 
 ### Added
