@@ -211,6 +211,19 @@ class BlueskyClient:
                 # Handle replies: only include self-replies where the root is by the user
                 # AND the immediate parent is also by the user
                 # Filter all replies in threads started by other people
+                #
+                # WHY: We only want to sync posts that are part of YOUR conversations,
+                # not replies you make to other people's conversations. This prevents
+                # syncing fragments of discussions with other users, which would be
+                # out of context on the target platform.
+                #
+                # EXAMPLES:
+                # ✅ SYNCED: You reply to your own post -> your reply to that reply
+                # ❌ FILTERED: Someone replies to your post -> you reply to their reply
+                # ❌ FILTERED: Someone's post -> you reply to it
+                #
+                # The critical check: BOTH root AND parent must be by the user.
+                # Just checking the root isn't enough (see example #2 above).
                 reply_parent_uri = None
                 if post.record.reply:
                     reply_parent_uri = post.record.reply.parent.uri
@@ -228,13 +241,14 @@ class BlueskyClient:
                         else None
                     )
 
-                    # Only allow replies where BOTH:
+                    # Only allow replies where BOTH conditions are met:
                     # 1. Root is by the user (original thread starter)
-                    # 2. Immediate parent is by the user (not replying to someone else)
+                    # 2. Immediate parent is by the user (direct conversation, not nested in others' replies)
+                    #
                     # This filters out:
-                    # 1. Replies to other people's original posts
-                    # 2. Replies to other people's replies, even in user's own thread
-                    # 3. Replies in threads started by other people
+                    # - Replies to other people's original posts
+                    # - Replies to other people's replies, even if in user's own thread
+                    # - Replies in threads started by other people
                     if root_did != user_did or parent_did != user_did:
                         # Filter out replies that don't meet both conditions
                         filtered_replies += 1
