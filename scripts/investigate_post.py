@@ -159,19 +159,30 @@ def investigate_post(post_rkey: str, user_did: str = None):
             reply = record.reply
             root_uri = getattr(reply.root, "uri", "") if hasattr(reply, "root") else ""
             root_did = root_uri.split("/")[2] if "/" in root_uri else ""
-            is_self_thread = root_did == user_did
+
+            parent_uri = (
+                getattr(reply.parent, "uri", "") if hasattr(reply, "parent") else ""
+            )
+            parent_did = parent_uri.split("/")[2] if "/" in parent_uri else ""
+
+            is_self_root = root_did == user_did
+            is_self_parent = parent_did == user_did
 
             print(f"\n💬 Reply Analysis:")
-            print(
-                f"   Parent: {getattr(reply.parent, 'uri', 'N/A') if hasattr(reply, 'parent') else 'N/A'}"
-            )
+            print(f"   Parent: {parent_uri}")
+            print(f"   Parent author: {parent_did}")
             print(f"   Root: {root_uri}")
             print(f"   Root author: {root_did}")
 
-            if is_self_thread:
-                print(f"   ✓ Self-reply (reply in own thread) → SYNCED")
-            else:
-                print(f"   ✗ Reply to someone else's thread → FILTERED")
+            # The filtering logic: must have BOTH self root AND self parent
+            if is_self_root and is_self_parent:
+                print(f"   ✓ Self-reply (both root and parent by user) → SYNCED")
+            elif not is_self_root:
+                print(f"   ✗ Reply in thread started by someone else → FILTERED")
+            else:  # is_self_root but not is_self_parent
+                print(
+                    f"   ✗ Reply to someone else's reply (even though root is yours) → FILTERED"
+                )
         elif is_quote_post:
             print(f"\n📎 Quote Post:")
             if quoted_author_did and quoted_author_did != user_did:
