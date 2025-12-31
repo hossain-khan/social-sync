@@ -18,7 +18,8 @@ class BlueskyFetchResult:
     """
     Result of fetching posts from Bluesky with filtering statistics.
 
-    This provides visibility into how many posts were retrieved vs filtered.
+    This provides visibility into how many posts were retrieved vs filtered,
+    including detailed information about filtered posts for audit trail.
     """
 
     posts: List["BlueskyPost"]
@@ -27,6 +28,14 @@ class BlueskyFetchResult:
     filtered_reposts: int  # Number of reposts filtered out
     filtered_by_date: int  # Number of posts filtered by date
     filtered_quotes: int = 0  # Number of quote posts of others filtered out
+
+    # Detailed filtering information for audit trail
+    filtered_posts: Dict[str, str] = None  # Dict mapping post URI -> filter reason
+
+    def __post_init__(self):
+        """Initialize filtered_posts if not provided"""
+        if self.filtered_posts is None:
+            self.filtered_posts = {}
 
 
 @dataclass
@@ -172,6 +181,7 @@ class BlueskyClient:
             filtered_reposts = 0
             filtered_by_date = 0
             filtered_quotes = 0
+            filtered_posts = {}  # Track filtered posts with reasons
             total_retrieved = len(response.feed)
 
             for feed_item in response.feed:
@@ -180,6 +190,7 @@ class BlueskyClient:
                 # Track and skip reposts
                 if hasattr(feed_item, "reason") and feed_item.reason is not None:
                     filtered_reposts += 1
+                    filtered_posts[post.uri] = "repost"
                     continue
 
                 # Track and skip quote posts of other people's content
@@ -199,6 +210,7 @@ class BlueskyClient:
                             # Skip if quoting someone else's post (allow self-quotes)
                             if quoted_did and quoted_did != user_did:
                                 filtered_quotes += 1
+                                filtered_posts[post.uri] = "quote-of-other"
                                 logger.debug(
                                     f"Filtered quote post of other's content: {post.uri} (quoting: {quoted_uri})"
                                 )
@@ -208,31 +220,67 @@ class BlueskyClient:
                                     f"Including self-quote post: {post.uri} (quoting own: {quoted_uri})"
                                 )
 
-                # Handle replies: allow self-replies to own threads, filter others
-                # Check the root of the thread to determine if this is part of
-                # a conversation started by someone else
-                is_self_thread = False
+                # Handle replies: only include self-replies where the root is by the user
+                # AND the immediate parent is also by the user
+                # Filter all replies in threads started by other people
+                #
+                # WHY: We only want to sync posts that are part of YOUR conversations,
+                # not replies you make to other people's conversations. This prevents
+                # syncing fragments of discussions with other users, which would be
+                # out of context on the target platform.
+                #
+                # EXAMPLES:
+                # ✅ SYNCED: You post A -> You reply B to A -> You reply C to B (root=A by you, parent=B by you)
+                # ❌ FILTERED: Someone replies to your post -> you reply to their reply
+                # ❌ FILTERED: Someone's post -> you reply to it
+                #
+                # The critical check: BOTH root AND parent must be by the user.
+                # Just checking the root isn't enough (see example #2 above).
                 reply_parent_uri = None
                 if post.record.reply:
                     reply_parent_uri = post.record.reply.parent.uri
-                    # Check the root post of the thread (not just immediate parent)
-                    # to ensure we skip replies in threads started by others
                     reply_root_uri = post.record.reply.root.uri
-                    if reply_root_uri and user_did:
-                        root_did = self._extract_did_from_uri(reply_root_uri)
-                        is_self_thread = root_did == user_did
 
-                    if not is_self_thread:
-                        # Filter out replies in threads started by other people
-                        # This includes direct replies and nested replies
+                    # Extract the author DIDs to check if both root and parent are by the user
+                    root_did = (
+                        self._extract_did_from_uri(reply_root_uri)
+                        if reply_root_uri
+                        else None
+                    )
+                    parent_did = (
+                        self._extract_did_from_uri(reply_parent_uri)
+                        if reply_parent_uri
+                        else None
+                    )
+
+                    # Defensive check: log and filter if either DID is None (malformed URIs)
+                    if root_did is None or parent_did is None:
                         filtered_replies += 1
+                        filtered_posts[post.uri] = "reply-not-self-threaded"
+                        logger.warning(
+                            f"Filtered reply with malformed URIs: {post.uri} (root_did={root_did}, parent_did={parent_did})"
+                        )
+                        continue
+
+                    # Only allow replies where BOTH conditions are met:
+                    # 1. Root is by the user (original thread starter)
+                    # 2. Immediate parent is by the user (direct conversation, not nested in others' replies)
+                    #
+                    # This filters out:
+                    # - Replies to other people's original posts
+                    # - Replies to other people's replies, even if in user's own thread
+                    # - Replies in threads started by other people
+                    if root_did != user_did or parent_did != user_did:
+                        # Filter out replies that don't meet both conditions
+                        filtered_replies += 1
+                        filtered_posts[post.uri] = "reply-not-self-threaded"
                         logger.debug(
-                            f"Filtered reply in non-self thread: {post.uri} (root: {reply_root_uri})"
+                            f"Filtered reply: {post.uri} (root: {reply_root_uri} by {root_did}, parent: {reply_parent_uri} by {parent_did})"
                         )
                         continue
                     else:
                         logger.debug(
-                            f"Including reply in self-thread: {post.uri} -> {reply_parent_uri} (root: {reply_root_uri})"
+                            f"Including self-reply: {post.uri} -> {reply_parent_uri} (root: {reply_root_uri})"
                         )
 
                 # Parse the post creation date
@@ -243,6 +291,7 @@ class BlueskyClient:
                 # Filter by date if specified
                 if since_date and created_at < since_date:
                     filtered_by_date += 1
+                    filtered_posts[post.uri] = "older-than-sync-date"
                     continue
 
                 # Extract self-labels (content warnings) if present
@@ -317,6 +366,7 @@ class BlueskyClient:
                 filtered_reposts=filtered_reposts,
                 filtered_by_date=filtered_by_date,
                 filtered_quotes=filtered_quotes,
+                filtered_posts=filtered_posts,
             )
 
         except Exception as e:
@@ -327,6 +377,8 @@ class BlueskyClient:
                 filtered_replies=0,
                 filtered_reposts=0,
                 filtered_by_date=0,
+                filtered_quotes=0,
+                filtered_posts={},
             )
 
     @staticmethod

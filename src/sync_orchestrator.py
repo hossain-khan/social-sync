@@ -93,6 +93,17 @@ class SocialSyncOrchestrator:
         skipped_with_tag_count = 0
         already_skipped_count = 0
         skipped_replies_count = 0
+        skipped_filtered_count = 0
+
+        # Persist filtered posts from fetch result (audit trail)
+        # These are posts filtered during the fetch phase (replies not self-threaded, reposts, etc.)
+        for post_uri, filter_reason in fetch_result.filtered_posts.items():
+            # Only add if not already synced or skipped
+            if not self.sync_state.is_post_synced(
+                post_uri
+            ) and not self.sync_state.is_post_skipped(post_uri):
+                self.sync_state.mark_post_skipped(post_uri, reason=filter_reason)
+                skipped_filtered_count += 1
 
         for post in fetch_result.posts:
             # Check if already synced
@@ -127,6 +138,10 @@ class SocialSyncOrchestrator:
         # Sort posts by creation time (ascending) to post older posts first
         new_posts.sort(key=lambda post: post.created_at)
 
+        if skipped_filtered_count > 0:
+            logger.info(
+                f"Persisted {skipped_filtered_count} filtered posts to audit trail"
+            )
         if skipped_with_tag_count > 0:
             logger.info(f"Skipped {skipped_with_tag_count} posts with #no-sync tag")
         if already_skipped_count > 0:
