@@ -123,14 +123,23 @@ The project uses centralized version management following modern Python packagin
 3. **Ensure all changes are properly categorized** under Added/Changed/Fixed/Removed/Security
 
 ### Git Release Process
-1. **Commit version changes**:
+1. **Commit version changes on release branch**:
    ```bash
+   git checkout -b release/X.Y.Z
    git add pyproject.toml src/social_sync/__init__.py docs/CHANGELOG.md
    git commit -m "🏗️ Prepare release X.Y.Z"
    ```
 
-2. **Create annotated release tag**:
+2. **Push release branch and create PR**:
    ```bash
+   git push -u origin release/X.Y.Z
+   # Create PR from release/X.Y.Z → main on GitHub
+   ```
+
+3. **After PR merge to main, checkout main and tag**:
+   ```bash
+   git checkout main
+   git pull origin main
    git tag -a X.Y.Z -m "Release X.Y.Z: Brief description
 
    Major features:
@@ -142,11 +151,12 @@ The project uses centralized version management following modern Python packagin
    - Fix 2"
    ```
 
-3. **Push commits and tags**:
+4. **Push tag**:
    ```bash
-   git push origin main
    git push origin X.Y.Z
    ```
+
+**⚠️ IMPORTANT**: Only create and push tags AFTER the release PR has been merged to main. Never tag on release branches before merge.
 
 ### Post-Release Preparation
 1. **Prepare for next development cycle**:
