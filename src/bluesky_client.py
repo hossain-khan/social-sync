@@ -18,7 +18,8 @@ class BlueskyFetchResult:
     """
     Result of fetching posts from Bluesky with filtering statistics.
 
-    This provides visibility into how many posts were retrieved vs filtered.
+    This provides visibility into how many posts were retrieved vs filtered,
+    including detailed information about filtered posts for audit trail.
     """
 
     posts: List["BlueskyPost"]
@@ -27,6 +28,14 @@ class BlueskyFetchResult:
     filtered_reposts: int  # Number of reposts filtered out
     filtered_by_date: int  # Number of posts filtered by date
     filtered_quotes: int = 0  # Number of quote posts of others filtered out
+
+    # Detailed filtering information for audit trail
+    filtered_posts: Dict[str, str] = None  # Dict mapping post URI -> filter reason
+
+    def __post_init__(self):
+        """Initialize filtered_posts if not provided"""
+        if self.filtered_posts is None:
+            self.filtered_posts = {}
 
 
 @dataclass
@@ -172,6 +181,7 @@ class BlueskyClient:
             filtered_reposts = 0
             filtered_by_date = 0
             filtered_quotes = 0
+            filtered_posts = {}  # Track filtered posts with reasons
             total_retrieved = len(response.feed)
 
             for feed_item in response.feed:
@@ -180,6 +190,7 @@ class BlueskyClient:
                 # Track and skip reposts
                 if hasattr(feed_item, "reason") and feed_item.reason is not None:
                     filtered_reposts += 1
+                    filtered_posts[post.uri] = "repost"
                     continue
 
                 # Track and skip quote posts of other people's content
@@ -199,6 +210,7 @@ class BlueskyClient:
                             # Skip if quoting someone else's post (allow self-quotes)
                             if quoted_did and quoted_did != user_did:
                                 filtered_quotes += 1
+                                filtered_posts[post.uri] = "quote-of-other"
                                 logger.debug(
                                     f"Filtered quote post of other's content: {post.uri} (quoting: {quoted_uri})"
                                 )
@@ -252,6 +264,7 @@ class BlueskyClient:
                     if root_did != user_did or parent_did != user_did:
                         # Filter out replies that don't meet both conditions
                         filtered_replies += 1
+                        filtered_posts[post.uri] = "reply-not-self-threaded"
                         logger.debug(
                             f"Filtered reply: {post.uri} (root: {reply_root_uri} by {root_did}, parent: {reply_parent_uri} by {parent_did})"
                         )
@@ -269,6 +282,7 @@ class BlueskyClient:
                 # Filter by date if specified
                 if since_date and created_at < since_date:
                     filtered_by_date += 1
+                    filtered_posts[post.uri] = "older-than-sync-date"
                     continue
 
                 # Extract self-labels (content warnings) if present
@@ -343,6 +357,7 @@ class BlueskyClient:
                 filtered_reposts=filtered_reposts,
                 filtered_by_date=filtered_by_date,
                 filtered_quotes=filtered_quotes,
+                filtered_posts=filtered_posts,
             )
 
         except Exception as e:
@@ -353,6 +368,8 @@ class BlueskyClient:
                 filtered_replies=0,
                 filtered_reposts=0,
                 filtered_by_date=0,
+                filtered_quotes=0,
+                filtered_posts={},
             )
 
     @staticmethod
