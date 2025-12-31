@@ -34,6 +34,7 @@ For ANY new features, bug fixes, or changes:
 - **Bug Fixes**: `fix/bug-description` (e.g., `fix/image-attachment-blob-reference`)
 - **Documentation**: `docs/description` (e.g., `docs/update-readme`)
 - **Refactoring**: `refactor/description` (e.g., `refactor/extract-content-processor`)
+- **Release**: `release/X.Y.Z` (e.g., `release/0.8.2`) - Use for preparing hotfixes and releases
 
 ## Code Quality Requirements
 
