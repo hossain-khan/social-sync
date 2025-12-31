@@ -230,7 +230,7 @@ class BlueskyClient:
                 # out of context on the target platform.
                 #
                 # EXAMPLES:
-                # ✅ SYNCED: You reply to your own post -> your reply to that reply
+                # ✅ SYNCED: You post A -> You reply B to A -> You reply C to B (root=A by you, parent=B by you)
                 # ❌ FILTERED: Someone replies to your post -> you reply to their reply
                 # ❌ FILTERED: Someone's post -> you reply to it
                 #
@@ -252,6 +252,15 @@ class BlueskyClient:
                         if reply_parent_uri
                         else None
                     )
+
+                    # Defensive check: log and filter if either DID is None (malformed URIs)
+                    if root_did is None or parent_did is None:
+                        filtered_replies += 1
+                        filtered_posts[post.uri] = "reply-not-self-threaded"
+                        logger.warning(
+                            f"Filtered reply with malformed URIs: {post.uri} (root_did={root_did}, parent_did={parent_did})"
+                        )
+                        continue
 
                     # Only allow replies where BOTH conditions are met:
                     # 1. Root is by the user (original thread starter)

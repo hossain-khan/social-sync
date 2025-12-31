@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
-from src.bluesky_client import BlueskyFetchResult, BlueskyPost
+from src.bluesky_client import BlueskyFetchResult
 from src.sync_orchestrator import SocialSyncOrchestrator
 from src.sync_state import SyncState
 
@@ -291,7 +291,7 @@ class TestFilteredPostsPersistence:
         # Mock the fetch result
         orchestrator.bluesky_client.get_recent_posts.return_value = fetch_result
 
-        posts_to_sync, skipped_count = orchestrator.get_posts_to_sync()
+        _, _ = orchestrator.get_posts_to_sync()
 
         # Verify all filtered posts were persisted
         with open(temp_state_file, "r") as f:
@@ -364,7 +364,7 @@ class TestFilteredPostsPersistence:
         # Mock the fetch result
         orchestrator.bluesky_client.get_recent_posts.return_value = fetch_result
 
-        posts_to_sync, skipped_count = orchestrator.get_posts_to_sync()
+        _, _ = orchestrator.get_posts_to_sync()
 
         # Verify the post wasn't added again (should still be only one skipped_post entry)
         with open(temp_state_file, "r") as f:
@@ -447,7 +447,7 @@ class TestFilteredPostsPersistence:
         # Mock the fetch result
         orchestrator.bluesky_client.get_recent_posts.return_value = fetch_result
 
-        posts_to_sync, skipped_count = orchestrator.get_posts_to_sync()
+        _ = orchestrator.get_posts_to_sync()
 
         # Verify the synced post was not added to skipped_posts
         with open(temp_state_file, "r") as f:
@@ -475,7 +475,7 @@ class TestFilteredPostsPersistence:
         assert "skipped_at" in filtered_entry
         skipped_at = filtered_entry["skipped_at"]
         # Rough time check - should be between before and after
-        assert before_time <= skipped_at <= after_time or True  # Allow some margin
+        assert before_time <= skipped_at <= after_time
 
 
 if __name__ == "__main__":
