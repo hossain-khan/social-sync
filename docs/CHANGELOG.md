@@ -17,6 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.8.2] - 2025-12-31
+
+### Fixed
+- 🔍 **Reply Filtering Bug Fix**: Corrected reply filtering to check both root AND immediate parent author
+  - Previously only checked thread root author, causing replies to nested conversations to incorrectly sync
+  - Now checks both conditions: root must be by user AND immediate parent must be by user
+  - Prevents out-of-context discussion fragments from syncing to Mastodon
+  - Added test case for nested replies in others' threads
+- 📊 **Filtered Posts Audit Trail**: All filtered posts now persisted to `skipped_posts` with filter reasons
+  - Tracks why each post was filtered: `reply-not-self-threaded`, `repost`, `quote-of-other`, `older-than-sync-date`
+  - Prevents re-processing of filtered posts across sync runs
+  - Provides complete audit trail for troubleshooting and transparency
+  - Added 11 comprehensive tests validating persistence and audit trail integrity
+- 🛡️ **Defensive URI Parsing**: Added explicit None checks for DID extraction with diagnostic logging
+  - Logs warnings when URI extraction fails (malformed URIs)
+  - Better diagnostics for API data issues
+
 ## [0.8.1] - 2025-12-26
 
 ### Fixed
