@@ -708,6 +708,11 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mbysrmy2tc2o",
       "reason": "reply-not-self-threaded",
       "skipped_at": "2026-01-09T18:03:15.847905"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mdot3ine6223",
+      "reason": "quote-of-other",
+      "skipped_at": "2026-01-31T06:07:12.265512"
     }
   ]
 }
