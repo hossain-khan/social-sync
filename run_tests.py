@@ -4,6 +4,7 @@ Test runner for Social Sync
 
 This script runs the test suite and provides a simple interface for testing.
 """
+
 import os
 import subprocess
 import sys

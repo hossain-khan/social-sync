@@ -2,6 +2,7 @@
 """
 Test script for Social Sync - validates setup and configuration
 """
+
 import os  # noqa: F401
 import sys
 from pathlib import Path

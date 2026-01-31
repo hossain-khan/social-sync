@@ -14,6 +14,7 @@ Usage:
     # Or specify custom DID:
     python scripts/investigate_post.py 3m5x5kzlnoc2u did:plc:custom123
 """
+
 import argparse
 import json
 import sys

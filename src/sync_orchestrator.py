@@ -240,7 +240,9 @@ class SocialSyncOrchestrator:
                         )
                     )
                     failed_count = image_count - successful_image_count
-                    placeholder = f"\n\n[⚠️ {failed_count} image(s) could not be synced]"
+                    placeholder = (
+                        f"\n\n[⚠️ {failed_count} image(s) could not be synced]"
+                    )
                     processed_text += placeholder
                     logger.info(
                         f"Added text placeholder for {failed_count} failed image(s)"
