@@ -2,6 +2,7 @@
 """
 Example script demonstrating Social Sync components
 """
+
 import asyncio
 import sys
 from pathlib import Path
