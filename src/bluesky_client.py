@@ -322,10 +322,13 @@ class BlueskyClient:
                         post.record.reply.parent.uri if post.record.reply else None
                     ),
                     # Convert AT Protocol embed objects to dictionaries for cross-platform compatibility
-                    # This ensures external links, images, etc. are preserved when syncing to Mastodon
+                    # This ensures external links, images, etc. are preserved when syncing to Mastodon.
+                    # We prefer post.embed (Hydrated View) over post.record.embed (Raw Record)
+                    # because it contains resolved data like quoted post text and author info.
                     embed=(
-                        BlueskyClient._extract_embed_data(post.record.embed)
-                        if hasattr(post.record, "embed") and post.record.embed
+                        BlueskyClient._extract_embed_data(post.embed or post.record.embed)
+                        if (hasattr(post, "embed") and post.embed)
+                        or (hasattr(post.record, "embed") and post.record.embed)
                         else None
                     ),
                     # Extract rich text features (hashtags, mentions, links) from AT Protocol facets
@@ -493,7 +496,12 @@ class BlueskyClient:
                             image, "aspect_ratio", None
                         ),  # Width:height ratio
                     }
-                    # Additional blob/file metadata if available
+
+                    # Support for hydrated ImageView (from AppView)
+                    if hasattr(image, "fullsize"):
+                        image_data["url"] = image.fullsize
+
+                    # Additional blob/file metadata if available (from original record)
                     if hasattr(image, "image") and image.image:
                         image_data["image"] = {
                             "mime_type": getattr(
@@ -546,10 +554,31 @@ class BlueskyClient:
 
             # === QUOTED POSTS (Record Embeds) ===
             # Handle when users quote-tweet/quote-post another post
-            # Currently basic implementation - could be expanded for full quote handling
             if hasattr(embed, "record") and embed.record:
-                # TODO: Could extract quoted post author, text, etc. for richer display
-                embed_dict["record"] = {"py_type": str(type(embed.record).__name__)}
+                record = embed.record
+                record_dict = {
+                    "py_type": (
+                        record.py_type
+                        if hasattr(record, "py_type")
+                        else str(type(record).__name__)
+                    )
+                }
+
+                # Support for hydrated ViewRecord (from AppView)
+                # This allows extracting quoted post author and text
+                if hasattr(record, "author"):
+                    record_dict["author"] = {
+                        "handle": getattr(record.author, "handle", None),
+                        "displayName": getattr(record.author, "display_name", None),
+                    }
+
+                if hasattr(record, "value"):
+                    # Record value contains the actual post content
+                    record_dict["value"] = {
+                        "text": getattr(record.value, "text", "")
+                    }
+
+                embed_dict["record"] = record_dict
 
             return embed_dict
         except Exception as e:

@@ -280,19 +280,22 @@ class ContentProcessor:
     @staticmethod
     def _truncate_if_needed(text: str) -> str:
         """Truncate text if it exceeds Mastodon's character limit"""
-        if len(text) <= ContentProcessor.MASTODON_CHAR_LIMIT:
+        limit = ContentProcessor.MASTODON_CHAR_LIMIT
+        if len(text) <= limit:
             return text
 
-        # Try to truncate at a word boundary
-        truncated = text[: ContentProcessor.MASTODON_CHAR_LIMIT - 3]
+        # Try to truncate at a word boundary, leaving room for ellipsis
+        # Ensure we don't have negative slice if limit is very small
+        max_content_len = max(0, limit - 3)
+        truncated = text[:max_content_len]
+
         last_space = truncated.rfind(" ")
 
-        if (
-            last_space > ContentProcessor.MASTODON_CHAR_LIMIT * 0.8
-        ):  # If we can save at least 20% by truncating at word boundary
+        # If we found a space and it's not too early (keep at least 80% of allowed content)
+        if last_space > max_content_len * 0.8:
             truncated = truncated[:last_space]
 
-        return truncated + "..."
+        return (truncated + "...")[:limit]
 
     @staticmethod
     def extract_hashtags(text: str) -> List[str]:

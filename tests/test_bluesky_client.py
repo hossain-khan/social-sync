@@ -137,7 +137,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -202,7 +202,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/reply-post"
         mock_feed_item.post.cid = "reply-cid"
         mock_feed_item.post.record = mock_post_record
@@ -255,7 +255,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/self-reply"
         mock_feed_item.post.cid = "self-reply-cid"
         mock_feed_item.post.record = mock_post_record
@@ -322,7 +322,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/nested-reply"
         mock_feed_item.post.cid = "nested-reply-cid"
         mock_feed_item.post.record = mock_post_record
@@ -383,7 +383,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = (
             "at://did:plc:test123/app.bsky.feed.post/deep-nested-reply"
         )
@@ -513,7 +513,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://post-with-embed"
         mock_feed_item.post.cid = "embed-cid"
         mock_feed_item.post.record = mock_post_record
@@ -992,7 +992,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1039,7 +1039,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1084,7 +1084,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1128,7 +1128,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1172,7 +1172,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1216,7 +1216,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1267,7 +1267,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:userA/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
@@ -1319,7 +1319,7 @@ class TestBlueskyClient:
         if hasattr(mock_feed_item, "reason"):
             delattr(mock_feed_item, "reason")
 
-        mock_feed_item.post = Mock()
+        mock_feed_item.post = Mock(embed=None)
         mock_feed_item.post.uri = "at://did:plc:userA/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record

@@ -36,8 +36,21 @@ class TestContentProcessor:
 
         assert len(result) <= 500
         assert result.endswith("...")
-        # Verify truncation maintains exactly 500 chars: 497 content + "..." = 500 total
+        # Verify truncation maintains exactly 500 chars when no word boundary is found
+        # 497 content chars + "..." = 500 total
         assert len(result) == 500
+
+    def test_truncate_if_needed_word_boundary(self):
+        """Test that truncation happens at a word boundary if possible"""
+        # Create text with a space at 450 characters
+        text = "A" * 450 + " " + "B" * 150
+        result = ContentProcessor._truncate_if_needed(text)
+
+        assert len(result) <= 500
+        assert result.endswith("...")
+        # Should truncate at the space (450) + ellipsis (3) = 453 characters
+        assert len(result) == 453
+        assert result.startswith("A" * 450 + "...")
 
     def test_truncate_if_needed_exactly_500_chars(self):
         """Test text exactly at the limit"""
