@@ -326,7 +326,9 @@ class BlueskyClient:
                     # We prefer post.embed (Hydrated View) over post.record.embed (Raw Record)
                     # because it contains resolved data like quoted post text and author info.
                     embed=(
-                        BlueskyClient._extract_embed_data(post.embed or post.record.embed)
+                        BlueskyClient._extract_embed_data(
+                            post.embed or post.record.embed
+                        )
                         if (hasattr(post, "embed") and post.embed)
                         or (hasattr(post.record, "embed") and post.record.embed)
                         else None
@@ -574,9 +576,7 @@ class BlueskyClient:
 
                 if hasattr(record, "value"):
                     # Record value contains the actual post content
-                    record_dict["value"] = {
-                        "text": getattr(record.value, "text", "")
-                    }
+                    record_dict["value"] = {"text": getattr(record.value, "text", "")}
 
                 embed_dict["record"] = record_dict
 
