@@ -20,19 +20,16 @@ jobs:
     # Grant permissions to write to repository
     permissions:
       contents: write
-
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Use Personal Access Token for bypassing branch protection
           token: ${{ secrets.PAT_TOKEN }}
       
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -179,7 +176,7 @@ jobs:
       
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sync-logs-${{ github.run_id }}
           path: social_sync.log
@@ -187,7 +184,7 @@ jobs:
       
       - name: Upload sync state (backup)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sync-state-backup-${{ github.run_id }}
           path: sync_state.json

@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
-- 🔧 **GitHub Actions Node.js 24 compatibility**: Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to all workflow jobs to resolve Node.js 20 deprecation warnings for `actions/checkout@v4`, `actions/setup-python@v5`, and `actions/upload-artifact@v4`
+- 🔧 **GitHub Actions Node.js 24 migration**: Upgraded actions to latest stable versions with Node.js 24 support: `actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v6`
 
 ### Removed
 
