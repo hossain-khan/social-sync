@@ -164,15 +164,15 @@ def get_settings() -> Settings:
             if not env_file_exists:
                 raise ConfigurationError(
                     "Configuration file missing!\n\n"
-                    "To get started:\n"
-                    "1. Copy the example configuration file:\n"
-                    "   cp .env.example .env\n\n"
-                    "2. Edit .env with your credentials:\n"
+                    "To get started, run the setup command:\n"
+                    "   social-sync setup\n\n"
+                    "This will create a .env file that you can fill with your credentials:\n"
                     "   - Set your Bluesky handle and app password\n"
                     "   - Set your Mastodon instance URL and access token\n"
                     "   - Optionally configure sync settings\n\n"
                     "3. Run the command again\n\n"
-                    "For detailed setup instructions, see: docs/SETUP.md"
+                    "For detailed setup instructions, see:\n"
+                    "   https://github.com/hossain-khan/social-sync/blob/main/docs/SETUP.md"
                 ) from e
             else:
                 raise ConfigurationError(
@@ -182,7 +182,8 @@ def get_settings() -> Settings:
                     "- BLUESKY_HANDLE (your Bluesky handle)\n"
                     "- BLUESKY_PASSWORD (your Bluesky app password)\n"
                     "- MASTODON_ACCESS_TOKEN (your Mastodon access token)\n\n"
-                    "For detailed setup instructions, see: docs/SETUP.md\n\n"
+                    "For detailed setup instructions, see:\n"
+                    "   https://github.com/hossain-khan/social-sync/blob/main/docs/SETUP.md\n\n"
                     f"Original error: {e}"
                 ) from e
 
