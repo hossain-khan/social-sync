@@ -26,10 +26,10 @@ jobs:
           - os: ubuntu-latest
             artifact_name: social-sync-linux-x86_64
             asset_name: social-sync-linux-x86_64
-          - os: macos-13
+          - os: macos-15-intel
             artifact_name: social-sync-macos-x86_64
             asset_name: social-sync-macos-x86_64
-          - os: macos-14
+          - os: macos-15
             artifact_name: social-sync-macos-arm64
             asset_name: social-sync-macos-arm64
 
