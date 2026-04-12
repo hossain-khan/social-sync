@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -80,8 +82,8 @@ jobs:
     name: Attach binaries to GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    # Only run when triggered by a tag push
-    if: startsWith(github.ref, 'refs/tags/')
+    # Only run when triggered by a tag push or manual dispatch with a tag
+    if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''
     permissions:
       contents: write
 
