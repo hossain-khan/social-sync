@@ -26,6 +26,9 @@ jobs:
           - os: ubuntu-latest
             artifact_name: social-sync-linux-x86_64
             asset_name: social-sync-linux-x86_64
+          - os: ubuntu-24.04-arm
+            artifact_name: social-sync-linux-arm64
+            asset_name: social-sync-linux-arm64
           - os: macos-15-intel
             artifact_name: social-sync-macos-x86_64
             asset_name: social-sync-macos-x86_64
@@ -96,6 +99,7 @@ jobs:
         with:
           files: |
             dist/social-sync-linux-x86_64/social-sync-linux-x86_64
+            dist/social-sync-linux-arm64/social-sync-linux-arm64
             dist/social-sync-macos-x86_64/social-sync-macos-x86_64
             dist/social-sync-macos-arm64/social-sync-macos-arm64
           fail_on_unmatched_files: false
