@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `sync.spec` PyInstaller spec file for reproducible builds
   - New `.github/workflows/build-binaries.yml` workflow that builds and uploads binaries to GitHub Releases on version tags
   - Updated README with binary download and usage instructions
+- 🍺 **Homebrew Formula**: Added `Formula/social-sync.rb` for easy installation via Homebrew on macOS and Linux
+  - Install with `brew tap hossain-khan/social-sync && brew install social-sync`
+  - Formula uses platform-specific pre-built binaries (macOS arm64/x86_64, Linux x86_64)
+  - Includes `brew test` that verifies `social-sync --help` runs successfully
 
 ### Changed
 
