@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.9.1] - 2026-04-12
+
+### Fixed
+- 🍎 **macOS binary runtime error**: Removed ad-hoc code signing step from build workflow
+  - The `codesign --sign -` (ad-hoc) step caused a "different Team IDs" error at runtime: the Python framework bundled by PyInstaller carries Apple's Team ID, but the ad-hoc identity has none, causing macOS to reject `dlopen()` on extraction
+  - Removing the signing step restores the previous working behaviour
+
 ## [0.9.0] - 2026-04-12
 
 ### Added
@@ -32,18 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes `brew test` that verifies `social-sync --help` runs successfully
 
 ### Fixed
-- 🔧 **Build binaries workflow updates**: Updated `.github/workflows/build-binaries.yml` with Node.js 24-compatible GitHub Actions versions (`actions/checkout@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`, `softprops/action-gh-release@v3`), fixed tag glob pattern, replaced deprecated `macos-13` runner with `macos-15-intel`, added Linux arm64 build target (`ubuntu-24.04-arm`), and wired `workflow_dispatch` tag input into checkout and release job
-- 🔧 **Build binaries workflow Node.js 24 migration**: Updated `.github/workflows/build-binaries.yml` to use Node.js 24-compatible GitHub Actions versions: `actions/checkout@v6`, `actions/setup-python@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`
-- 🍎 **macOS Gatekeeper / signing fix**: macOS binaries are now ad-hoc code-signed (`codesign --sign -`) in the build workflow to satisfy macOS security requirements
-  - Prevents the "Not Opened — Apple could not verify…" Gatekeeper dialog on macOS
-  - Added `xattr -d com.apple.quarantine` instructions to README for users downloading binaries directly
-  - Binaries are signed with `--options runtime` (hardened runtime) to be compatible with future Apple notarization
-
-### Removed
-
-### Security
-
-## [0.8.2] - 2025-12-31
+- 🔧 **Build binaries workflow updates**: Updated `.github/workflows/build-binaries.yml` with Node.js 24-compatible GitHub Actions versions (`actions/checkout@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`, `softprops/action-gh-release@v3`), fixed tag glob pattern, replaced deprecated `macos-13` runner with `macos-15-intel`, added Linux arm64 build target (`ubuntu-24.04-arm`), and wired `workflow_dispatch` tag input into checkout and release job 2025-12-31
 
 ### Fixed
 - 🔍 **Reply Filtering Bug Fix**: Corrected reply filtering to check both root AND immediate parent author
