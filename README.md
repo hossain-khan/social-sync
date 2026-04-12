@@ -18,9 +18,20 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 
 ## 🚀 Quick Start
 
+### Install via Homebrew (macOS and Linux x86_64)
+
+The easiest way to install Social Sync on macOS or Linux (x86_64) is via [Homebrew](https://brew.sh):
+
+```bash
+brew tap hossain-khan/social-sync
+brew install social-sync
+```
+
+Homebrew handles installation, updates (`brew upgrade social-sync`), and removal (`brew uninstall social-sync`) automatically.
+
 ### Download Standalone Binary (No Python Required)
 
-Pre-built binaries are available for macOS and Linux on the [Releases page](../../releases).
+Pre-built binaries are also available for macOS and Linux on the [Releases page](https://github.com/hossain-khan/social-sync/releases).
 
 ```bash
 # macOS (Apple Silicon / arm64)
