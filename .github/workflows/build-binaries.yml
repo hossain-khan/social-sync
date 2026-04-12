@@ -95,7 +95,7 @@ jobs:
         run: find dist/ -type f | sort
 
       - name: Upload binaries to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/social-sync-linux-x86_64/social-sync-linux-x86_64
