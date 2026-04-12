@@ -1,0 +1,101 @@
+name: Build Release Binaries
+
+on:
+  push:
+    tags:
+      # Trigger on version tags like 0.8.2, 1.0.0, etc.
+      - "[0-9]+.[0-9]+.[0-9]+"
+  # Allow manual triggering for testing the workflow
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag to build (e.g. 0.8.2)"
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} binary
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: social-sync-linux-x86_64
+            asset_name: social-sync-linux-x86_64
+          - os: macos-13
+            artifact_name: social-sync-macos-x86_64
+            asset_name: social-sync-macos-x86_64
+          - os: macos-14
+            artifact_name: social-sync-macos-arm64
+            asset_name: social-sync-macos-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller>=6.0.0
+
+      - name: Build binary with PyInstaller
+        run: |
+          echo "🏗️ Building standalone binary for ${{ matrix.os }}..."
+          pyinstaller sync.spec --clean --noconfirm
+          echo "✅ Build complete"
+
+      - name: Verify binary works
+        run: |
+          echo "🧪 Verifying binary..."
+          ./dist/social-sync --help
+          ./dist/social-sync --version
+          echo "✅ Binary verification passed"
+
+      - name: Rename binary for upload
+        run: |
+          mv dist/social-sync dist/${{ matrix.asset_name }}
+
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.asset_name }}
+          retention-days: 30
+
+  release:
+    name: Attach binaries to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    # Only run when triggered by a tag push
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all built binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: List downloaded artifacts
+        run: find dist/ -type f | sort
+
+      - name: Upload binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/social-sync-linux-x86_64/social-sync-linux-x86_64
+            dist/social-sync-macos-x86_64/social-sync-macos-x86_64
+            dist/social-sync-macos-arm64/social-sync-macos-arm64
+          fail_on_unmatched_files: false
