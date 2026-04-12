@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+### Security
+
+## [0.9.0] - 2026-04-12
+
+### Added
 - 📦 **Standalone Binary Distribution**: Package Social Sync CLI as standalone executables using PyInstaller
   - Pre-built binaries for macOS (arm64, x86_64) and Linux (x86_64, arm64) — no Python or `pip` required
   - New `sync.spec` PyInstaller spec file for reproducible builds
@@ -15,17 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated README with binary download and usage instructions
 - 🍺 **Homebrew Formula**: Added `Formula/social-sync.rb` for easy installation via Homebrew on macOS and Linux
   - Install with `brew tap hossain-khan/social-sync && brew install social-sync`
-  - Formula uses platform-specific pre-built binaries (macOS arm64/x86_64, Linux x86_64)
+  - Formula supports platform-specific pre-built binaries (macOS arm64/x86_64, Linux x86_64/arm64)
+  - Formula version and sha256 checksums are auto-updated by CI after each release
   - Includes `brew test` that verifies `social-sync --help` runs successfully
 
-### Changed
-
 ### Fixed
-- 🔧 **Build binaries workflow Node.js 24 migration**: Updated `.github/workflows/build-binaries.yml` to use Node.js 24-compatible GitHub Actions versions: `actions/checkout@v6`, `actions/setup-python@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`
-
-### Removed
-
-### Security
+- 🔧 **Build binaries workflow updates**: Updated `.github/workflows/build-binaries.yml` with Node.js 24-compatible GitHub Actions versions (`actions/checkout@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`, `softprops/action-gh-release@v3`), fixed tag glob pattern, replaced deprecated `macos-13` runner with `macos-15-intel`, added Linux arm64 build target (`ubuntu-24.04-arm`), and wired `workflow_dispatch` tag input into checkout and release job
 
 ## [0.8.2] - 2025-12-31
 
