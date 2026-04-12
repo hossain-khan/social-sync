@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- 📦 **Standalone Binary Distribution**: Package Social Sync CLI as standalone executables using PyInstaller
+  - Pre-built binaries for macOS (arm64, x86_64) and Linux (x86_64) — no Python or `pip` required
+  - New `sync.spec` PyInstaller spec file for reproducible builds
+  - New `.github/workflows/build-binaries.yml` workflow that builds and uploads binaries to GitHub Releases on version tags
+  - Updated README with binary download and usage instructions
 
 ### Changed
 

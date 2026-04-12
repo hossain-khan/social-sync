@@ -1,6 +1,6 @@
 # Social Sync 🔄
 
-[![Code Quality Validation](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml/badge.svg)](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml) [![codecov](https://codecov.io/gh/hossain-khan/social-sync/graph/badge.svg?token=LMUT124IVM)](https://codecov.io/gh/hossain-khan/social-sync) 
+[![Code Quality Validation](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml/badge.svg)](https://github.com/hossain-khan/social-sync/actions/workflows/validate.yml) [![Build Release Binaries](https://github.com/hossain-khan/social-sync/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/hossain-khan/social-sync/actions/workflows/build-binaries.yml) [![codecov](https://codecov.io/gh/hossain-khan/social-sync/graph/badge.svg?token=LMUT124IVM)](https://codecov.io/gh/hossain-khan/social-sync) 
 
 A Python-based tool to automatically sync posts from Bluesky to Mastodon with GitHub Actions automation.
 
@@ -18,12 +18,37 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 
 ## 🚀 Quick Start
 
+### Download Standalone Binary (No Python Required)
+
+Pre-built binaries are available for macOS and Linux on the [Releases page](../../releases).
+
+```bash
+# macOS (Apple Silicon / arm64)
+curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-macos-arm64 -o social-sync
+chmod +x social-sync
+./social-sync --help
+
+# macOS (Intel / x86_64)
+curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-macos-x86_64 -o social-sync
+chmod +x social-sync
+./social-sync --help
+
+# Linux (x86_64)
+curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-linux-x86_64 -o social-sync
+chmod +x social-sync
+./social-sync --help
+```
+
+The standalone binary includes all dependencies — no Python or `pip` installation needed.
+
 ### For Fork Users
 **👥 Setting up your own instance?** → [Fork Setup Guide](docs/FORK_SETUP.md)
 
 **🔧 First time setup:**
 ```bash
 # Interactive setup wizard
+./social-sync setup
+# OR with Python:
 python sync.py setup
 
 # Or manual setup:
@@ -36,7 +61,22 @@ cp .env.example .env
 
 ## 📖 Usage
 
-### Command Line
+### Standalone Binary
+
+```bash
+# Interactive setup wizard (first time)
+./social-sync setup
+
+# Sync posts (dry run first)
+./social-sync sync --dry-run
+./social-sync sync
+
+# Check configuration and test connections
+./social-sync config
+./social-sync test
+```
+
+### Command Line (Python)
 
 <img src="https://github.com/user-attachments/assets/78d49bf8-d71e-432f-b00d-010d171f9de7" align="right" width="350" alt="CLI help preview" />
 
