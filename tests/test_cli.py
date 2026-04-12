@@ -13,7 +13,7 @@ from click.testing import CliRunner
 
 # Import the CLI group from sync.py
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sync import cli
+from sync import ENV_TEMPLATE, _cli_name, cli
 
 
 class TestCLI:
@@ -442,3 +442,114 @@ class TestCLIIntegration:
         # This would test actual file I/O operations
         # Requires more setup but is valuable for integration testing
         pass
+
+
+class TestEnvTemplate:
+    """Tests for the embedded ENV_TEMPLATE constant."""
+
+    def test_env_template_contains_required_keys(self):
+        """ENV_TEMPLATE must include all required credential keys."""
+        required = [
+            "BLUESKY_HANDLE",
+            "BLUESKY_PASSWORD",
+            "MASTODON_API_BASE_URL",
+            "MASTODON_ACCESS_TOKEN",
+        ]
+        for key in required:
+            assert key in ENV_TEMPLATE, f"{key} missing from ENV_TEMPLATE"
+
+    def test_env_template_contains_common_settings(self):
+        """ENV_TEMPLATE should include common optional settings."""
+        for key in (
+            "SYNC_INTERVAL_MINUTES",
+            "MAX_POSTS_PER_SYNC",
+            "DRY_RUN",
+            "LOG_LEVEL",
+        ):
+            assert key in ENV_TEMPLATE, f"{key} missing from ENV_TEMPLATE"
+
+    def test_env_template_is_non_empty_string(self):
+        assert isinstance(ENV_TEMPLATE, str) and len(ENV_TEMPLATE) > 0
+
+
+class TestCliName:
+    """Tests for the _cli_name() helper."""
+
+    def test_cli_name_returns_string(self):
+        assert isinstance(_cli_name(), str)
+
+    def test_cli_name_not_frozen(self):
+        """When not frozen (normal Python), returns 'python sync.py'."""
+        with patch("sys.frozen", False, create=True):
+            assert _cli_name() == "python sync.py"
+
+    def test_cli_name_frozen(self):
+        """When frozen (PyInstaller binary), returns the executable filename."""
+        with patch.object(sys, "frozen", True, create=True):
+            with patch.object(sys, "argv", ["/home/user/tools/social-sync", "setup"]):
+                assert _cli_name() == "social-sync"
+
+
+class TestSetupCommand:
+    """Tests for the `setup` CLI command in standalone / no-repo mode."""
+
+    def test_setup_creates_env_file(self):
+        """setup writes a .env file from the embedded template."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            result = runner.invoke(cli, ["setup"], input="n\n")
+            assert result.exit_code == 0, result.output
+            assert Path(".env").exists()
+
+    def test_setup_env_file_contains_required_keys(self):
+        """The .env file written by setup must contain required credential keys."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            runner.invoke(cli, ["setup"], input="n\n")
+            content = Path(".env").read_text()
+            for key in (
+                "BLUESKY_HANDLE",
+                "BLUESKY_PASSWORD",
+                "MASTODON_ACCESS_TOKEN",
+                "MASTODON_API_BASE_URL",
+            ):
+                assert key in content
+
+    def test_setup_does_not_require_env_example(self):
+        """setup must succeed even when .env.example is absent (standalone mode)."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            assert not Path(".env.example").exists()
+            result = runner.invoke(cli, ["setup"], input="n\n")
+            assert result.exit_code == 0
+            assert "Error" not in result.output
+
+    def test_setup_prompts_before_overwrite(self):
+        """setup asks for confirmation when .env already exists."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            Path(".env").write_text("EXISTING=1\n")
+            result = runner.invoke(cli, ["setup"], input="n\n")  # decline overwrite
+            assert result.exit_code == 0
+            assert "already exists" in result.output
+            # Original file must be untouched
+            assert Path(".env").read_text() == "EXISTING=1\n"
+
+    def test_setup_overwrites_on_confirm(self):
+        """setup replaces .env when the user confirms."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            Path(".env").write_text("EXISTING=1\n")
+            result = runner.invoke(
+                cli, ["setup"], input="y\nn\n"
+            )  # confirm overwrite, skip editor
+            assert result.exit_code == 0
+            content = Path(".env").read_text()
+            assert "BLUESKY_HANDLE" in content
+
+    def test_setup_shows_github_url(self):
+        """Hint shown after setup must point to the GitHub docs URL."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            result = runner.invoke(cli, ["setup"], input="n\n")
+            assert "github.com/hossain-khan/social-sync" in result.output

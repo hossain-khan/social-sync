@@ -27,6 +27,53 @@ try:
 except ImportError:
     __version__ = "unknown"
 
+# Template used by the `setup` command — embedded so it works in standalone binaries
+# (no dependency on .env.example being present on disk)
+ENV_TEMPLATE = """\
+# Environment variables for Social Sync
+# Fill in your credentials below
+
+# Bluesky Credentials
+BLUESKY_HANDLE=your-handle.bsky.social
+BLUESKY_PASSWORD=your-app-password
+
+# Mastodon Credentials
+MASTODON_API_BASE_URL=https://mastodon.social
+MASTODON_ACCESS_TOKEN=your-access-token
+
+# Sync Configuration
+SYNC_INTERVAL_MINUTES=60
+MAX_POSTS_PER_SYNC=10
+# Start date for syncing posts (ISO format). If not set, starts from 7 days ago
+# Examples:
+#   SYNC_START_DATE=2025-01-01
+#   SYNC_START_DATE=2025-01-15T10:30:00
+#   SYNC_START_DATE=2025-01-15T10:30:00-05:00
+# SYNC_START_DATE=2025-01-01
+# SYNC_CONTENT_WARNINGS=true
+DRY_RUN=true
+# DISABLE_SOURCE_PLATFORM=false
+
+# Video Sync Settings
+SYNC_VIDEOS=false
+MAX_VIDEO_SIZE_MB=40
+
+# Media Upload Failure Handling
+IMAGE_UPLOAD_FAILURE_STRATEGY=partial
+IMAGE_UPLOAD_MAX_RETRIES=3
+
+# Logging
+LOG_LEVEL=INFO
+"""
+
+
+def _cli_name() -> str:
+    """Return the name to use in usage hints (binary name or 'python sync.py')."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.argv[0]).name
+    return "python sync.py"
+
+
 # Load environment variables
 load_dotenv()
 
@@ -178,22 +225,15 @@ def setup():
                 "⚠️  .env file already exists. Do you want to overwrite it?"
             ):
                 click.echo(
-                    "Setup cancelled. Use 'python sync.py config' to view current configuration."
+                    f"Setup cancelled. Use '{_cli_name()} config' to view current configuration."
                 )
                 return
 
-        # Copy .env.example to .env
-        example_path = Path(".env.example")
-        if not example_path.exists():
-            click.echo("❌ Error: .env.example file not found!")
-            sys.exit(1)
+        # Write the embedded template (works even in standalone binary — no .env.example needed)
+        env_path.write_text(ENV_TEMPLATE)
+        click.echo("✅ Created .env configuration file")
 
-        # Copy the example file
-        import shutil
-
-        shutil.copy2(example_path, env_path)
-        click.echo("✅ Created .env file from .env.example")
-
+        cli = _cli_name()
         click.echo("\n📝 Next steps:")
         click.echo("1. Edit the .env file with your credentials:")
         click.echo("   - BLUESKY_HANDLE: Your Bluesky handle (e.g., user.bsky.social)")
@@ -201,10 +241,13 @@ def setup():
         click.echo("   - MASTODON_ACCESS_TOKEN: Your Mastodon access token")
         click.echo("   - MASTODON_API_BASE_URL: Your Mastodon instance URL")
         click.echo("\n2. Test your configuration:")
-        click.echo("   python sync.py test")
+        click.echo(f"   {cli} test")
         click.echo("\n3. Run your first sync:")
-        click.echo("   python sync.py sync --dry-run")
-        click.echo("\n📖 For detailed setup instructions, see: docs/SETUP.md")
+        click.echo(f"   {cli} sync --dry-run")
+        click.echo("\n📖 For detailed setup instructions, see:")
+        click.echo(
+            "   https://github.com/hossain-khan/social-sync/blob/main/docs/SETUP.md"
+        )
 
         # Offer to open the file for editing
         if click.confirm("\n🔧 Would you like to open .env for editing now?"):

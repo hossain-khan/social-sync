@@ -124,7 +124,7 @@ class TestConfigurationEdgeCases:
 
                 error_msg = str(exc_info.value)
                 assert "Configuration file missing" in error_msg
-                assert "cp .env.example .env" in error_msg
+                assert "social-sync setup" in error_msg
             finally:
                 os.chdir(original_cwd)
 
