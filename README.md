@@ -48,6 +48,11 @@ chmod +x social-sync
 curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-linux-x86_64 -o social-sync
 chmod +x social-sync
 ./social-sync --help
+
+# Linux (arm64)
+curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-linux-arm64 -o social-sync
+chmod +x social-sync
+./social-sync --help
 ```
 
 The standalone binary includes all dependencies — no Python or `pip` installation needed.

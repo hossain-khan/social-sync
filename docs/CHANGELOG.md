@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - 📦 **Standalone Binary Distribution**: Package Social Sync CLI as standalone executables using PyInstaller
-  - Pre-built binaries for macOS (arm64, x86_64) and Linux (x86_64) — no Python or `pip` required
+  - Pre-built binaries for macOS (arm64, x86_64) and Linux (x86_64, arm64) — no Python or `pip` required
   - New `sync.spec` PyInstaller spec file for reproducible builds
   - New `.github/workflows/build-binaries.yml` workflow that builds and uploads binaries to GitHub Releases on version tags
   - Updated README with binary download and usage instructions
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
-- 🔧 **GitHub Actions Node.js 24 migration**: Upgraded actions to latest stable versions with Node.js 24 support: `actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v6`
+- 🔧 **Build binaries workflow Node.js 24 migration**: Updated `.github/workflows/build-binaries.yml` to use Node.js 24-compatible GitHub Actions versions: `actions/checkout@v6`, `actions/setup-python@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`
 
 ### Removed
 
