@@ -29,7 +29,7 @@ brew install social-sync
 
 Homebrew handles installation, updates (`brew upgrade social-sync`), and removal (`brew uninstall social-sync`) automatically.
 
-### Download Standalone Binary (No Python Required)
+<details><summary>Download Standalone Binary (No Python Required)</summary>
 
 Pre-built binaries are also available for macOS and Linux on the [Releases page](https://github.com/hossain-khan/social-sync/releases).
 
@@ -58,6 +58,8 @@ chmod +x social-sync
 ```
 
 The standalone binary includes all dependencies — no Python or `pip` installation needed.
+
+</details>
 
 ### For Fork Users
 **👥 Setting up your own instance?** → [Fork Setup Guide](docs/FORK_SETUP.md)
