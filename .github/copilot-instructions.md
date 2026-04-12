@@ -156,6 +156,11 @@ The project uses centralized version management following modern Python packagin
    git push origin X.Y.Z
    ```
 
+   After the tag is pushed, the **Build Release Binaries** workflow (`.github/workflows/build-binaries.yml`) runs automatically and:
+   - Builds platform binaries (Linux x86_64, Linux arm64, macOS x86_64, macOS arm64)
+   - Attaches all binaries to the GitHub Release
+   - Updates `Formula/social-sync.rb` with the correct `version` and real `sha256` checksums for all binaries, then commits directly to `main` — **no manual formula update is needed**
+
 **⚠️ IMPORTANT**: Only create and push tags AFTER the release PR has been merged to main. Never tag on release branches before merge.
 
 ### Post-Release Preparation
