@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - 🔧 **Build binaries workflow Node.js 24 migration**: Updated `.github/workflows/build-binaries.yml` to use Node.js 24-compatible GitHub Actions versions: `actions/checkout@v6`, `actions/setup-python@v6`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`
+- 🍎 **macOS Gatekeeper / signing fix**: macOS binaries are now ad-hoc code-signed (`codesign --sign -`) in the build workflow to satisfy macOS security requirements
+  - Prevents the "Not Opened — Apple could not verify…" Gatekeeper dialog on macOS
+  - Added `xattr -d com.apple.quarantine` instructions to README for users downloading binaries directly
+  - Binaries are signed with `--options runtime` (hardened runtime) to be compatible with future Apple notarization
 
 ### Removed
 

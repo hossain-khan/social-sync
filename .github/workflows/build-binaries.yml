@@ -60,6 +60,14 @@ jobs:
           pyinstaller sync.spec --clean --noconfirm
           echo "✅ Build complete"
 
+      - name: Sign macOS binary (ad-hoc)
+        if: runner.os == 'macOS'
+        run: |
+          echo "🔏 Applying ad-hoc code signing to macOS binary..."
+          codesign --sign - --force --options runtime dist/social-sync
+          echo "✅ Ad-hoc code signing complete"
+          codesign --verify --verbose dist/social-sync
+
       - name: Verify binary works
         run: |
           echo "🧪 Verifying binary..."

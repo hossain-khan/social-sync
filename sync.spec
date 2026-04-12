@@ -82,6 +82,6 @@ exe = EXE(
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
-    codesign_identity=None,
+    codesign_identity=None,  # Ad-hoc signing applied post-build in CI workflow via codesign --sign -
     entitlements_file=None,
 )

@@ -37,11 +37,13 @@ Pre-built binaries are also available for macOS and Linux on the [Releases page]
 # macOS (Apple Silicon / arm64)
 curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-macos-arm64 -o social-sync
 chmod +x social-sync
+xattr -d com.apple.quarantine social-sync   # Remove macOS quarantine for unsigned binaries
 ./social-sync --help
 
 # macOS (Intel / x86_64)
 curl -fL https://github.com/hossain-khan/social-sync/releases/latest/download/social-sync-macos-x86_64 -o social-sync
 chmod +x social-sync
+xattr -d com.apple.quarantine social-sync   # Remove macOS quarantine for unsigned binaries
 ./social-sync --help
 
 # Linux (x86_64)
@@ -165,6 +167,11 @@ MASTODON_ACCESS_TOKEN=your-access-token
 **🚫 Selective Sync:** Add `#no-sync` to any Bluesky post to prevent it from syncing. The tag is case-insensitive (`#No-Sync`, `#NO-SYNC`, etc. all work).
 
 ## 🐛 Common Issues
+
+**macOS Gatekeeper Warning ("Not Opened")?**
+- macOS may block unsigned binaries downloaded from the internet
+- Remove the quarantine attribute: `xattr -d com.apple.quarantine social-sync`
+- Alternatively, install via Homebrew (`brew tap hossain-khan/social-sync && brew install social-sync`) which bypasses this issue
 
 **GitHub Actions Failing?**
 - Repository rule violations → Use Personal Access Token
