@@ -24,19 +24,23 @@ class SocialSync < Formula
   on_macos do
     on_arm do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-macos-arm64"
-      sha256 "PLACEHOLDER_SHA256_MACOS_ARM64"
+      sha256 "<REPLACE_WITH_REAL_SHA256_FOR_social-sync-macos-arm64>"
     end
 
     on_intel do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-macos-x86_64"
-      sha256 "PLACEHOLDER_SHA256_MACOS_X86_64"
+      sha256 "<REPLACE_WITH_REAL_SHA256_FOR_social-sync-macos-x86_64>"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-linux-x86_64"
-      sha256 "PLACEHOLDER_SHA256_LINUX_X86_64"
+      sha256 "<REPLACE_WITH_REAL_SHA256_FOR_social-sync-linux-x86_64>"
+    end
+
+    on_arm do
+      odie "Linux ARM (aarch64) is not yet supported. Use the x86_64 binary on a compatible system."
     end
   end
 
@@ -45,11 +49,11 @@ class SocialSync < Formula
       arch_str = Hardware::CPU.arm? ? "arm64" : "x86_64"
       bin.install "social-sync-macos-#{arch_str}" => "social-sync"
     elsif OS.linux?
-      raise "Only x86_64 Linux is supported" unless Hardware::CPU.intel?
+      odie "Only x86_64 Linux is supported" unless Hardware::CPU.intel?
 
       bin.install "social-sync-linux-x86_64" => "social-sync"
     else
-      raise "Unsupported operating system"
+      odie "Unsupported operating system"
     end
   end
 
