@@ -41,9 +41,16 @@ class SocialSync < Formula
   end
 
   def install
-    os_str   = OS.mac? ? "macos" : "linux"
-    arch_str = Hardware::CPU.arm? ? "arm64" : "x86_64"
-    bin.install "social-sync-#{os_str}-#{arch_str}" => "social-sync"
+    if OS.mac?
+      arch_str = Hardware::CPU.arm? ? "arm64" : "x86_64"
+      bin.install "social-sync-macos-#{arch_str}" => "social-sync"
+    elsif OS.linux?
+      raise "Only x86_64 Linux is supported" unless Hardware::CPU.intel?
+
+      bin.install "social-sync-linux-x86_64" => "social-sync"
+    else
+      raise "Unsupported operating system"
+    end
   end
 
   test do

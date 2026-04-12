@@ -31,7 +31,7 @@ Homebrew handles installation, updates (`brew upgrade social-sync`), and removal
 
 ### Download Standalone Binary (No Python Required)
 
-Pre-built binaries are also available for macOS and Linux on the [Releases page](../../releases).
+Pre-built binaries are also available for macOS and Linux on the [Releases page](https://github.com/hossain-khan/social-sync/releases).
 
 ```bash
 # macOS (Apple Silicon / arm64)
