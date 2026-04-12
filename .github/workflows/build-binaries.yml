@@ -113,3 +113,86 @@ jobs:
             dist/social-sync-macos-x86_64/social-sync-macos-x86_64
             dist/social-sync-macos-arm64/social-sync-macos-arm64
           fail_on_unmatched_files: false
+
+  update-formula:
+    name: Update Homebrew Formula
+    needs: release
+    runs-on: ubuntu-latest
+    # Only auto-update on real tag pushes, not manual workflow dispatch
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          ref: main
+
+      - name: Download all built binaries
+        uses: actions/download-artifact@v8
+        with:
+          path: dist/
+
+      - name: Update formula with real sha256 values and version
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          # Compute sha256 for each binary (skip if missing due to build failure)
+          SHA_MACOS_ARM64=""
+          SHA_MACOS_X86_64=""
+          SHA_LINUX_X86_64=""
+          SHA_LINUX_ARM64=""
+          [ -f dist/social-sync-macos-arm64/social-sync-macos-arm64 ] && \
+            SHA_MACOS_ARM64=$(shasum -a 256 dist/social-sync-macos-arm64/social-sync-macos-arm64 | awk '{print $1}')
+          [ -f dist/social-sync-macos-x86_64/social-sync-macos-x86_64 ] && \
+            SHA_MACOS_X86_64=$(shasum -a 256 dist/social-sync-macos-x86_64/social-sync-macos-x86_64 | awk '{print $1}')
+          [ -f dist/social-sync-linux-x86_64/social-sync-linux-x86_64 ] && \
+            SHA_LINUX_X86_64=$(shasum -a 256 dist/social-sync-linux-x86_64/social-sync-linux-x86_64 | awk '{print $1}')
+          [ -f dist/social-sync-linux-arm64/social-sync-linux-arm64 ] && \
+            SHA_LINUX_ARM64=$(shasum -a 256 dist/social-sync-linux-arm64/social-sync-linux-arm64 | awk '{print $1}')
+          echo "macos-arm64:  $SHA_MACOS_ARM64"
+          echo "macos-x86_64: $SHA_MACOS_X86_64"
+          echo "linux-x86_64: $SHA_LINUX_X86_64"
+          echo "linux-arm64:  $SHA_LINUX_ARM64"
+          export SHA_MACOS_ARM64 SHA_MACOS_X86_64 SHA_LINUX_X86_64 SHA_LINUX_ARM64
+          python3 - << 'PYEOF'
+          import re, os
+          def sub_sha(name, sha, content):
+              if not sha:
+                  return content
+              return re.sub(
+                  rf'(url "[^"]*{re.escape(name)}[^"]*"\n\s+sha256 )"[^"]*"',
+                  rf'\g<1>"{sha}"',
+                  content,
+              )
+          version = os.environ['VERSION']
+          shas = {
+              'social-sync-macos-arm64':  os.environ.get('SHA_MACOS_ARM64', ''),
+              'social-sync-macos-x86_64': os.environ.get('SHA_MACOS_X86_64', ''),
+              'social-sync-linux-x86_64': os.environ.get('SHA_LINUX_X86_64', ''),
+              'social-sync-linux-arm64':  os.environ.get('SHA_LINUX_ARM64', ''),
+          }
+          with open('Formula/social-sync.rb') as f:
+              content = f.read()
+          content = re.sub(r'version "\d+\.\d+\.\d+"', f'version "{version}"', content)
+          for name, sha in shas.items():
+              content = sub_sha(name, sha, content)
+          with open('Formula/social-sync.rb', 'w') as f:
+              f.write(content)
+          print(f'Formula updated for version {version}')
+          PYEOF
+
+      - name: Commit and push formula update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Formula/social-sync.rb
+          if git diff --staged --quiet; then
+            echo "📋 No changes to formula - skipping commit"
+          else
+            git commit -m "🍺 Update Homebrew formula for ${{ github.ref_name }}: version and sha256 checksums"
+            git push origin main
+            echo "✅ Formula committed and pushed to main"
+          fi

@@ -11,6 +11,7 @@
 #      shasum -a 256 social-sync-macos-arm64
 #      shasum -a 256 social-sync-macos-x86_64
 #      shasum -a 256 social-sync-linux-x86_64
+#      shasum -a 256 social-sync-linux-arm64
 
 class SocialSync < Formula
   desc "Sync posts from Bluesky to Mastodon"
@@ -40,7 +41,8 @@ class SocialSync < Formula
     end
 
     on_arm do
-      odie "Linux ARM (aarch64) is not yet supported. Use the x86_64 binary on a compatible system."
+      url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-linux-arm64"
+      sha256 "<REPLACE_WITH_REAL_SHA256_FOR_social-sync-linux-arm64>"
     end
   end
 
@@ -49,9 +51,8 @@ class SocialSync < Formula
       arch_str = Hardware::CPU.arm? ? "arm64" : "x86_64"
       bin.install "social-sync-macos-#{arch_str}" => "social-sync"
     elsif OS.linux?
-      odie "Only x86_64 Linux is supported" unless Hardware::CPU.intel?
-
-      bin.install "social-sync-linux-x86_64" => "social-sync"
+      arch_str = Hardware::CPU.arm? ? "arm64" : "x86_64"
+      bin.install "social-sync-linux-#{arch_str}" => "social-sync"
     else
       odie "Unsupported operating system"
     end
