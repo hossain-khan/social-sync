@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.9.2] - 2026-04-12
+
+### Added
+- ✨ **Standalone-friendly `setup` command**: `setup` now works without a cloned repository
+  - Embedded a complete `.env` template inside the binary — no longer copies `.env.example` from disk
+  - `setup` creates a ready-to-edit `.env` file in the current directory when run from the standalone binary
+  - `_cli_name()` detects PyInstaller (`sys.frozen`) and shows the correct invocation (`./social-sync` vs `python sync.py`) in next-step hints
+  - Setup hints now link to the GitHub docs URL instead of the local `docs/SETUP.md` path
+
+### Fixed
+- 🐛 **Error messages for missing configuration now guide standalone users**: `config`, `sync`, `test`, and `status` commands previously told users to `cp .env.example .env` and read `docs/SETUP.md` — neither exists in standalone installs
+  - Error messages now say `social-sync setup` (runnable in any mode)
+  - Documentation links now point to the full GitHub URL
+
 ## [0.9.1] - 2026-04-12
 
 ### Fixed
