@@ -23,7 +23,7 @@ A Python-based tool to automatically sync posts from Bluesky to Mastodon with Gi
 The easiest way to install Social Sync on macOS or Linux (x86_64) is via [Homebrew](https://brew.sh):
 
 ```bash
-brew tap hossain-khan/social-sync
+brew tap hossain-khan/social-sync https://github.com/hossain-khan/social-sync.git
 brew install social-sync
 ```
 
