@@ -147,7 +147,7 @@ class TestBlueskyClientEdgeCases:
         assert "not authenticated" in str(exc_info.value)
 
     def test_get_recent_posts_authentication_failure(self):
-        """Test get_recent_posts when authentication fails"""
+        """Test get_recent_posts raises RuntimeError when client was never authenticated"""
         with pytest.raises(RuntimeError) as exc_info:
             self.client.get_recent_posts(limit=10)
 
@@ -218,10 +218,12 @@ class TestBlueskyClientEdgeCases:
 
                 assert isinstance(result, BlueskyFetchResult)
                 assert result.total_retrieved == 4
-                # Filtering stats should reflect what was filtered out
-                assert result.filtered_by_date >= 0
-                assert result.filtered_replies >= 0
-                assert result.filtered_reposts >= 0
+                # Verify exact filtering counts: 1 old post, 1 reply, 1 repost, 1 included
+                assert result.filtered_by_date == 1
+                assert result.filtered_replies == 1
+                assert result.filtered_reposts == 1
+                assert result.filtered_quotes == 0
+                assert len(result.posts) == 1
 
     def test_get_post_thread_not_authenticated(self):
         """Test get_post_thread when not authenticated"""
@@ -281,7 +283,9 @@ def create_mock_post(uri, created_at, is_reply=False, is_repost=False):
     if is_reply:
         mock_record.reply = Mock()
         mock_record.reply.parent = Mock()
-        mock_record.reply.parent.uri = "at://parent/post/uri"
+        mock_record.reply.parent.uri = (
+            "at://did:plc:otheruser/app.bsky.feed.post/parent"
+        )
         # Add root attribute for reply detection
         mock_record.reply.root = Mock()
         mock_record.reply.root.uri = "at://did:plc:otheruser/app.bsky.feed.post/root"
