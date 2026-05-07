@@ -12,7 +12,7 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.bluesky_client import BlueskyClient, BlueskyPost
+from src.bluesky_client import BlueskyClient, BlueskyFetchResult, BlueskyPost
 
 
 class TestBlueskyClient:
@@ -115,6 +115,7 @@ class TestBlueskyClient:
         assert result.filtered_replies == 0
         assert result.filtered_reposts == 0
         assert result.filtered_by_date == 0
+        assert result.filtered_quotes == 0
         mock_client.get_author_feed.assert_called_once()
 
     @patch("src.bluesky_client.AtprotoClient")
@@ -858,7 +859,7 @@ class TestBlueskyClient:
         # Verify it returns empty result instead of crashing
         result = client.get_recent_posts()
 
-        assert isinstance(result, type(client.get_recent_posts()))
+        assert isinstance(result, BlueskyFetchResult)
         assert result.total_retrieved == 0
 
     @patch("src.bluesky_client.AtprotoClient")
