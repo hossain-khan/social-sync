@@ -978,6 +978,11 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mlht7za46s2o",
       "reason": "reply-not-self-threaded",
       "skipped_at": "2026-05-10T06:50:27.257998"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mljra72uo225",
+      "reason": "quote-of-other",
+      "skipped_at": "2026-05-11T00:22:47.445251"
     }
   ]
 }
