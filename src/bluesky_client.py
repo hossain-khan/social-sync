@@ -3,7 +3,7 @@ Bluesky client wrapper for Social Sync
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -30,12 +30,9 @@ class BlueskyFetchResult:
     filtered_quotes: int = 0  # Number of quote posts of others filtered out
 
     # Detailed filtering information for audit trail
-    filtered_posts: Dict[str, str] = None  # Dict mapping post URI -> filter reason
-
-    def __post_init__(self):
-        """Initialize filtered_posts if not provided"""
-        if self.filtered_posts is None:
-            self.filtered_posts = {}
+    filtered_posts: Dict[str, str] = field(
+        default_factory=dict
+    )  # Dict mapping post URI -> filter reason
 
 
 @dataclass

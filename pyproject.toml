@@ -47,6 +47,7 @@ dev = [
     "black>=23.0.0",
     "isort>=5.12.0",
     "mypy>=1.0.0",
+    "pyrefly>=1.0.0",
     "flake8>=6.0.0",
     "bandit>=1.7.0",
     "pip-audit>=2.6.0",
@@ -97,6 +98,17 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
+
+[tool.pyrefly]
+python-version = "3.11.0"
+# Use the "legacy" preset to mirror the permissive mypy settings already in place.
+# This suppresses checks that mypy does not have, keeping noise low while still
+# catching real type errors (e.g. bad-assignment).
+preset = "legacy"
+# Suppress missing-import errors for third-party packages that lack type stubs
+# (atproto, mastodon.py, etc.) — same behaviour as mypy's ignore_missing_imports.
+ignore-missing-imports = ["*"]
+project-includes = ["sync.py", "src/**/*.py"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
