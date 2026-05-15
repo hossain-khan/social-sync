@@ -29,17 +29,22 @@ mypy sync.py src/ --ignore-missing-imports --no-strict-optional
 echo "✅ Type checking passed"
 
 echo
-echo "4️⃣ Linting (flake8)..."
+echo "4️⃣ Type Checking (pyrefly)..."
+pyrefly check sync.py src/
+echo "✅ Pyrefly type checking passed"
+
+echo
+echo "5️⃣ Linting (flake8)..."
 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 echo "✅ Critical linting passed"
 
 echo
-echo "5️⃣ All Tests (pytest)..."
+echo "6️⃣ All Tests (pytest)..."
 python -m pytest tests/ --tb=short | grep -E "(passed|failed|error)"
 echo "✅ All tests passed"
 
 echo
-echo "6️⃣ JSON Validation..."
+echo "7️⃣ JSON Validation..."
 if [ -f "sync_state.json" ]; then
     python -m json.tool sync_state.json > /dev/null
     echo "✅ JSON validation passed"
@@ -48,7 +53,7 @@ else
 fi
 
 echo
-echo "7️⃣ Security Scan (Bandit)..."
+echo "8️⃣ Security Scan (Bandit)..."
 # Count medium/high severity issues
 bandit_issues=$(bandit -r src/ tests/ *.py --severity-level medium --format csv 2>/dev/null | wc -l || echo "1")
 if [ "$bandit_issues" -le 1 ]; then
@@ -61,7 +66,7 @@ else
 fi
 
 echo
-echo "8️⃣ Dependency Security Check (pip-audit)..."
+echo "9️⃣ Dependency Security Check (pip-audit)..."
 if command -v pip-audit >/dev/null 2>&1; then
     pip-audit --desc --output=text 2>/dev/null || {
         echo "⚠️ pip-audit found vulnerability warnings (check output above)"

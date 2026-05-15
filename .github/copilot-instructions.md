@@ -18,7 +18,7 @@ For ANY new features, bug fixes, or changes:
    ```bash
    ./scripts/pre-commit-checks.sh
    ```
-   This script runs all required quality checks (Black, isort, mypy, flake8, pytest, JSON validation) and ensures CI will pass.
+   This script runs all required quality checks (Black, isort, mypy, pyrefly, flake8, pytest, JSON validation) and ensures CI will pass.
 
 3. **Commit and push**: Only commit and push after the pre-commit script passes
    ```bash
@@ -50,10 +50,11 @@ Before committing any code changes, you MUST run the pre-commit quality checks:
 1. **Format code with Black**: Always run `black .` to ensure proper code formatting across all files
 2. **Sort imports with isort**: Always run `isort .` to maintain consistent import ordering across all files
 3. **Type check with mypy**: Run `mypy src/ tests/` to catch type annotation issues
-4. **Lint with flake8**: Run `flake8 src/ tests/ *.py` to check code quality and style including root directory files
-5. **Run tests**: Run `python -m pytest tests/` to ensure all unit tests pass
-6. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
-7. **Update CHANGELOG.md**: Document any new features, bug fixes, or breaking changes in the changelog
+4. **Type check with pyrefly**: Run `pyrefly check sync.py src/` for additional type checking
+5. **Lint with flake8**: Run `flake8 src/ tests/ *.py` to check code quality and style including root directory files
+6. **Run tests**: Run `python -m pytest tests/` to ensure all unit tests pass
+7. **Validate JSON files**: Run `python -m json.tool sync_state.json > /dev/null` to validate JSON syntax
+8. **Update CHANGELOG.md**: Document any new features, bug fixes, or breaking changes in the changelog
 
 ## Changelog Management
 
@@ -278,6 +279,7 @@ The project has GitHub Actions workflows that validate:
 - Code formatting (Black)
 - Import sorting (isort) 
 - Type checking (mypy)
+- Type checking (pyrefly)
 - Linting (flake8)
 - JSON validation and structure verification
 - Security scanning (bandit)

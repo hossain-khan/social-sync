@@ -81,6 +81,12 @@ jobs:
           mypy sync.py src/ --ignore-missing-imports --no-strict-optional
           echo "✅ Type checking passed"
       
+      - name: Type checking with pyrefly
+        run: |
+          echo "🔍 Running pyrefly type checking..."
+          pyrefly check sync.py src/
+          echo "✅ Pyrefly type checking passed"
+      
       - name: Validate and format JSON files
         run: |
           echo "📄 Validating JSON files..."
