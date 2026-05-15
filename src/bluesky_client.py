@@ -35,10 +35,12 @@ class BlueskyFetchResult:
     )  # Dict mapping post URI -> filter reason
 
     def __post_init__(self) -> None:
-        # Normalize None to an empty dict so callers can safely call .items()
-        # even when the field is explicitly passed as None by untyped code.
-        # The type: ignore suppresses a false-positive from pyrefly, which
-        # correctly narrows Dict[str, str] to Never when compared with None.
+        # Compatibility escape hatch: normalize an explicitly-passed None to an
+        # empty dict so untyped callers that omit this argument do not crash
+        # when consumers call .items().  The type: ignore directives are required
+        # because the static type of filtered_posts is Dict[str, str] (never
+        # None), so the checker correctly flags the comparison and assignment as
+        # unreachable for typed callers.
         if self.filtered_posts is None:  # type: ignore[comparison-overlap]
             self.filtered_posts = {}  # type: ignore[assignment]
 

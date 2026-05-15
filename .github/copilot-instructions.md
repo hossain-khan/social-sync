@@ -18,7 +18,7 @@ For ANY new features, bug fixes, or changes:
    ```bash
    ./scripts/pre-commit-checks.sh
    ```
-   This script runs all required quality checks (Black, isort, mypy, flake8, pytest, JSON validation) and ensures CI will pass.
+   This script runs all required quality checks (Black, isort, mypy, pyrefly, flake8, pytest, JSON validation) and ensures CI will pass.
 
 3. **Commit and push**: Only commit and push after the pre-commit script passes
    ```bash

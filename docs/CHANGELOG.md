@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `pyrefly>=1.0.0` to dev dependencies in `pyproject.toml` and `requirements-dev.txt`
 
 ### Fixed
-- 🐛 **Type annotation bug in `BlueskyFetchResult`**: The `filtered_posts` field was declared as `Dict[str, str]` but defaulted to `None`, which is a type violation caught by pyrefly. Fixed by switching to `field(default_factory=dict)` so the field always holds an empty dict when not supplied, and removed the now-redundant `__post_init__` check.
+- 🐛 **Type annotation bug in `BlueskyFetchResult`**: The `filtered_posts` field was declared as `Dict[str, str]` but defaulted to `None`, which is a type violation caught by pyrefly. Fixed by switching to `field(default_factory=dict)` so the field always holds an empty dict when not supplied. A `__post_init__` null-guard is retained to normalize explicit `None` passed by untyped callers at runtime.
 
 ## [0.9.2] - 2026-04-12
 

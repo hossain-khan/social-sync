@@ -176,7 +176,7 @@ The CI/CD pipeline includes comprehensive testing:
 1. **Unit Tests**: Run with pytest and coverage reporting
 2. **Integration Tests**: Verify component interactions
 3. **Threading Tests**: Validate conversation threading
-4. **Code Quality**: Black, isort, flake8, mypy validation
+4. **Code Quality**: Black, isort, flake8, mypy, pyrefly validation
 5. **Security Scanning**: Bandit and dependency vulnerability checks
 
 ## Test Data Management
