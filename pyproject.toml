@@ -112,7 +112,7 @@ ignore-missing-imports = ["*"]
 # dynamically-typed objects (e.g. Record.reply, Record.text) do not produce
 # false-positive missing-attribute errors, regardless of whether the packages
 # are installed in the current environment.
-replace-imports-with-any = ["atproto", "atproto_client", "atproto_core", "mastodon"]
+replace-imports-with-any = ["atproto", "atproto_client", "atproto_core", "mastodon", "mastodon.Mastodon"]
 project-includes = ["sync.py", "src/**/*.py"]
 
 [tool.bandit]
