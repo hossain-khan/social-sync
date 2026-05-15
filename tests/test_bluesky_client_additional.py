@@ -410,3 +410,39 @@ class TestBlueskyDataClasses:
         assert result.filtered_replies == 0
         assert result.filtered_reposts == 0
         assert result.filtered_by_date == 0
+
+    def test_bluesky_fetch_result_filtered_posts_default(self):
+        """Test that filtered_posts defaults to an empty dict (not None) when omitted"""
+        result = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        # Must be an empty dict, never None, so callers can call .items() safely
+        assert result.filtered_posts == {}
+        assert isinstance(result.filtered_posts, dict)
+
+    def test_bluesky_fetch_result_filtered_posts_are_per_instance(self):
+        """Test that each BlueskyFetchResult instance gets its own filtered_posts dict"""
+        result_a = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+        result_b = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+        )
+
+        result_a.filtered_posts["at://user/post/1"] = "reply-not-self-threaded"
+
+        # Mutation of one instance must not affect the other
+        assert "at://user/post/1" not in result_b.filtered_posts

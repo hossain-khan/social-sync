@@ -108,6 +108,11 @@ preset = "legacy"
 # Suppress missing-import errors for third-party packages that lack type stubs
 # (atproto, mastodon.py, etc.) — same behaviour as mypy's ignore_missing_imports.
 ignore-missing-imports = ["*"]
+# Treat atproto and mastodon types as Any so that attribute accesses on their
+# dynamically-typed objects (e.g. Record.reply, Record.text) do not produce
+# false-positive missing-attribute errors, regardless of whether the packages
+# are installed in the current environment.
+replace-imports-with-any = ["atproto", "atproto_client", "atproto_core", "mastodon"]
 project-includes = ["sync.py", "src/**/*.py"]
 
 [tool.bandit]
