@@ -35,7 +35,7 @@ class BlueskyFetchResult:
     )  # Dict mapping post URI -> filter reason
 
     def __post_init__(self) -> None:
-        # Normalise None to an empty dict so callers can safely call .items()
+        # Normalize None to an empty dict so callers can safely call .items()
         # even when the field is explicitly passed as None by untyped code.
         # The type: ignore suppresses a false-positive from pyrefly, which
         # correctly narrows Dict[str, str] to Never when compared with None.
