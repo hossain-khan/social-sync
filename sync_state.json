@@ -1083,6 +1083,16 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mm3qlj5bj22a",
       "reason": "quote-of-other",
       "skipped_at": "2026-05-18T07:15:36.014305"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mnvqzhrpl22x",
+      "reason": "reply-not-self-threaded",
+      "skipped_at": "2026-06-10T07:22:55.838734"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mnvqn3ydlc2x",
+      "reason": "reply-not-self-threaded",
+      "skipped_at": "2026-06-10T07:22:55.839924"
     }
   ]
 }
