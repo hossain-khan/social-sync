@@ -1,5 +1,5 @@
 {
-  "last_sync_time": "2026-06-08T00:31:06.778893",
+  "last_sync_time": "2026-06-12T00:34:13.925788",
   "synced_posts": [
     {
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3lpy52wyd3c27",
@@ -945,9 +945,14 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mnqetwqfbc2o",
       "mastodon_id": "116711664296841464",
       "synced_at": "2026-06-08T00:31:06.777632"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mo2dcvb33s2w",
+      "mastodon_id": "116734325801573113",
+      "synced_at": "2026-06-12T00:34:13.924563"
     }
   ],
-  "last_bluesky_post_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mnqetwqfbc2o",
+  "last_bluesky_post_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mo2dcvb33s2w",
   "skipped_posts": [
     {
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3m4sqtr42dk2g",
@@ -1093,6 +1098,16 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mnvqn3ydlc2x",
       "reason": "reply-not-self-threaded",
       "skipped_at": "2026-06-10T07:22:55.839924"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mo2cr4vi622w",
+      "reason": "reply-not-self-threaded",
+      "skipped_at": "2026-06-12T00:34:10.501574"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mo2cr4p6yk2w",
+      "reason": "reply-not-self-threaded",
+      "skipped_at": "2026-06-12T00:34:10.502777"
     }
   ]
 }
