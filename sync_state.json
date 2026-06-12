@@ -1108,6 +1108,11 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mo2cr4p6yk2w",
       "reason": "reply-not-self-threaded",
       "skipped_at": "2026-06-12T00:34:10.502777"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mo2jafv6rs2v",
+      "reason": "reply-not-self-threaded",
+      "skipped_at": "2026-06-12T07:31:44.563391"
     }
   ]
 }
