@@ -232,7 +232,7 @@ jobs:
           MASTODON_API_BASE_URL: https://mastodon.social
         run: |
           echo "🔗 Running integration tests..."
-          python tests/test_integration.py
+          python -m pytest tests/test_integration.py
           echo "✅ Integration tests completed"
           
       - name: Run threading tests
@@ -243,7 +243,7 @@ jobs:
           MASTODON_API_BASE_URL: https://mastodon.social
         run: |
           echo "🧵 Running threading tests..."
-          python tests/test_threading.py
+          python -m pytest tests/test_threading.py
           echo "✅ Threading tests completed"
       
       - name: Validate sync dry-run
