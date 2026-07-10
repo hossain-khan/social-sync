@@ -6,14 +6,10 @@ including reply detection, parent post lookup, and Mastodon reply posting.
 """
 
 import os
-import sys
-import tempfile
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import pytest
 
 from src.bluesky_client import BlueskyPost
 from src.sync_orchestrator import SocialSyncOrchestrator
@@ -23,16 +19,11 @@ from src.sync_state import SyncState
 class TestThreadingSyncFlow:
     """Test threading functionality in sync workflow"""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_state(self, tmp_path):
         """Set up threading test environment"""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(tmp_path)
         self.state_file = os.path.join(self.temp_dir, "threading_test_state.json")
-
-    def teardown_method(self):
-        """Clean up test environment"""
-        import shutil
-
-        shutil.rmtree(self.temp_dir)
 
     @patch("src.sync_orchestrator.BlueskyClient")
     @patch("src.sync_orchestrator.MastodonClient")
@@ -416,51 +407,29 @@ class TestThreadingEdgeCases:
 
         assert regular_post.reply_to is None
 
-    def test_sync_state_thread_mappings(self):
+    def test_sync_state_thread_mappings(self, tmp_path):
         """Test sync state handles thread mappings correctly"""
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
-        temp_file.close()
+        state_file = tmp_path / "thread_mapping_test.json"
+        sync_state = SyncState(state_file)
 
-        try:
-            sync_state = SyncState(temp_file.name)
+        # Add thread: parent -> reply1 -> reply2
+        sync_state.mark_post_synced("at://parent", "mastodon-parent")
+        sync_state.mark_post_synced("at://reply1", "mastodon-reply1")
+        sync_state.mark_post_synced("at://reply2", "mastodon-reply2")
 
-            # Add thread: parent -> reply1 -> reply2
-            sync_state.mark_post_synced("at://parent", "mastodon-parent")
-            sync_state.mark_post_synced("at://reply1", "mastodon-reply1")
-            sync_state.mark_post_synced("at://reply2", "mastodon-reply2")
+        # Verify all mappings exist
+        assert (
+            sync_state.get_mastodon_id_for_bluesky_post("at://parent")
+            == "mastodon-parent"
+        )
+        assert (
+            sync_state.get_mastodon_id_for_bluesky_post("at://reply1")
+            == "mastodon-reply1"
+        )
+        assert (
+            sync_state.get_mastodon_id_for_bluesky_post("at://reply2")
+            == "mastodon-reply2"
+        )
 
-            # Verify all mappings exist
-            assert (
-                sync_state.get_mastodon_id_for_bluesky_post("at://parent")
-                == "mastodon-parent"
-            )
-            assert (
-                sync_state.get_mastodon_id_for_bluesky_post("at://reply1")
-                == "mastodon-reply1"
-            )
-            assert (
-                sync_state.get_mastodon_id_for_bluesky_post("at://reply2")
-                == "mastodon-reply2"
-            )
-
-            # Verify count
-            assert sync_state.get_synced_posts_count() == 3
-
-        finally:
-            os.unlink(temp_file.name)
-
-
-if __name__ == "__main__":
-    # Simple test runner for threading tests
-    import unittest
-
-    # Discover and run tests
-    loader = unittest.TestLoader()
-    start_dir = os.path.dirname(__file__)
-    suite = loader.discover(start_dir, pattern="test_threading.py")
-
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-
-    # Exit with appropriate code
-    exit(0 if result.wasSuccessful() else 1)
+        # Verify count
+        assert sync_state.get_synced_posts_count() == 3

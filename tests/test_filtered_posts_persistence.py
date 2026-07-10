@@ -3,14 +3,8 @@ Tests for filtered posts persistence to skipped_posts audit trail
 """
 
 import json
-import sys
-import tempfile
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock, patch
-
-# Add the parent directory to sys.path to import src as a package
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
@@ -23,22 +17,19 @@ class TestFilteredPostsPersistence:
     """Test that filtered posts are persisted to skipped_posts with correct reasons"""
 
     @pytest.fixture
-    def temp_state_file(self):
+    def temp_state_file(self, tmp_path):
         """Create a temporary sync state file for testing"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp:
-            temp_file = tmp.name
-            initial_state = {
-                "last_sync_time": "2025-12-26T00:00:00.000000",
-                "synced_posts": [],
-                "last_bluesky_post_uri": None,
-                "skipped_posts": [],
-            }
-            json.dump(initial_state, tmp)
+        temp_file = tmp_path / "sync_state.json"
+        initial_state = {
+            "last_sync_time": "2025-12-26T00:00:00.000000",
+            "synced_posts": [],
+            "last_bluesky_post_uri": None,
+            "skipped_posts": [],
+        }
+        with open(temp_file, "w") as f:
+            json.dump(initial_state, f)
 
-        yield temp_file
-
-        # Cleanup
-        Path(temp_file).unlink()
+        return str(temp_file)
 
     def test_bluesky_client_tracks_reply_filtering(self):
         """Test that BlueskyClient tracks filtered reply posts in result"""
