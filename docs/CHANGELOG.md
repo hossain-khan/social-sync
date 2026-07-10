@@ -7,16 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-09
+
 ### Added
 - 🔍 **Pyrefly type checking**: Added [pyrefly](https://github.com/facebook/pyrefly) (v1.0.0) as a second type checker alongside mypy
-  - Pyrefly is Meta's modern, high-performance Python type checker (now at stable 1.0.0)
-  - Configured with `preset = "legacy"` in `[tool.pyrefly]` in `pyproject.toml` for low-noise, mypy-compatible checking
-  - Added to CI validation workflow (`validate.yml`) as a dedicated step after mypy
-  - Added to `scripts/pre-commit-checks.sh` as step 4 (after mypy)
-  - Added `pyrefly>=1.0.0` to dev dependencies in `pyproject.toml` and `requirements-dev.txt`
+  - Pyrefly is Meta's modern, high-performance Python type checker
+  - Configured with `preset = "legacy"` in `[tool.pyrefly]` in `pyproject.toml`
+  - Added to CI validation workflow (`validate.yml`) and `scripts/pre-commit-checks.sh`
+  - Added `pyrefly>=1.0.0` to dev dependencies
+- 📝 **Agent Guidelines**: Added `AGENTS.md` symlink to `.github/copilot-instructions.md` for AI coding assistants.
+
+### Changed
+- 🧪 **Test Suite Modernization**: Refactored the test suite to adhere to modern `pytest` best practices:
+  - Added `pythonpath = .` to `pytest.ini` and removed legacy `sys.path.insert(0, ...)` boilerplate from all test files.
+  - Replaced manual `tempfile` and cleanup code with pytest's built-in `tmp_path` fixture.
+  - Standardized CLI command tests to run in-process using Click's `CliRunner` instead of subprocesses.
+  - Unified mixed class-based and function-based structures in CLI tests.
+  - Removed empty `TestCLIIntegration` stub.
 
 ### Fixed
-- 🐛 **Type annotation bug in `BlueskyFetchResult`**: The `filtered_posts` field was declared as `Dict[str, str]` but defaulted to `None`, which is a type violation caught by pyrefly. Fixed by switching to `field(default_factory=dict)` so the field always holds an empty dict when not supplied. A `__post_init__` null-guard is retained to normalize explicit `None` passed by untyped callers at runtime.
+- 🐛 **Type annotation bug in `BlueskyFetchResult`**: The `filtered_posts` field was declared as `Dict[str, str]` but defaulted to `None`, which is a type violation caught by pyrefly. Fixed by switching to `field(default_factory=dict)` so the field always holds an empty dict when not supplied.
+- 🧪 **Bluesky Client Test Accuracy**: Fixed test accuracy issues in Bluesky client tests.
 
 ## [0.9.2] - 2026-04-12
 
