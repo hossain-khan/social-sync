@@ -3,95 +3,51 @@ Tests for CLI Interface
 """
 
 import os
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
-
-# Import the CLI group from sync.py
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sync import ENV_TEMPLATE, _cli_name, cli
 
 
-class TestCLI:
-    """Test suite for CLI interface"""
+def test_cli_help_command():
+    """Test CLI help command works"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["--help"])
+    assert result.exit_code == 0
+    assert "Social Sync" in result.output or "Usage:" in result.output
 
-    def test_cli_help_command(self):
-        """Test CLI help command works"""
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "sync.py"), "--help"],
-            capture_output=True,
-            text=True,
-        )
 
-        assert result.returncode == 0
-        assert "Social Sync" in result.stdout or "Usage:" in result.stdout
+def test_cli_sync_command_help():
+    """Test sync subcommand help"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["sync", "--help"])
+    assert result.exit_code == 0
+    assert "--dry-run" in result.output
+    assert "--since-date" in result.output
+    assert "--disable-source-platform" in result.output
 
-    def test_cli_sync_command_help(self):
-        """Test sync subcommand help"""
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).parent.parent / "sync.py"),
-                "sync",
-                "--help",
-            ],
-            capture_output=True,
-            text=True,
-        )
 
-        assert result.returncode == 0
-        assert "--dry-run" in result.stdout
-        assert "--since-date" in result.stdout
-        assert "--disable-source-platform" in result.stdout
+def test_cli_status_command_help():
+    """Test status subcommand help"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["status", "--help"])
+    assert result.exit_code == 0
 
-    def test_cli_status_command_help(self):
-        """Test status subcommand help"""
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).parent.parent / "sync.py"),
-                "status",
-                "--help",
-            ],
-            capture_output=True,
-            text=True,
-        )
 
-        assert result.returncode == 0
+def test_cli_config_command_help():
+    """Test config subcommand help"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["config", "--help"])
+    assert result.exit_code == 0
 
-    def test_cli_config_command_help(self):
-        """Test config subcommand help"""
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).parent.parent / "sync.py"),
-                "config",
-                "--help",
-            ],
-            capture_output=True,
-            text=True,
-        )
 
-        assert result.returncode == 0
-
-    def test_cli_test_command_help(self):
-        """Test test subcommand help"""
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).parent.parent / "sync.py"),
-                "test",
-                "--help",
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        assert result.returncode == 0
+def test_cli_test_command_help():
+    """Test test subcommand help"""
+    runner = CliRunner()
+    result = runner.invoke(cli, ["test", "--help"])
+    assert result.exit_code == 0
 
 
 def test_sync_command_dry_run():
@@ -412,36 +368,6 @@ def test_cli_log_level_option():
     result = runner.invoke(cli, ["--log-level", "DEBUG", "--help"])
 
     assert result.exit_code == 0
-
-
-class TestCLIIntegration:
-    """Integration tests for CLI with real file operations"""
-
-    def setup_method(self):
-        """Set up temporary directory for integration tests"""
-        self.temp_dir = tempfile.mkdtemp()
-        self.original_cwd = os.getcwd()
-        os.chdir(self.temp_dir)
-
-    def teardown_method(self):
-        """Clean up temporary directory"""
-        os.chdir(self.original_cwd)
-        # Clean up temp directory
-        import shutil
-
-        shutil.rmtree(self.temp_dir)
-
-    def test_cli_creates_log_file(self):
-        """Test that CLI creates log file"""
-        # This would require more complex mocking or actual credentials
-        # For now, we'll test the simpler case
-        pass
-
-    def test_cli_state_file_handling(self):
-        """Test CLI handles state file correctly"""
-        # This would test actual file I/O operations
-        # Requires more setup but is valuable for integration testing
-        pass
 
 
 class TestEnvTemplate:

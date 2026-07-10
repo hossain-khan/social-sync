@@ -4,18 +4,10 @@ Additional tests for SyncState module to improve coverage
 
 import json
 import os
-import sys
-import tempfile
 import time
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
-
-# Add the parent directory to sys.path to import src as a package
-project_root = Path(__file__).parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 from src.sync_state import SyncState
 
@@ -23,16 +15,11 @@ from src.sync_state import SyncState
 class TestSyncStateEdgeCases:
     """Additional tests for SyncState edge cases to improve coverage"""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_state(self, tmp_path):
         """Set up test fixtures"""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(tmp_path)
         self.state_file_path = os.path.join(self.temp_dir, "test_state.json")
-
-    def teardown_method(self):
-        """Clean up test fixtures"""
-        import shutil
-
-        shutil.rmtree(self.temp_dir)
 
     def test_corrupted_json_file_recovery(self):
         """Test that SyncState recovers gracefully from corrupted JSON files"""

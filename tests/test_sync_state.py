@@ -4,15 +4,9 @@ Tests for Sync State Management
 
 import json
 import os
-import sys
-import tempfile
 from datetime import datetime
-from pathlib import Path
 
-# Add the parent directory to sys.path to import src as a package
-project_root = Path(__file__).parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+import pytest
 
 from src.sync_state import SyncState
 
@@ -20,20 +14,11 @@ from src.sync_state import SyncState
 class TestSyncState:
     """Test suite for SyncState class"""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_state(self, tmp_path):
         """Set up test fixtures with temporary state file"""
-        # Create temporary file for state
-        self.temp_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        )
-        self.temp_file.close()
-        self.state_file_path = self.temp_file.name
+        self.state_file_path = str(tmp_path / "sync_state.json")
         self.sync_state = SyncState(self.state_file_path)
-
-    def teardown_method(self):
-        """Clean up test fixtures"""
-        if os.path.exists(self.state_file_path):
-            os.unlink(self.state_file_path)
 
     def test_init_new_state_file(self):
         """Test initialization with non-existent state file"""

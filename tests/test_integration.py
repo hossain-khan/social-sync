@@ -6,14 +6,10 @@ They use mocked external dependencies but test real integration between internal
 """
 
 import os
-import sys
-import tempfile
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import pytest
 
 from src.bluesky_client import BlueskyFetchResult
 from src.config import Settings
@@ -24,16 +20,11 @@ from src.sync_state import SyncState
 class TestSyncIntegration:
     """Integration tests for sync workflow"""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_state(self, tmp_path):
         """Set up integration test environment"""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = str(tmp_path)
         self.state_file = os.path.join(self.temp_dir, "test_sync_state.json")
-
-    def teardown_method(self):
-        """Clean up test environment"""
-        import shutil
-
-        shutil.rmtree(self.temp_dir)
 
     @patch("src.sync_orchestrator.BlueskyClient")
     @patch("src.sync_orchestrator.MastodonClient")
@@ -128,7 +119,6 @@ class TestContentProcessingIntegration:
 
     def setup_method(self):
         """Set up content processing tests"""
-        sys.path.insert(0, str(Path(__file__).parent.parent))
         from src.content_processor import ContentProcessor
 
         self.processor = ContentProcessor()
@@ -186,19 +176,3 @@ class TestContentProcessingIntegration:
         # Should be truncated to fit within 500 chars
         assert len(with_attribution) <= 500
         assert with_attribution.endswith("(via Bluesky 🦋)")
-
-
-if __name__ == "__main__":
-    # Simple test runner for integration tests
-    import unittest
-
-    # Discover and run tests
-    loader = unittest.TestLoader()
-    start_dir = os.path.dirname(__file__)
-    suite = loader.discover(start_dir, pattern="test_integration.py")
-
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-
-    # Exit with appropriate code
-    exit(0 if result.wasSuccessful() else 1)

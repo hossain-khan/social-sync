@@ -3,18 +3,11 @@ Additional tests for Configuration module to improve coverage
 """
 
 import os
-import sys
 import tempfile
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
-
-# Add the parent directory to sys.path to import src as a package
-project_root = Path(__file__).parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 from src.config import ConfigurationError, Settings, check_env_file_exists, get_settings
 
