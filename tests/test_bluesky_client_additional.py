@@ -449,9 +449,10 @@ class TestBlueskyDataClasses:
             filtered_reposts=0,
             filtered_by_date=0,
             filtered_quotes=0,
-            filtered_posts=None
+            filtered_posts=None,
         )
         assert result.filtered_posts == {}
+
 
 class TestBlueskyClientAdditional:
     """Additional tests for BlueskyClient"""
@@ -459,7 +460,10 @@ class TestBlueskyClientAdditional:
     def test_extract_did_from_uri_empty_identifier(self):
         """Test extracting DID from URI with empty identifier"""
         client = BlueskyClient("test.bsky.social", "test-password")
-        assert client._extract_did_from_uri("at://did:plc:/app.bsky.feed.post/12345") is None
+        assert (
+            client._extract_did_from_uri("at://did:plc:/app.bsky.feed.post/12345")
+            is None
+        )
 
     def test_get_recent_posts_malformed_uri_in_reply(self):
         """Test handling malformed URIs in reply"""
@@ -508,13 +512,18 @@ class TestBlueskyClientAdditional:
 
         result = client.get_recent_posts()
         assert result.filtered_replies == 1
-        assert result.filtered_posts["at://did:plc:test123/app.bsky.feed.post/12345"] == "reply-not-self-threaded"
+        assert (
+            result.filtered_posts["at://did:plc:test123/app.bsky.feed.post/12345"]
+            == "reply-not-self-threaded"
+        )
 
     def test_extract_facets_data_exception(self):
         """Test extract_facets_data exception handling"""
         mock_facet = Mock()
         # Mock index but make it raise exception when accessed
-        type(mock_facet).index = property(lambda self: (_ for _ in ()).throw(Exception("Test error")))
+        type(mock_facet).index = property(
+            lambda self: (_ for _ in ()).throw(Exception("Test error"))
+        )
 
         result = BlueskyClient._extract_facets_data([mock_facet])
         assert result == []
@@ -560,9 +569,11 @@ class TestBlueskyClientAdditional:
         mock_video_blob = Mock()
         mock_video_blob.mime_type = "video/mp4"
         mock_video_blob.size = 1234
+
         class MockRefFallback:
             def __str__(self):
                 return "justastring"
+
         mock_video_blob.ref = MockRefFallback()
 
         mock_video.ref = MockRefFallback()
@@ -594,7 +605,7 @@ class TestBlueskyClientAdditional:
         mock_get.return_value = mock_response
 
         client = BlueskyClient("test.bsky.social", "test-password")
-        client.client = Mock() # mock client so hasattr doesn't fail
+        client.client = Mock()  # mock client so hasattr doesn't fail
         client.client.access_token = "fake_token"
         client._authenticated = True
 
@@ -670,17 +681,20 @@ class TestBlueskyClientAdditional:
         result = client._extract_did_from_uri(None)
         assert result is None
 
-
     def test_extract_did_from_uri_invalid_start(self):
         """Test extract did from uri not starting with did:"""
         client = BlueskyClient("test.bsky.social", "test-password")
-        assert client._extract_did_from_uri("at://notadid:12345/app.bsky.feed.post/123") is None
+        assert (
+            client._extract_did_from_uri("at://notadid:12345/app.bsky.feed.post/123")
+            is None
+        )
 
     def test_extract_did_from_uri_less_than_3_parts(self):
         """Test extract did from uri with less than 3 parts"""
         client = BlueskyClient("test.bsky.social", "test-password")
-        assert client._extract_did_from_uri("at://did:plc/app.bsky.feed.post/123") is None
-
+        assert (
+            client._extract_did_from_uri("at://did:plc/app.bsky.feed.post/123") is None
+        )
 
     def test_extract_embed_data_image_ref_dict_fallback(self):
         """Test extract embed data with dict image ref that uses $link internally (not hasattr)"""
@@ -700,8 +714,9 @@ class TestBlueskyClientAdditional:
         class MockRefDollarLink:
             def __getitem__(self, key):
                 return "some_link_value"
+
         ref = MockRefDollarLink()
-        setattr(ref, "$link", True) # Make hasattr return True
+        setattr(ref, "$link", True)  # Make hasattr return True
         if hasattr(ref, "link"):
             delattr(ref, "link")
         mock_image_blob.ref = ref
@@ -720,7 +735,6 @@ class TestBlueskyClientAdditional:
         result = BlueskyClient._extract_embed_data(mock_embed)
         assert result is not None
         assert result["images"][0]["image"]["ref"]["$link"] == "some_link_value"
-
 
     def test_extract_embed_data_video_ref_dict_fallback(self):
         """Test extract embed data video ref fallback to dict with $link"""
@@ -749,20 +763,19 @@ class TestBlueskyClientAdditional:
         assert result is not None
         assert result["video"]["blob_ref"] == "dict_link_val"
 
-
-
     def test_extract_did_from_uri_index_error(self):
         """Test extract did from uri handling IndexError internally"""
         client = BlueskyClient("test.bsky.social", "test-password")
+
         # Pass a custom mock string that raises IndexError on split
         class MockString(str):
             def split(self, *args, **kwargs):
                 raise IndexError("test index error")
+
             def startswith(self, prefix):
                 return True
 
         assert client._extract_did_from_uri(MockString("did:something")) is None
-
 
     def test_extract_did_from_uri_attribute_error(self):
         """Test extract did from uri handling AttributeError internally"""
