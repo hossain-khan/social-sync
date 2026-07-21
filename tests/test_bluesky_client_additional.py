@@ -439,3 +439,333 @@ class TestBlueskyDataClasses:
 
         # Mutation of one instance must not affect the other
         assert "at://user/post/1" not in result_b.filtered_posts
+
+    def test_dataclass_initialization_no_filtered_posts(self):
+        """Test initialization when filtered_posts is None"""
+        result = BlueskyFetchResult(
+            posts=[],
+            total_retrieved=0,
+            filtered_replies=0,
+            filtered_reposts=0,
+            filtered_by_date=0,
+            filtered_quotes=0,
+            filtered_posts=None
+        )
+        assert result.filtered_posts == {}
+
+class TestBlueskyClientAdditional:
+    """Additional tests for BlueskyClient"""
+
+    def test_extract_did_from_uri_empty_identifier(self):
+        """Test extracting DID from URI with empty identifier"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        assert client._extract_did_from_uri("at://did:plc:/app.bsky.feed.post/12345") is None
+
+    def test_get_recent_posts_malformed_uri_in_reply(self):
+        """Test handling malformed URIs in reply"""
+        mock_client = Mock()
+        mock_me = Mock()
+        mock_me.did = "did:plc:test123"
+        mock_client.me = mock_me
+
+        mock_reply = Mock()
+        mock_reply.root = Mock()
+        mock_reply.root.uri = "malformed:uri"
+        mock_reply.parent = Mock()
+        mock_reply.parent.uri = "another:malformed:uri"
+
+        mock_post_record = Mock()
+        mock_post_record.text = "This is a reply"
+        mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
+        mock_post_record.facets = []
+        mock_post_record.reply = mock_reply
+        mock_post_record.labels = None
+        mock_post_record.langs = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
+
+        mock_feed_item = Mock()
+        if hasattr(mock_feed_item, "reason"):
+            delattr(mock_feed_item, "reason")
+
+        mock_feed_item.post = Mock()
+        mock_feed_item.post.uri = "at://did:plc:test123/app.bsky.feed.post/12345"
+        mock_feed_item.post.cid = "test-cid"
+        mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.author = Mock()
+        mock_feed_item.post.author.handle = "test.bsky.social"
+        mock_feed_item.post.author.display_name = "Test User"
+        if hasattr(mock_feed_item.post, "embed"):
+            delattr(mock_feed_item.post, "embed")
+
+        mock_response = Mock()
+        mock_response.feed = [mock_feed_item]
+        mock_client.get_author_feed.return_value = mock_response
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client.client = mock_client
+        client._authenticated = True
+
+        result = client.get_recent_posts()
+        assert result.filtered_replies == 1
+        assert result.filtered_posts["at://did:plc:test123/app.bsky.feed.post/12345"] == "reply-not-self-threaded"
+
+    def test_extract_facets_data_exception(self):
+        """Test extract_facets_data exception handling"""
+        mock_facet = Mock()
+        # Mock index but make it raise exception when accessed
+        type(mock_facet).index = property(lambda self: (_ for _ in ()).throw(Exception("Test error")))
+
+        result = BlueskyClient._extract_facets_data([mock_facet])
+        assert result == []
+
+    def test_extract_embed_data_image_ref_dict(self):
+        """Test extract embed data with dict image ref"""
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.images"
+
+        mock_image = Mock()
+        mock_image.alt = "Test alt"
+        mock_image_blob = Mock()
+        mock_image_blob.mime_type = "image/jpeg"
+        mock_image_blob.size = 1234
+        # Use simple dict for ref to test fallback branch
+        mock_image_blob.ref = {"somedata": "value"}
+        if hasattr(mock_image_blob.ref, "link"):
+            delattr(mock_image_blob.ref, "link")
+        if hasattr(mock_image_blob.ref, "$link"):
+            delattr(mock_image_blob.ref, "$link")
+
+        mock_image.image = mock_image_blob
+        mock_embed.images = [mock_image]
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
+        if hasattr(mock_embed, "video"):
+            delattr(mock_embed, "video")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+        assert result is not None
+        assert result["images"][0]["image"]["ref"] == {"somedata": "value"}
+
+    def test_extract_embed_data_video_ref_fallback(self):
+        """Test extract embed data video ref fallback to str"""
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.video"
+
+        mock_video = Mock()
+        mock_video_blob = Mock()
+        mock_video_blob.mime_type = "video/mp4"
+        mock_video_blob.size = 1234
+        class MockRefFallback:
+            def __str__(self):
+                return "justastring"
+        mock_video_blob.ref = MockRefFallback()
+
+        mock_video.ref = MockRefFallback()
+        mock_video.mime_type = "video/mp4"
+        mock_video.size = 1234
+        if hasattr(mock_video, "video"):
+            delattr(mock_video, "video")
+        mock_embed.video = mock_video
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "images"):
+            delattr(mock_embed, "images")
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+        assert result is not None
+        assert result["video"]["blob_ref"] == "justastring"
+
+    @patch("src.bluesky_client.requests.get")
+    def test_download_blob_fallback_mime_type(self, mock_get):
+        """Test download blob fallback to image/jpeg mime type"""
+        mock_response = Mock()
+        mock_response.content = b"fakeimage"
+        # Return a content type that doesn't start with image/
+        mock_response.headers = {"content-type": "application/octet-stream"}
+        mock_get.return_value = mock_response
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client.client = Mock() # mock client so hasattr doesn't fail
+        client.client.access_token = "fake_token"
+        client._authenticated = True
+
+        result = client.download_blob("fake_blob", "did:plc:123")
+        assert result is not None
+        assert result[1] == "image/jpeg"
+
+    def test_download_video_unauthenticated(self):
+        """Test download video unauthenticated returns None instead of raising ValueError (it logs an error)"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        # client is not authenticated
+        result = client.download_video("fake_blob", "did:plc:123")
+        assert result is None
+
+    @patch("src.bluesky_client.requests.get")
+    def test_download_video_exception(self, mock_get):
+        """Test download video handling exceptions"""
+        mock_get.side_effect = Exception("Test exception")
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client.client = Mock()
+        client.client.access_token = "fake_token"
+        client._authenticated = True
+
+        result = client.download_video("fake_blob", "did:plc:123")
+        assert result is None
+
+    def test_download_blob_unauthenticated(self):
+        """Test download blob unauthenticated returns None"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        # client is not authenticated
+        result = client.download_blob("fake_blob", "did:plc:123")
+        assert result is None
+
+    @patch("src.bluesky_client.requests.get")
+    def test_download_video_success(self, mock_get):
+        """Test download video successful"""
+        mock_response = Mock()
+        mock_response.content = b"fakevideo"
+        mock_response.headers = {"content-type": "video/webm"}
+        mock_get.return_value = mock_response
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client.client = Mock()
+        client.client.access_token = "fake_token"
+        client._authenticated = True
+
+        result = client.download_video("fake_blob", "did:plc:123")
+        assert result is not None
+        assert result[0] == b"fakevideo"
+        assert result[1] == "video/webm"
+
+    @patch("src.bluesky_client.requests.get")
+    def test_download_video_success_no_token(self, mock_get):
+        """Test download video successful without token"""
+        mock_response = Mock()
+        mock_response.content = b"fakevideo"
+        mock_response.headers = {"content-type": "video/webm"}
+        mock_get.return_value = mock_response
+
+        client = BlueskyClient("test.bsky.social", "test-password")
+        client.client = Mock()
+        client.client.access_token = None
+        client._authenticated = True
+
+        result = client.download_video("fake_blob", "did:plc:123")
+        assert result is not None
+
+    def test_extract_did_from_uri_exception(self):
+        """Test extract did from uri handling index error internally without crashing if split behaves unexpectedly"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        # Providing something that triggers an AttributeError when split() is called
+        result = client._extract_did_from_uri(None)
+        assert result is None
+
+
+    def test_extract_did_from_uri_invalid_start(self):
+        """Test extract did from uri not starting with did:"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        assert client._extract_did_from_uri("at://notadid:12345/app.bsky.feed.post/123") is None
+
+    def test_extract_did_from_uri_less_than_3_parts(self):
+        """Test extract did from uri with less than 3 parts"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        assert client._extract_did_from_uri("at://did:plc/app.bsky.feed.post/123") is None
+
+
+    def test_extract_embed_data_image_ref_dict_fallback(self):
+        """Test extract embed data with dict image ref that uses $link internally (not hasattr)"""
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.images"
+
+        mock_image = Mock()
+        mock_image.alt = "Test alt"
+        mock_image_blob = Mock()
+        mock_image_blob.mime_type = "image/jpeg"
+        mock_image_blob.size = 1234
+
+        # We need a dict-like mock for the ref
+        # so hasattr(ref, "$link") fails, but we want it to act like a dict with "$link"
+        # Wait, the code says: `elif hasattr(ref, "$link"):`
+        # if `hasattr` is true, it goes to `ref["$link"]`
+        class MockRefDollarLink:
+            def __getitem__(self, key):
+                return "some_link_value"
+        ref = MockRefDollarLink()
+        setattr(ref, "$link", True) # Make hasattr return True
+        if hasattr(ref, "link"):
+            delattr(ref, "link")
+        mock_image_blob.ref = ref
+
+        mock_image.image = mock_image_blob
+        mock_embed.images = [mock_image]
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
+        if hasattr(mock_embed, "video"):
+            delattr(mock_embed, "video")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+        assert result is not None
+        assert result["images"][0]["image"]["ref"]["$link"] == "some_link_value"
+
+
+    def test_extract_embed_data_video_ref_dict_fallback(self):
+        """Test extract embed data video ref fallback to dict with $link"""
+        mock_embed = Mock()
+        mock_embed.py_type = "app.bsky.embed.video"
+
+        mock_video = Mock()
+        mock_video.mime_type = "video/mp4"
+        mock_video.size = 1234
+
+        mock_video.ref = {"$link": "dict_link_val"}
+
+        if hasattr(mock_video, "video"):
+            delattr(mock_video, "video")
+        mock_embed.video = mock_video
+        if hasattr(mock_embed, "external"):
+            delattr(mock_embed, "external")
+        if hasattr(mock_embed, "images"):
+            delattr(mock_embed, "images")
+        if hasattr(mock_embed, "media"):
+            delattr(mock_embed, "media")
+        if hasattr(mock_embed, "record"):
+            delattr(mock_embed, "record")
+
+        result = BlueskyClient._extract_embed_data(mock_embed)
+        assert result is not None
+        assert result["video"]["blob_ref"] == "dict_link_val"
+
+
+
+    def test_extract_did_from_uri_index_error(self):
+        """Test extract did from uri handling IndexError internally"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        # Pass a custom mock string that raises IndexError on split
+        class MockString(str):
+            def split(self, *args, **kwargs):
+                raise IndexError("test index error")
+            def startswith(self, prefix):
+                return True
+
+        assert client._extract_did_from_uri(MockString("did:something")) is None
+
+
+    def test_extract_did_from_uri_attribute_error(self):
+        """Test extract did from uri handling AttributeError internally"""
+        client = BlueskyClient("test.bsky.social", "test-password")
+        # Trigger an attribute error by passing an object that lacks `startswith` or `split`
+        assert client._extract_did_from_uri(123) is None

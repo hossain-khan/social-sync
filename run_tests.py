@@ -59,9 +59,13 @@ def run_integration_tests():
     print("🔗 Running Integration Tests...")
     print("=" * 30)
 
+    # Set up environment for tests
+    project_root = Path(__file__).parent
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root)
     # Run integration tests
-    cmd = [sys.executable, "test_integration.py"]
-    result = subprocess.run(cmd)
+    cmd = [sys.executable, "tests/test_integration.py"]
+    result = subprocess.run(cmd, env=env)
 
     if result.returncode == 0:
         print("✅ Integration tests passed!")
@@ -76,9 +80,13 @@ def run_threading_tests():
     print("🧵 Running Threading Tests...")
     print("=" * 30)
 
+    # Set up environment for tests
+    project_root = Path(__file__).parent
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(project_root)
     # Run threading tests
-    cmd = [sys.executable, "test_threading.py"]
-    result = subprocess.run(cmd)
+    cmd = [sys.executable, "tests/test_threading.py"]
+    result = subprocess.run(cmd, env=env)
 
     if result.returncode == 0:
         print("✅ Threading tests passed!")

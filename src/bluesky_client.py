@@ -202,16 +202,16 @@ class BlueskyClient:
 
                 # Track and skip quote posts of other people's content
                 # Allow self-quotes (quoting own posts) but filter quotes of others
-                if hasattr(post.record, "embed") and post.record.embed:
-                    embed_type = getattr(post.record.embed, "py_type", None)
+                if hasattr(post, "embed") and post.embed:
+                    embed_type = getattr(post.embed, "py_type", None)
 
                     # Check if this is a quote post (app.bsky.embed.record)
                     if embed_type == "app.bsky.embed.record":
                         # Extract the quoted post URI
-                        if hasattr(post.record.embed, "record") and hasattr(
-                            post.record.embed.record, "uri"
+                        if hasattr(post.embed, "record") and hasattr(
+                            post.embed.record, "uri"
                         ):
-                            quoted_uri = post.record.embed.record.uri
+                            quoted_uri = post.embed.record.uri
                             quoted_did = self._extract_did_from_uri(quoted_uri)
 
                             # Skip if quoting someone else's post (allow self-quotes)
@@ -331,8 +331,8 @@ class BlueskyClient:
                     # Convert AT Protocol embed objects to dictionaries for cross-platform compatibility
                     # This ensures external links, images, etc. are preserved when syncing to Mastodon
                     embed=(
-                        BlueskyClient._extract_embed_data(post.record.embed)
-                        if hasattr(post.record, "embed") and post.record.embed
+                        BlueskyClient._extract_embed_data(post.embed)
+                        if hasattr(post, "embed") and post.embed
                         else None
                     ),
                     # Extract rich text features (hashtags, mentions, links) from AT Protocol facets

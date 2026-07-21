@@ -121,7 +121,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Test post content"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = None
         mock_post_record.langs = None
@@ -186,7 +187,8 @@ class TestBlueskyClient:
         mock_post_record.text = "This is a reply"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = (
             mock_reply  # This should cause the post to be filtered out
         )
@@ -242,7 +244,8 @@ class TestBlueskyClient:
         mock_post_record.text = "This is a self-reply"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = mock_reply
 
         mock_feed_item = Mock()
@@ -309,7 +312,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Reply to my reply in someone else's thread"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = mock_reply
 
         mock_feed_item = Mock()
@@ -370,7 +374,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Deep nested reply in my own thread"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = mock_reply
 
         mock_feed_item = Mock()
@@ -497,7 +502,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Check this out"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = mock_embed
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = None
         mock_post_record.langs = None
@@ -511,6 +517,7 @@ class TestBlueskyClient:
         mock_feed_item.post.uri = "at://post-with-embed"
         mock_feed_item.post.cid = "embed-cid"
         mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.embed = mock_embed
         mock_feed_item.post.author = Mock()
         mock_feed_item.post.author.handle = "test.bsky.social"
         mock_feed_item.post.author.display_name = "Test User"
@@ -977,7 +984,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Test post with labels"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = mock_labels
         mock_post_record.langs = None
@@ -1024,7 +1032,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Test post with single label"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = mock_labels
         mock_post_record.langs = None
@@ -1068,7 +1077,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Test post without labels"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         # Explicitly set labels to None to indicate no labels
         mock_post_record.labels = None
@@ -1113,7 +1123,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Test post in English"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = None
         mock_post_record.langs = ["en"]
@@ -1157,7 +1168,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Bilingual post / Post bilingüe"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = None
         mock_post_record.langs = ["en", "es"]
@@ -1201,7 +1213,8 @@ class TestBlueskyClient:
         mock_post_record.text = "Post without language metadata"
         mock_post_record.created_at = "2025-01-01T10:00:00.000Z"
         mock_post_record.facets = []
-        mock_post_record.embed = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
         mock_post_record.reply = None
         mock_post_record.labels = None
         mock_post_record.langs = None
@@ -1248,6 +1261,8 @@ class TestBlueskyClient:
         mock_post_record.facets = []
         mock_post_record.labels = None
         mock_post_record.langs = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
 
         # Add quote post embed (quoting someone else's post)
         mock_embed = Mock()
@@ -1255,7 +1270,6 @@ class TestBlueskyClient:
         mock_embed_record = Mock()
         mock_embed_record.uri = "at://did:plc:userB/app.bsky.feed.post/quoted123"
         mock_embed.record = mock_embed_record
-        mock_post_record.embed = mock_embed
 
         mock_feed_item = Mock()
         if hasattr(mock_feed_item, "reason"):
@@ -1265,6 +1279,7 @@ class TestBlueskyClient:
         mock_feed_item.post.uri = "at://did:plc:userA/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.embed = mock_embed
         mock_feed_item.post.author = Mock()
         mock_feed_item.post.author.handle = "userA.bsky.social"
         mock_feed_item.post.author.display_name = "User A"
@@ -1300,6 +1315,8 @@ class TestBlueskyClient:
         mock_post_record.facets = []
         mock_post_record.labels = None
         mock_post_record.langs = None
+        if hasattr(mock_post_record, "embed"):
+            delattr(mock_post_record, "embed")
 
         # Add quote post embed (quoting own post)
         mock_embed = Mock()
@@ -1307,7 +1324,6 @@ class TestBlueskyClient:
         mock_embed_record = Mock()
         mock_embed_record.uri = "at://did:plc:userA/app.bsky.feed.post/original123"
         mock_embed.record = mock_embed_record
-        mock_post_record.embed = mock_embed
 
         mock_feed_item = Mock()
         if hasattr(mock_feed_item, "reason"):
@@ -1317,6 +1333,7 @@ class TestBlueskyClient:
         mock_feed_item.post.uri = "at://did:plc:userA/app.bsky.feed.post/12345"
         mock_feed_item.post.cid = "test-cid"
         mock_feed_item.post.record = mock_post_record
+        mock_feed_item.post.embed = mock_embed
         mock_feed_item.post.author = Mock()
         mock_feed_item.post.author.handle = "userA.bsky.social"
         mock_feed_item.post.author.display_name = "User A"
@@ -1357,7 +1374,8 @@ class TestBlueskyClient:
         mock_post1.record.facets = []
         mock_post1.record.labels = None
         mock_post1.record.langs = None
-        mock_post1.record.embed = None
+        if hasattr(mock_post1, "embed"):
+            delattr(mock_post1, "embed")
         mock_post1.uri = "at://did:plc:userA/app.bsky.feed.post/post1"
         mock_post1.cid = "cid1"
         mock_post1.author = Mock()
@@ -1379,11 +1397,13 @@ class TestBlueskyClient:
         mock_post2.record.facets = []
         mock_post2.record.labels = None
         mock_post2.record.langs = None
+        if hasattr(mock_post2.record, "embed"):
+            delattr(mock_post2.record, "embed")
         mock_embed2 = Mock()
         mock_embed2.py_type = "app.bsky.embed.record"
         mock_embed2.record = Mock()
         mock_embed2.record.uri = "at://did:plc:userB/app.bsky.feed.post/quoted"
-        mock_post2.record.embed = mock_embed2
+        mock_post2.embed = mock_embed2
         mock_post2.uri = "at://did:plc:userA/app.bsky.feed.post/post2"
         mock_post2.cid = "cid2"
         mock_post2.author = Mock()
@@ -1405,11 +1425,13 @@ class TestBlueskyClient:
         mock_post3.record.facets = []
         mock_post3.record.labels = None
         mock_post3.record.langs = None
+        if hasattr(mock_post3.record, "embed"):
+            delattr(mock_post3.record, "embed")
         mock_embed3 = Mock()
         mock_embed3.py_type = "app.bsky.embed.record"
         mock_embed3.record = Mock()
         mock_embed3.record.uri = "at://did:plc:userA/app.bsky.feed.post/original"
-        mock_post3.record.embed = mock_embed3
+        mock_post3.embed = mock_embed3
         mock_post3.uri = "at://did:plc:userA/app.bsky.feed.post/post3"
         mock_post3.cid = "cid3"
         mock_post3.author = Mock()
