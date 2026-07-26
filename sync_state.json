@@ -1178,6 +1178,11 @@
       "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mqlalurdx222",
       "reason": "quote-of-other",
       "skipped_at": "2026-07-14T06:40:30.258525"
+    },
+    {
+      "bluesky_uri": "at://did:plc:sek23f2vucrxxyaaud2emnxe/app.bsky.feed.post/3mrjddvbgk22d",
+      "reason": "quote-of-other",
+      "skipped_at": "2026-07-26T06:51:30.298123"
     }
   ]
 }
