@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
 ### Changed
+- 📦 **Dependency Updates**: Updated core runtime and development dependencies to current stable releases:
+  - Runtime: `atproto` (>=0.0.72), `Mastodon.py` (>=2.2.2), `pydantic` (>=2.13.0), `pydantic-settings` (>=2.15.0), `click` (>=8.5.0), `python-dotenv` (>=1.2.0), `requests` (>=2.34.0)
+  - Tooling & Development: `black` (>=24.0.0), `flake8` (>=7.0.0), `mypy` (>=1.10.0), `pytest` (>=9.0.0), `pyinstaller` (>=6.10.0)
+  - Deduplicated test dependencies in `requirements-dev.txt`
+
+### Security
+- 🔒 **Dependency Vulnerability Fixes**: Resolved 69 known vulnerabilities across dependencies by upgrading `click`, `urllib3`, `cryptography`, `anyio`, and build tools in the environment.
+
+### Added
 
 ### Fixed
 

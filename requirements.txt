@@ -1,8 +1,8 @@
 # Social Sync Dependencies
-atproto>=0.0.62
-Mastodon.py>=1.8.0
-python-dotenv>=1.0.0
-requests>=2.31.0
-click>=8.1.7
-pydantic>=2.5.0
-pydantic-settings>=2.0.0
+atproto>=0.0.72
+Mastodon.py>=2.2.2
+python-dotenv>=1.2.0
+requests>=2.34.0
+click>=8.5.0
+pydantic>=2.13.0
+pydantic-settings>=2.15.0
