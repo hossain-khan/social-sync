@@ -417,7 +417,9 @@ class ContentProcessor:
                             image_info["blob_ref"] = blob.ref.link
                     elif isinstance(blob, dict):
                         # Dict format
-                        image_info["mime_type"] = blob.get("mime_type", "image/jpeg")
+                        image_info["mime_type"] = blob.get(
+                            "mime_type", blob.get("mimeType", "image/jpeg")
+                        )
                         # The blob ref contains the image identifier
                         if blob.get("ref"):
                             # For AT Protocol, we'll need to construct the blob URL

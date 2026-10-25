@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Fixed
+- 🐛 **GIF image syncing**: Read AT Protocol's `mimeType` field so GIF blobs retain their correct MIME type when uploaded.
 
 ## [0.10.0] - 2026-07-09
 
