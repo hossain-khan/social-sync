@@ -173,6 +173,27 @@ class TestContentProcessor:
         assert result[0]["blob_ref"] == "test-blob-ref"
         assert result[0]["mime_type"] == "image/jpeg"
 
+    def test_extract_images_from_embed_gif_mime_type(self):
+        """Test GIF MIME type extraction from AT Protocol blob data"""
+        embed = {
+            "$type": "app.bsky.embed.images",
+            "images": [
+                {
+                    "alt": "Animated image",
+                    "image": {
+                        "$type": "blob",
+                        "ref": {"$link": "gif-blob-ref"},
+                        "mimeType": "image/gif",
+                    },
+                }
+            ],
+        }
+
+        result = ContentProcessor.extract_images_from_embed(embed)
+
+        assert result[0]["blob_ref"] == "gif-blob-ref"
+        assert result[0]["mime_type"] == "image/gif"
+
     def test_extract_images_from_embed_multiple_images(self):
         """Test image extraction with multiple image embed"""
         embed = {
