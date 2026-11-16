@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-15
+
 ### Changed
 - 📦 **Dependency Updates**: Updated core runtime and development dependencies to current stable releases:
   - Runtime: `atproto` (>=0.0.75), `Mastodon.py` (>=2.3.3), `pydantic` (>=2.14.3), `pydantic-settings` (>=2.16.3), `click` (>=8.5.1), `python-dotenv` (>=1.2.4), `requests` (>=2.34.2)
@@ -15,8 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - 🔒 **Dependency Vulnerability Fixes**: Resolved known vulnerabilities across dependencies by upgrading `black`, `certifi`, `dnspython`, `authlib`, `joserfc`, `msgpack`, `nltk`, `setuptools`, `click`, `urllib3`, `cryptography`, and `anyio`.
-
-### Added
 
 ### Fixed
 - 🐛 **GIF image syncing**: Read AT Protocol's `mimeType` field so GIF blobs retain their correct MIME type when uploaded.
