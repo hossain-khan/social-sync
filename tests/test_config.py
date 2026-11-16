@@ -201,12 +201,14 @@ class TestSettings:
             assert isinstance(
                 result_datetime, datetime
             ), f"Expected datetime object for: {date_str}"
+            assert (
+                result_datetime.tzinfo is not None
+            ), f"Expected timezone-aware datetime for: {date_str}"
 
             # Convert to UTC naive datetime for comparison
-            if result_datetime.tzinfo is not None:
-                result_datetime = result_datetime.astimezone(timezone.utc).replace(
-                    tzinfo=None
-                )
+            result_datetime = result_datetime.astimezone(timezone.utc).replace(
+                tzinfo=None
+            )
 
             assert result_datetime == expected_datetime, (
                 f"Date conversion failed for {date_str}: "

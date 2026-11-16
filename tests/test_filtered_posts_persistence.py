@@ -3,7 +3,7 @@ Tests for filtered posts persistence to skipped_posts audit trail
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -451,12 +451,12 @@ class TestFilteredPostsPersistence:
         """Test that persisted filtered posts have skipped_at timestamp"""
         sync_state = SyncState(temp_state_file)
 
-        before_time = datetime.now().isoformat()
+        before_time = datetime.now(timezone.utc).isoformat()
         filtered_post_uri = "at://filtered-reply"
         sync_state.mark_post_skipped(
             filtered_post_uri, reason="reply-not-self-threaded"
         )
-        after_time = datetime.now().isoformat()
+        after_time = datetime.now(timezone.utc).isoformat()
 
         # Verify timestamp is present and reasonable
         with open(temp_state_file, "r") as f:

@@ -4,7 +4,7 @@ Tests for Sync State Management
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -138,9 +138,19 @@ class TestSyncState:
 
         assert result is not None
         assert isinstance(result, datetime)
+        assert result.tzinfo is not None
         # Should be very recent (within last minute)
-        time_diff = datetime.now() - result
+        time_diff = datetime.now(timezone.utc) - result
         assert time_diff.total_seconds() < 60
+
+    def test_get_last_sync_time_legacy_naive_timestamp(self):
+        """Test getting last sync time when state file contains legacy naive timestamp"""
+        self.sync_state.state["last_sync_time"] = "2025-01-15T10:30:00"
+        result = self.sync_state.get_last_sync_time()
+
+        assert result is not None
+        assert result.tzinfo == timezone.utc
+        assert result == datetime(2025, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
 
     def test_update_sync_time(self):
         """Test updating sync time"""

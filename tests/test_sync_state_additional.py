@@ -5,7 +5,7 @@ Additional tests for SyncState module to improve coverage
 import json
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -311,9 +311,9 @@ class TestSyncStateEdgeCases:
         sync_state = SyncState(self.state_file_path)
 
         # Update sync time
-        before_update = datetime.now()
+        before_update = datetime.now(timezone.utc)
         sync_state.update_sync_time()
-        after_update = datetime.now()
+        after_update = datetime.now(timezone.utc)
 
         # Get the timestamp
         last_sync = sync_state.get_last_sync_time()
@@ -321,6 +321,7 @@ class TestSyncStateEdgeCases:
 
         # Should be a datetime object
         assert isinstance(last_sync, datetime)
+        assert last_sync.tzinfo is not None
 
         # Should be between before and after
         assert before_update <= last_sync <= after_update
