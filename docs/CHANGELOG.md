@@ -9,17 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 📦 **Dependency Updates**: Updated core runtime and development dependencies to current stable releases:
-  - Runtime: `atproto` (>=0.0.72), `Mastodon.py` (>=2.2.2), `pydantic` (>=2.13.0), `pydantic-settings` (>=2.15.0), `click` (>=8.5.0), `python-dotenv` (>=1.2.0), `requests` (>=2.34.0)
-  - Tooling & Development: `black` (>=24.0.0), `flake8` (>=7.0.0), `mypy` (>=1.10.0), `pytest` (>=9.0.0), `pyinstaller` (>=6.10.0)
-  - Deduplicated test dependencies in `requirements-dev.txt`
+  - Runtime: `atproto` (>=0.0.75), `Mastodon.py` (>=2.3.3), `pydantic` (>=2.14.3), `pydantic-settings` (>=2.16.3), `click` (>=8.5.1), `python-dotenv` (>=1.2.4), `requests` (>=2.34.2)
+  - Tooling & Development: `black` (>=26.10.1), `isort` (>=9.0.2), `flake8` (>=7.5.0), `mypy` (>=2.4.1), `pyrefly` (>=1.4.1), `pytest` (>=9.2.0), `pytest-cov` (>=7.1.0), `pytest-mock` (>=3.17.0), `bandit` (>=1.9.4), `pip-audit` (>=2.10.1), `safety` (>=3.8.1), `pyinstaller` (>=6.22.3)
+  - Removed invalid `pytest-anyio>=0.4.0` dev dependency from `pyproject.toml` and deduplicated test dependencies in `requirements-dev.txt`
 
 ### Security
-- 🔒 **Dependency Vulnerability Fixes**: Resolved 69 known vulnerabilities across dependencies by upgrading `click`, `urllib3`, `cryptography`, `anyio`, and build tools in the environment.
+- 🔒 **Dependency Vulnerability Fixes**: Resolved known vulnerabilities across dependencies by upgrading `black`, `certifi`, `dnspython`, `authlib`, `joserfc`, `msgpack`, `nltk`, `setuptools`, `click`, `urllib3`, `cryptography`, and `anyio`.
 
 ### Added
 
 ### Fixed
 - 🐛 **GIF image syncing**: Read AT Protocol's `mimeType` field so GIF blobs retain their correct MIME type when uploaded.
+- 🐛 **AT Protocol 0.0.75 type compatibility**: Updated `BlueskyClient` record and profile type handling for `atproto>=0.0.75` union record models and `mypy>=2.4.1`.
 
 ## [0.10.0] - 2026-07-09
 
