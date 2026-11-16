@@ -312,6 +312,147 @@ class TestSyncState:
         tmp_files = [name for name in os.listdir(parent_dir) if name.endswith(".tmp")]
         assert tmp_files == []
 
+    def test_production_sync_state_roundtrip_fidelity(self, tmp_path):
+        """Test that loading and saving the production sync_state.json preserves exact data and byte format"""
+        import shutil
+        from pathlib import Path
+
+        repo_state_file = Path(__file__).parent.parent / "sync_state.json"
+        assert repo_state_file.exists(), "Production sync_state.json should exist"
+
+        original_bytes = repo_state_file.read_bytes()
+        original_data = json.loads(original_bytes.decode("utf-8"))
+
+        copied_state_file = tmp_path / "sync_state.json"
+        shutil.copy2(repo_state_file, copied_state_file)
+
+        # Load state and re-save without modifications
+        sync_state = SyncState(str(copied_state_file))
+        assert sync_state.get_synced_posts_count() == len(original_data["synced_posts"])
+        assert sync_state.get_skipped_posts_count() == len(
+            original_data["skipped_posts"]
+        )
+
+        sync_state._save_state()
+
+        saved_bytes = copied_state_file.read_bytes()
+        assert saved_bytes == original_bytes
+
+        # Now add a new synced post and verify all existing records remain intact
+        sync_state.mark_post_synced(
+            "at://did:plc:test/app.bsky.feed.post/new123", "999888777"
+        )
+        reloaded = SyncState(str(copied_state_file))
+        assert (
+            reloaded.get_synced_posts_count() == len(original_data["synced_posts"]) + 1
+        )
+        assert reloaded.get_skipped_posts_count() == len(original_data["skipped_posts"])
+        assert (
+            reloaded.get_mastodon_id_for_bluesky_post(
+                original_data["synced_posts"][0]["bluesky_uri"]
+            )
+            == original_data["synced_posts"][0]["mastodon_id"]
+        )
+
+    def test_non_dict_json_root_creates_backup_and_recovers(self):
+        """Test that a JSON file containing a list instead of a dict is backed up and reset"""
+        with open(self.state_file_path, "w") as f:
+            f.write('["not", "a", "dict"]')
+
+        sync_state = SyncState(self.state_file_path)
+        assert sync_state.get_synced_posts_count() == 0
+        assert sync_state.get_skipped_posts_count() == 0
+
+        backup_path = f"{self.state_file_path}.corrupted.bak"
+        assert os.path.exists(backup_path)
+        with open(backup_path, "r") as f:
+            assert f.read() == '["not", "a", "dict"]'
+
+    def test_existing_corrupted_backup_is_not_overwritten(self):
+        """Test that an existing .corrupted.bak file is preserved and not clobbered by subsequent loads"""
+        backup_path = f"{self.state_file_path}.corrupted.bak"
+        with open(backup_path, "w") as f:
+            f.write("original precious backup data")
+
+        with open(self.state_file_path, "w") as f:
+            f.write("{corrupted again")
+
+        SyncState(self.state_file_path)
+
+        with open(backup_path, "r") as f:
+            assert f.read() == "original precious backup data"
+
+    def test_backup_oserror_handled_gracefully(self, monkeypatch):
+        """Test that an OSError while backing up a corrupted state file does not crash SyncState"""
+        import shutil
+
+        with open(self.state_file_path, "w") as f:
+            f.write("{corrupted json")
+
+        def failing_copy2(*args, **kwargs):
+            raise OSError("Disk full during backup")
+
+        monkeypatch.setattr(shutil, "copy2", failing_copy2)
+
+        sync_state = SyncState(self.state_file_path)
+        assert sync_state.get_synced_posts_count() == 0
+
+    def test_non_list_synced_and_skipped_fields_normalized(self):
+        """Test that non-list synced_posts or skipped_posts fields are normalized to empty lists"""
+        with open(self.state_file_path, "w") as f:
+            json.dump(
+                {
+                    "last_sync_time": None,
+                    "synced_posts": "invalid-not-a-list",
+                    "skipped_posts": 12345,
+                    "last_bluesky_post_uri": None,
+                },
+                f,
+            )
+
+        sync_state = SyncState(self.state_file_path)
+        assert sync_state.state["synced_posts"] == []
+        assert sync_state.state["skipped_posts"] == []
+
+    def test_load_state_unexpected_read_error_handled(self, monkeypatch):
+        """Test that an unexpected OSError during file read falls back to default state"""
+        with open(self.state_file_path, "w") as f:
+            f.write("{}")
+
+        original_open = open
+
+        def failing_open(file, *args, **kwargs):
+            if str(file) == str(self.state_file_path):
+                raise OSError("Simulated read error")
+            return original_open(file, *args, **kwargs)
+
+        monkeypatch.setattr("builtins.open", failing_open)
+        sync_state = SyncState(self.state_file_path)
+        assert sync_state.get_synced_posts_count() == 0
+
+    def test_atomic_save_os_replace_failure_and_tmp_unlink_error(self, monkeypatch):
+        """Test that os.replace failure and tmp unlink OSError are handled without corrupting state"""
+        from pathlib import Path
+
+        self.sync_state.mark_post_synced("at://initial", "100")
+        with open(self.state_file_path, "r") as f:
+            original_content = f.read()
+
+        def failing_replace(src, dst):
+            raise OSError("Simulated atomic rename failure")
+
+        def failing_unlink(self_path, *args, **kwargs):
+            raise OSError("Simulated unlink failure")
+
+        monkeypatch.setattr(os, "replace", failing_replace)
+        monkeypatch.setattr(Path, "unlink", failing_unlink)
+
+        self.sync_state.mark_post_synced("at://second", "200")
+
+        # Original file on disk must still be completely untouched
+        with open(self.state_file_path, "r") as f:
+            assert f.read() == original_content
+
     def test_partial_json_corruption(self):
         """Test recovery from partially corrupted JSON state file"""
         # Write partial JSON that's missing closing braces

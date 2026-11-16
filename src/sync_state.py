@@ -39,6 +39,11 @@ class SyncState:
         backup_path = self.state_file.with_suffix(
             self.state_file.suffix + ".corrupted.bak"
         )
+        if backup_path.exists():
+            logger.warning(
+                f"Existing corrupted state backup found at {backup_path}; preserving original backup"
+            )
+            return backup_path
         try:
             shutil.copy2(self.state_file, backup_path)
             logger.warning(
