@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - 🐛 **Timezone-aware datetime handling**: Ensure `Settings.get_sync_start_datetime()`, `BlueskyClient.get_recent_posts()`, `SyncState`, and `SocialSyncOrchestrator` consistently use timezone-aware UTC `datetime` objects, preventing `TypeError` when comparing timezone-naive `SYNC_START_DATE` strings (e.g. `2025-01-15T10:30:00`) against Bluesky post timestamps.
+- 🔒 **Atomic sync state persistence & corruption backup**: Write `sync_state.json` atomically via a temporary file (`os.fsync` + `os.replace`) so interrupted writes cannot truncate or corrupt existing state, and automatically preserve a `.corrupted.bak` copy if a malformed state file is encountered on load.
 
 ## [0.11.0] - 2026-11-15
 

@@ -273,17 +273,44 @@ class TestSyncState:
         )
 
     def test_invalid_json_recovery(self):
-        """Test recovery from corrupted JSON state file"""
+        """Test recovery from corrupted JSON state file and backup preservation"""
         # Write invalid JSON to state file
         with open(self.state_file_path, "w") as f:
             f.write("invalid json content")
 
-        # Should create new state without crashing
+        # Should create new state without crashing and preserve a backup
         sync_state = SyncState(self.state_file_path)
 
         # Should have default empty state
         assert sync_state.get_synced_posts_count() == 0
         assert sync_state.get_last_sync_time() is None
+
+        backup_path = f"{self.state_file_path}.corrupted.bak"
+        assert os.path.exists(backup_path)
+        with open(backup_path, "r") as f:
+            assert f.read() == "invalid json content"
+
+    def test_atomic_save_preserves_existing_file_on_failure(self, monkeypatch):
+        """Test that a failed save does not corrupt or truncate the existing state file"""
+        self.sync_state.mark_post_synced("at://existing-post", "11111")
+        with open(self.state_file_path, "r") as f:
+            original_content = f.read()
+
+        def failing_dump(*args, **kwargs):
+            raise RuntimeError("Simulated write failure mid-dump")
+
+        monkeypatch.setattr(json, "dump", failing_dump)
+
+        # Attempting another save should fail gracefully without corrupting the file on disk
+        self.sync_state.mark_post_synced("at://second-post", "22222")
+
+        with open(self.state_file_path, "r") as f:
+            assert f.read() == original_content
+
+        # Ensure no leftover temporary files remain in the directory
+        parent_dir = os.path.dirname(self.state_file_path)
+        tmp_files = [name for name in os.listdir(parent_dir) if name.endswith(".tmp")]
+        assert tmp_files == []
 
     def test_partial_json_corruption(self):
         """Test recovery from partially corrupted JSON state file"""
