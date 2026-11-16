@@ -40,7 +40,7 @@ echo "✅ Critical linting passed"
 
 echo
 echo "6️⃣ All Tests (pytest)..."
-python -m pytest tests/ --tb=short | grep -E "(passed|failed|error)"
+python -m pytest tests/ --tb=short --cov=src --cov-fail-under=80 | grep -E "(passed|failed|error)"
 echo "✅ All tests passed"
 
 echo

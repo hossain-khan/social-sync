@@ -152,10 +152,6 @@ addopts = [
     "--strict-config",
     "--strict-markers",
     "-ra",
-    "--cov=src",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-fail-under=80",
 ]
 ```
 
