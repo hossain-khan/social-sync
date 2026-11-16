@@ -4,6 +4,9 @@ State management for Social Sync
 
 import json
 import logging
+import os
+import shutil
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -21,48 +24,107 @@ class SyncState:
         if not self.state_file.exists():
             self._save_state()
 
+    @staticmethod
+    def _default_state() -> Dict[str, Any]:
+        """Return a fresh default state dictionary"""
+        return {
+            "last_sync_time": None,
+            "synced_posts": [],
+            "skipped_posts": [],
+            "last_bluesky_post_uri": None,
+        }
+
+    def _backup_corrupted_state(self) -> Optional[Path]:
+        """Create a backup copy of a corrupted state file before resetting state"""
+        backup_path = self.state_file.with_suffix(
+            self.state_file.suffix + ".corrupted.bak"
+        )
+        if backup_path.exists():
+            logger.warning(
+                f"Existing corrupted state backup found at {backup_path}; preserving original backup"
+            )
+            return backup_path
+        try:
+            shutil.copy2(self.state_file, backup_path)
+            logger.warning(
+                f"Backed up corrupted state file to {backup_path} before resetting state"
+            )
+            return backup_path
+        except OSError as backup_err:
+            logger.error(f"Failed to back up corrupted state file: {backup_err}")
+            return None
+
     def _load_state(self) -> Dict[str, Any]:
         """Load state from file"""
         if not self.state_file.exists():
-            return {
-                "last_sync_time": None,
-                "synced_posts": [],
-                "skipped_posts": [],
-                "last_bluesky_post_uri": None,
-            }
+            return self._default_state()
 
         try:
-            with open(self.state_file, "r") as f:
-                data = json.load(f)
-                # Ensure skipped_posts field exists for backward compatibility
-                if isinstance(data, dict):
-                    if "skipped_posts" not in data:
-                        data["skipped_posts"] = []
-                    return data
-                else:
-                    return {
-                        "last_sync_time": None,
-                        "synced_posts": [],
-                        "skipped_posts": [],
-                        "last_bluesky_post_uri": None,
-                    }
+            with open(self.state_file, "r", encoding="utf-8") as f:
+                raw_content = f.read()
+
+            if not raw_content.strip():
+                logger.warning(
+                    f"State file {self.state_file} is empty; initializing default state"
+                )
+                return self._default_state()
+
+            data = json.loads(raw_content)
+            if isinstance(data, dict):
+                defaults = self._default_state()
+                for key, default_val in defaults.items():
+                    data.setdefault(key, default_val)
+                if not isinstance(data.get("synced_posts"), list):
+                    data["synced_posts"] = []
+                if not isinstance(data.get("skipped_posts"), list):
+                    data["skipped_posts"] = []
+                return data
+            else:
+                logger.error(
+                    f"State file {self.state_file} does not contain a JSON object"
+                )
+                self._backup_corrupted_state()
+                return self._default_state()
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON from state file {self.state_file}: {e}")
+            self._backup_corrupted_state()
+            return self._default_state()
         except Exception as e:
             logger.error(f"Failed to load state file: {e}")
-            return {
-                "last_sync_time": None,
-                "synced_posts": [],
-                "skipped_posts": [],
-                "last_bluesky_post_uri": None,
-            }
+            return self._default_state()
 
-    def _save_state(self):
-        """Save state to file"""
+    def _save_state(self) -> None:
+        """Atomically save state to file using a temporary file and os.replace"""
+        tmp_path: Optional[Path] = None
         try:
-            with open(self.state_file, "w") as f:
-                json.dump(self.state, f, indent=2, default=str)
-            logger.debug(f"State saved to {self.state_file}")
+            if self.state_file.exists() and not os.access(self.state_file, os.W_OK):
+                raise PermissionError(f"State file is not writable: {self.state_file}")
+
+            parent_dir = self.state_file.parent
+            parent_dir.mkdir(parents=True, exist_ok=True)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                dir=parent_dir,
+                prefix=f".{self.state_file.name}.",
+                suffix=".tmp",
+                delete=False,
+                encoding="utf-8",
+            ) as tmp_file:
+                tmp_path = Path(tmp_file.name)
+                json.dump(self.state, tmp_file, indent=2, default=str)
+                tmp_file.flush()
+                os.fsync(tmp_file.fileno())
+
+            os.replace(tmp_path, self.state_file)
+            logger.debug(f"State saved atomically to {self.state_file}")
         except Exception as e:
             logger.error(f"Failed to save state file: {e}")
+            if tmp_path is not None and tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
 
     def is_post_synced(self, post_uri: str) -> bool:
         """Check if a post has already been synced"""
