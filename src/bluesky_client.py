@@ -93,9 +93,9 @@ class BlueskyClient:
         try:
             profile = self.client.login(self.handle, self.password)
             self._authenticated = True
-            logger.info(
-                f"Successfully authenticated as {profile.display_name} (@{profile.handle})"
-            )
+            display_name = profile.display_name if profile else self.handle
+            handle = profile.handle if profile else self.handle
+            logger.info(f"Successfully authenticated as {display_name} (@{handle})")
             return True
         except Exception as e:
             logger.error(f"Failed to authenticate with Bluesky: {e}")
@@ -193,6 +193,7 @@ class BlueskyClient:
 
             for feed_item in response.feed:
                 post = feed_item.post
+                record: Any = post.record
 
                 # Track and skip reposts
                 if hasattr(feed_item, "reason") and feed_item.reason is not None:
@@ -202,16 +203,16 @@ class BlueskyClient:
 
                 # Track and skip quote posts of other people's content
                 # Allow self-quotes (quoting own posts) but filter quotes of others
-                if hasattr(post.record, "embed") and post.record.embed:
-                    embed_type = getattr(post.record.embed, "py_type", None)
+                if hasattr(record, "embed") and record.embed:
+                    embed_type = getattr(record.embed, "py_type", None)
 
                     # Check if this is a quote post (app.bsky.embed.record)
                     if embed_type == "app.bsky.embed.record":
                         # Extract the quoted post URI
-                        if hasattr(post.record.embed, "record") and hasattr(
-                            post.record.embed.record, "uri"
+                        if hasattr(record.embed, "record") and hasattr(
+                            record.embed.record, "uri"
                         ):
-                            quoted_uri = post.record.embed.record.uri
+                            quoted_uri = record.embed.record.uri
                             quoted_did = self._extract_did_from_uri(quoted_uri)
 
                             # Skip if quoting someone else's post (allow self-quotes)
@@ -244,9 +245,9 @@ class BlueskyClient:
                 # The critical check: BOTH root AND parent must be by the user.
                 # Just checking the root isn't enough (see example #2 above).
                 reply_parent_uri = None
-                if post.record.reply:
-                    reply_parent_uri = post.record.reply.parent.uri
-                    reply_root_uri = post.record.reply.root.uri
+                if record.reply:
+                    reply_parent_uri = record.reply.parent.uri
+                    reply_root_uri = record.reply.root.uri
 
                     # Extract the author DIDs to check if both root and parent are by the user
                     root_did = (
@@ -292,7 +293,7 @@ class BlueskyClient:
 
                 # Parse the post creation date
                 created_at = datetime.fromisoformat(
-                    post.record.created_at.replace("Z", "+00:00")
+                    record.created_at.replace("Z", "+00:00")
                 )
 
                 # Filter by date if specified
@@ -304,42 +305,40 @@ class BlueskyClient:
                 # Extract self-labels (content warnings) if present
                 self_labels = None
                 if (
-                    hasattr(post.record, "labels")
-                    and post.record.labels
-                    and hasattr(post.record.labels, "values")
-                    and post.record.labels.values
+                    hasattr(record, "labels")
+                    and record.labels
+                    and hasattr(record.labels, "values")
+                    and record.labels.values
                 ):
-                    self_labels = [label.val for label in post.record.labels.values]
+                    self_labels = [label.val for label in record.labels.values]
                     logger.debug(f"Found self-labels: {self_labels}")
 
                 # Extract language tags if present
                 langs = None
-                if hasattr(post.record, "langs") and post.record.langs:
-                    langs = list(post.record.langs)
+                if hasattr(record, "langs") and record.langs:
+                    langs = list(record.langs)
                     logger.debug(f"Found language tags: {langs}")
 
                 bluesky_post = BlueskyPost(
                     uri=post.uri,
                     cid=post.cid,
-                    text=post.record.text,
+                    text=record.text,
                     created_at=created_at,
                     author_handle=post.author.handle,
                     author_display_name=post.author.display_name,
-                    reply_to=(
-                        post.record.reply.parent.uri if post.record.reply else None
-                    ),
+                    reply_to=(record.reply.parent.uri if record.reply else None),
                     # Convert AT Protocol embed objects to dictionaries for cross-platform compatibility
                     # This ensures external links, images, etc. are preserved when syncing to Mastodon
                     embed=(
-                        BlueskyClient._extract_embed_data(post.record.embed)
-                        if hasattr(post.record, "embed") and post.record.embed
+                        BlueskyClient._extract_embed_data(record.embed)
+                        if hasattr(record, "embed") and record.embed
                         else None
                     ),
                     # Extract rich text features (hashtags, mentions, links) from AT Protocol facets
                     # Facets provide precise byte ranges and metadata for text formatting
                     facets=(
-                        BlueskyClient._extract_facets_data(post.record.facets)
-                        if hasattr(post.record, "facets") and post.record.facets
+                        BlueskyClient._extract_facets_data(record.facets)
+                        if hasattr(record, "facets") and record.facets
                         else None
                     ),
                     # Extract content warning labels for cross-platform moderation
@@ -492,7 +491,7 @@ class BlueskyClient:
                 images_data = []
                 for image in images_to_process:
                     # Extract image metadata and accessibility info
-                    image_data = {
+                    image_data: Dict[str, Any] = {
                         "alt": getattr(
                             image, "alt", None
                         ),  # Alt text for screen readers
