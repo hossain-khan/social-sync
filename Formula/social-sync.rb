@@ -17,7 +17,7 @@ class SocialSync < Formula
   desc "Sync posts from Bluesky to Mastodon"
   homepage "https://github.com/hossain-khan/social-sync"
   license "MIT"
-  version "0.11.0"
+  version "0.12.0"
 
   # Pre-built binaries are attached to each GitHub Release by the
   # "Build Release Binaries" workflow (.github/workflows/build-binaries.yml).
@@ -25,24 +25,24 @@ class SocialSync < Formula
   on_macos do
     on_arm do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-macos-arm64"
-      sha256 "3813930b194602b12376fcd83fc3173f659edba3e9cf126c8ded9b846f732982"
+      sha256 "553fa44daafafa10c988073e085987ce48f706bcbce46d45628e3aa3e6e8eb4b"
     end
 
     on_intel do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-macos-x86_64"
-      sha256 "c570b9ab4a304182c03221b70f7ea39890072634d9740308cb017f1d2a07b09f"
+      sha256 "2eb09a125e679907fa7d5da565184f5201523d0ecdfd284bee626d906076446e"
     end
   end
 
   on_linux do
     on_intel do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-linux-x86_64"
-      sha256 "bf2cadd435d61a199ccd7c9feff2d7adfcb71f91ae5643cde943314f3b633ae4"
+      sha256 "aa5006eb8fbb0fb477171ef4a0500549dd3a50bb83026673e87be45614200f68"
     end
 
     on_arm do
       url "https://github.com/hossain-khan/social-sync/releases/download/#{version}/social-sync-linux-arm64"
-      sha256 "16f6188f747095f0488a42c59a5697c72cde4f6e0e39b6b50b2c5551d97a0e03"
+      sha256 "f9548aa77f603f0c1a802b2367b343953d00b26c6634c8f4334a69a89648722f"
     end
   end
 
