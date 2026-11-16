@@ -4,7 +4,7 @@ Bluesky client wrapper for Social Sync
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
@@ -295,12 +295,20 @@ class BlueskyClient:
                 created_at = datetime.fromisoformat(
                     record.created_at.replace("Z", "+00:00")
                 )
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
 
-                # Filter by date if specified
-                if since_date and created_at < since_date:
-                    filtered_by_date += 1
-                    filtered_posts[post.uri] = "older-than-sync-date"
-                    continue
+                # Filter by date if specified (normalize naive since_date to UTC)
+                if since_date:
+                    normalized_since = (
+                        since_date.replace(tzinfo=timezone.utc)
+                        if since_date.tzinfo is None
+                        else since_date
+                    )
+                    if created_at < normalized_since:
+                        filtered_by_date += 1
+                        filtered_posts[post.uri] = "older-than-sync-date"
+                        continue
 
                 # Extract self-labels (content warnings) if present
                 self_labels = None

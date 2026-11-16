@@ -476,6 +476,12 @@ class TestBlueskyClient:
         assert result.filtered_reposts == 0
         assert result.filtered_by_date == 1  # One filtered by date
 
+        # Also verify that passing a timezone-naive since_date does not raise TypeError
+        naive_since_date = datetime(2024, 12, 31, 0, 0, 0)
+        naive_result = client.get_recent_posts(since_date=naive_since_date)
+        assert len(naive_result.posts) == 1
+        assert naive_result.filtered_by_date == 1
+
     @patch("src.bluesky_client.AtprotoClient")
     def test_get_recent_posts_with_embed(self, mock_client_class):
         """Test getting posts with embed content"""

@@ -4,7 +4,7 @@ Main sync orchestrator for Social Sync
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from .bluesky_client import BlueskyClient, BlueskyFetchResult, BlueskyPost
@@ -528,7 +528,7 @@ class SocialSyncOrchestrator:
 
     def run_sync(self) -> dict:
         """Run the main sync process"""
-        start_time = datetime.now()
+        start_time = datetime.now(timezone.utc)
 
         logger.info("Starting social sync process...")
 
@@ -539,7 +539,7 @@ class SocialSyncOrchestrator:
                 "error": "Failed to setup clients",
                 "synced_count": 0,
                 "skipped_count": 0,
-                "duration": (datetime.now() - start_time).total_seconds(),
+                "duration": (datetime.now(timezone.utc) - start_time).total_seconds(),
             }
 
         # Get posts to sync
@@ -552,7 +552,7 @@ class SocialSyncOrchestrator:
                 "error": f"Failed to get posts: {e}",
                 "synced_count": 0,
                 "skipped_count": 0,
-                "duration": (datetime.now() - start_time).total_seconds(),
+                "duration": (datetime.now(timezone.utc) - start_time).total_seconds(),
             }
 
         # Sync posts
@@ -574,7 +574,7 @@ class SocialSyncOrchestrator:
         if synced_count > 0 or skipped_count > 0:
             self.sync_state.update_sync_time()
 
-        duration = (datetime.now() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
 
         result = {
             "success": True,

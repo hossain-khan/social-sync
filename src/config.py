@@ -125,14 +125,17 @@ class Settings(BaseSettings):
             )
 
     def get_sync_start_datetime(self) -> datetime:
-        """Get the sync start date as a datetime object"""
+        """Get the sync start date as a timezone-aware UTC datetime object"""
         if self.sync_start_date:
             try:
                 if "T" in self.sync_start_date:
                     # Full datetime format
-                    return datetime.fromisoformat(
+                    parsed_dt = datetime.fromisoformat(
                         self.sync_start_date.replace("Z", "+00:00")
                     )
+                    if parsed_dt.tzinfo is None:
+                        parsed_dt = parsed_dt.replace(tzinfo=timezone.utc)
+                    return parsed_dt
                 else:
                     # Date only format - start at beginning of day UTC
                     return datetime.fromisoformat(

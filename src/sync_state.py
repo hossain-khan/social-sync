@@ -4,7 +4,7 @@ State management for Social Sync
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -86,7 +86,7 @@ class SyncState:
         sync_record = {
             "bluesky_uri": bluesky_post_uri,
             "mastodon_id": mastodon_post_id,
-            "synced_at": datetime.now().isoformat(),
+            "synced_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # Remove existing record if it exists
@@ -103,7 +103,7 @@ class SyncState:
 
     def update_sync_time(self):
         """Update the last sync time"""
-        self.state["last_sync_time"] = datetime.now().isoformat()
+        self.state["last_sync_time"] = datetime.now(timezone.utc).isoformat()
         self._save_state()
 
     def get_last_sync_time(self) -> Optional[datetime]:
@@ -111,7 +111,10 @@ class SyncState:
         last_sync = self.state.get("last_sync_time")
         if last_sync:
             try:
-                return datetime.fromisoformat(last_sync)
+                parsed = datetime.fromisoformat(last_sync.replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                return parsed
             except ValueError:
                 return None
         return None
@@ -188,7 +191,7 @@ class SyncState:
         skip_record = {
             "bluesky_uri": bluesky_post_uri,
             "reason": reason,
-            "skipped_at": datetime.now().isoformat(),
+            "skipped_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # Remove existing record if it exists
