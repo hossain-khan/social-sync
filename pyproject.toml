@@ -65,7 +65,7 @@ social-sync = "sync:cli"
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 # A regex preceded by ^/ will apply only to files and directories
@@ -92,14 +92,14 @@ disable = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
 
 [tool.pyrefly]
-python-version = "3.11.0"
+python-version = "3.12.0"
 # Use the "legacy" preset to mirror the permissive mypy settings already in place.
 # This suppresses checks that mypy does not have, keeping noise low while still
 # catching real type errors (e.g. bad-assignment).
@@ -119,6 +119,7 @@ exclude_dirs = ["tests", "venv", ".venv"]
 skips = ["B101", "B601"]  # Skip assert_used and shell_injection_possible for dev scripts
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -126,9 +127,13 @@ python_functions = ["test_*"]
 addopts = [
     "-v",
     "--tb=short",
-    "--strict-config", 
+    "--strict-config",
     "--strict-markers",
-    "-ra"
+    "-ra",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
 ]
 markers = [
     "unit: Unit tests",

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- 🧹 **CI & Configuration Hygiene**:
+  - Consolidated `pytest` configuration into `[tool.pytest.ini_options]` in `pyproject.toml` and removed duplicate `pytest.ini`.
+  - Fixed Codecov upload condition in `.github/workflows/validate.yml` (`matrix.python-version == '3.12'`) and aligned `dependency-check` job to Python 3.12.
+  - Unified `mypy` target scope (`mypy sync.py src/ tests/`) across `.github/workflows/validate.yml` and `scripts/pre-commit-checks.sh`, and aligned tool target versions (`black`, `mypy`, `pyrefly`) to Python 3.12.
+
 ### Fixed
 - 🐛 **Timezone-aware datetime handling**: Ensure `Settings.get_sync_start_datetime()`, `BlueskyClient.get_recent_posts()`, `SyncState`, and `SocialSyncOrchestrator` consistently use timezone-aware UTC `datetime` objects, preventing `TypeError` when comparing timezone-naive `SYNC_START_DATE` strings (e.g. `2025-01-15T10:30:00`) against Bluesky post timestamps.
 - 🔒 **Atomic sync state persistence & corruption backup**: Write `sync_state.json` atomically via a temporary file (`os.fsync` + `os.replace`) so interrupted writes cannot truncate or corrupt existing state, and automatically preserve a `.corrupted.bak` copy if a malformed state file is encountered on load.

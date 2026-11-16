@@ -25,7 +25,7 @@ echo "✅ Import sorting passed"
 
 echo
 echo "3️⃣ Type Checking (mypy)..."
-mypy sync.py src/ --ignore-missing-imports --no-strict-optional
+mypy sync.py src/ tests/ --ignore-missing-imports --no-strict-optional
 echo "✅ Type checking passed"
 
 echo

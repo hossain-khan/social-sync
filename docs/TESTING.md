@@ -27,7 +27,7 @@ social-sync/
 ├── test_threading.py         # Threading-specific tests (standalone)
 ├── test_setup.py            # Original setup validation script
 ├── run_tests.py             # Comprehensive test runner
-└── pytest.ini              # Pytest configuration
+└── pyproject.toml           # Pytest and coverage configuration
 ```
 
 ## Running Tests
@@ -138,9 +138,10 @@ The test suite covers the following key areas:
 
 ## Test Configuration
 
-### pytest Configuration (`pytest.ini`)
-```ini
+### pytest Configuration (`pyproject.toml`)
+```toml
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -148,9 +149,13 @@ python_functions = ["test_*"]
 addopts = [
     "-v",
     "--tb=short",
-    "--strict-config", 
+    "--strict-config",
     "--strict-markers",
-    "-ra"
+    "-ra",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
 ]
 ```
 
