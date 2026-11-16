@@ -25,7 +25,7 @@ echo "✅ Import sorting passed"
 
 echo
 echo "3️⃣ Type Checking (mypy)..."
-mypy sync.py src/ --ignore-missing-imports --no-strict-optional
+mypy sync.py src/ tests/ --ignore-missing-imports --no-strict-optional
 echo "✅ Type checking passed"
 
 echo
@@ -40,7 +40,7 @@ echo "✅ Critical linting passed"
 
 echo
 echo "6️⃣ All Tests (pytest)..."
-python -m pytest tests/ --tb=short | grep -E "(passed|failed|error)"
+python -m pytest tests/ --tb=short --cov=src --cov-fail-under=80 | grep -E "(passed|failed|error)"
 echo "✅ All tests passed"
 
 echo
